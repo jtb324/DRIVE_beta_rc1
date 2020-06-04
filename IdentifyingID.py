@@ -1,12 +1,12 @@
 # This is the main file that uses the VariantID.py and the MultipleVariantID.py to determine
 # the IDs of individuals who contain a variant
 
-from MEGA_CLI_project.VariantID import individualVariantID
-from MEGA_CLI_project.MultipleVariantID import multiVariantID
+from VariantID import individualVariantID
+from MultipleVariantID import multiVariantID
 
 
-def IdentifyID():
-    with open("/data100t1/home/james/MEGA_CFTR_test_case/CFTR_snps_extracted/low_maf_CFTR_recodeA.raw") as geno_file:
+def IdentifyID(filepath):
+    with open(filepath) as geno_file:
 
         headerLine = next(geno_file)  # This skips the 1st row
 
