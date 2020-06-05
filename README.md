@@ -14,6 +14,10 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
   - This file writes the ids of all the individuals with variants to a file named totalVariantIDList.txt. It then writes the ids of all the individuals with multiple variants to a file named multiVariantIDList.txt. The user provides the output directory and then these files are written into that directory.
 
+  \*Added a functionality where you can choose if you want to just find the ids in the raw file or use the raw file to search through provided Pedigrees. [EXPLAIN FURTHER]
+
 - **VariantID.py:** contains the individualVariantID function that identifies individuals that contain a single variant. The IIDs for these individuals get appended to the totalVariantList that is passed as the second argument to the function.
 
 - **MultipleVariantID.py:** contains the multiVariantID function that identifies individuals that contain multiple variants. These IIDs are also append to the multiVariantList that is passed as the second argument to the function.
+
+* **FindIndPedigree.py:** attempt at iterating through the list of total variants and seeing if any of those are in the Pedigree. Currently it is not writing properly

@@ -24,10 +24,14 @@ def IdentifyID(filepath, writeLocation):
             multiVariantID(row, multiVariantList)
 
         # The next two lines print the length of the two list made which corresponds to number of ids found
-        print(len(totalVariantList))
 
+        print("The number of individuals that have at least one desired variant is:")
+        print(len(totalVariantList))
+        print("The number of individuals carrying two or multiple desired variants is:")
         print(len(multiVariantList))
 
+        ####################################################
+        # This section writes the above two list to txt files
         writePath = writeLocation
 
         totalVarDirectory = os.path.join(
