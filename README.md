@@ -8,6 +8,8 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Current Development
 
+# TODO: need to discuss the multiVariantAnalysis.py file once that is incorporated
+
 - **MEGA_ID.py:** contains the argparse script to make the CLI. At the current development the program uses recodeA files from PLINK.
 
 - **IdenifyingID.py:** contains the main function that opens the input file and reads it line by line. It then passes each line to the individualVariantID and the multiVariantID functions to identify individuals who have a single variant or those that have multiple variants. This file also passes an empty list to each of the above mentioned functions that the IDs of each variant carrying individual gets written to.
