@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 # TODO: Need to figure out why the IIDFindFunction.py is not giving an output
+# FIXME: For some reason it is not finding the necessary path
 
 import argparse
-from IIDFindFunction import totalVariantID
+from IIDFindFunction import totalVariantID, multiVariantAnalysis
 
 # from FindIndPedigree import findPedigreeInd
 
@@ -12,6 +13,10 @@ def run(args):
         print("generating list of IIDs who carry a desired variant....")
         print('\n')
         totalVariantID(args.input, args.output)
+
+    if args.multivar == True:
+        print("generating list of individuals carrying multiple variants....")
+        multiVariantAnalysis(args.input, args.output, 'MultiVariantList.csv')
 
     # elif args.pedigreeid == True:
     #     print("Generate the list of individuals in the pedigree files...")
@@ -30,7 +35,9 @@ def main():
                         dest="output", type=str, required=True)
 
     parser.add_argument("--totalVar", help="this tag is used to find the total number of individuals containing a variant and outputs a txt file containing all the IIDS.",
-                        dest="totalvar", type=bool, default=True)
+                        dest="totalvar", type=bool, default=False)
+
+    parser.add_argument("--multiVar", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv file is made which contains the index of the variants and the individuals that contain those variants.", dest="multivar", type=bool, default=False)
     parser.set_defaults(func=run)
     args = parser.parse_args()
     args.func(args)
