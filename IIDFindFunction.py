@@ -5,6 +5,7 @@ import os
 import csv
 ###################################################################################
 # Function to find the total number of variants
+# TODO: figure out how to convert the multiVariantAnalysis to an is in
 
 
 def totalVariantID(filepath, writeLocation):
