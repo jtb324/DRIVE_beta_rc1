@@ -8,18 +8,23 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Current Development
 
-# TODO: need to discuss the multiVariantAnalysis.py file once that is incorporated
+#TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested while and for loops.
+#TODO: Need to incorporate a function in the CLI to search through Pedigrees
 
-- **MEGA_ID.py:** contains the argparse script to make the CLI. At the current development the program uses recodeA files from PLINK.
+## Files in the Directory
 
-- **IdenifyingID.py:** contains the main function that opens the input file and reads it line by line. It then passes each line to the individualVariantID and the multiVariantID functions to identify individuals who have a single variant or those that have multiple variants. This file also passes an empty list to each of the above mentioned functions that the IDs of each variant carrying individual gets written to.
+- **MEGA_ID.py:** contains the argparse script to make the CLI. At the current development the program uses recodeA files from PLINK. Contains functions to determine the total # of individuals containing at least one variant and a function to find individuals containing multiple variants
 
-  - This file writes the ids of all the individuals with variants to a file named totalVariantIDList.txt. It then writes the ids of all the individuals with multiple variants to a file named multiVariantIDList.txt. The user provides the output directory and then these files are written into that directory.
+- **IIDFindFunction.py:** contains five major functions to determine the number of individuals with at least one variant and the number of individuals with multiple variants.
 
-  * Added a functionality where you can choose if you want to just find the ids in the raw file or use the raw file to search through provided Pedigrees. [EXPLAIN FURTHER]
+  - totalVariantID: This function finds the total number of individuals carrying at least one variant. It prints the number of individuals carrying at least one variant to the console and then it creates a file "totalVariantIDList.txt" that contains the IIDs of each individual.
 
-- **VariantID.py:** contains the individualVariantID function that identifies individuals that contain a single variant. The IIDs for these individuals get appended to the totalVariantList that is passed as the second argument to the function.
+  * writePath: This simple function just creates a path to write files to. This was doing to keep the DRY principle of coding.
 
-- **MultipleVariantID.py:** contains the multiVariantID function that identifies individuals that contain multiple variants. These IIDs are also append to the multiVariantList that is passed as the second argument to the function.
+  * individualCount: This function forms the dictionary where the keys are the index of each variant in each row from the recode file. The values are the number of individuals carrying that combination of variants. This function then uses the csvDictWriter function to write this dictionary to a csv file.
 
-* **FindIndPedigree.py:** attempt at iterating through the list of total variants and seeing if any of those are in the Pedigree. Currently it is not writing properly
+  * multiVariantAnalysis: This function creates a dictionary where the keys are the index of each variant in each row from the recode file. The values are list of IIDs of individuals who carry that combination of variants. The csvDictWriter function is then used to write this dictionary to a csv file.
+
+  * csvDictWriter: This function creates a csv file from dictionaries passed to it. It uses the write path function to create a path for the csv file to be written to. This function was also made to keep the DRY principle.
+
+* **FindIndPedigree.py:** attempt at iterating through the list of total variants and seeing if any of those are in the Pedigree. Currently it is not writing properly. This is a working progress
