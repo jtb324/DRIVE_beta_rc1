@@ -1,10 +1,11 @@
 # This file contains the functions used to determine how many toatl individuals contain some variant and how many individuals contain multiple variants
-# BUG: This version using the CLI is 1KB bigger than the version in the scripts folder so I need to figure out why thats happening
+
 ###################################################################################
 import os
 import csv
 ###################################################################################
 # Function to find the total number of variants
+# TODO: figure out how to convert the multiVariantAnalysis to an is in
 
 
 def totalVariantID(filepath, writeLocation):
@@ -78,63 +79,53 @@ def multiVariantAnalysis(filepath, writePath, fileName):
 
         headerLine = next(geno_file)  # This skips the 1st row
 
-        indexList = []  # This creates an empty indexList that the index of the variants will be added to. It is outside of the while loop so that it gets reset ot empty for each new row
-        variantCount = 0
-
         multiVarDict = dict()
 
         for row in geno_file:  # This iterates through each row in the file
 
+            # This establishes a counter to keep track of how many variants there are in a row
+            variantCount = 0
+
             row = row.split()  # This will split the row by white space
 
-            i = 6  # This begins the i counter at 6 since the 7th position is the the first index of interest in the row and python is zero based indexing
+            # These next two lines split the row into the rowID, which contains just the identifying info, and then the genotyping info in the row variable
+            rowID = row[0:6]
+            row = row[6:]
 
-            # This while loop iterates over the row from the 6th index to the end of the row
-            while i <= len(row)-1:
+            indexList = []  # This establishes an empty list to store the index position in
 
-                # Checks to see if the value at row[i] is a string one or two
-                if row[i] == '1' or row[i] == '2':
+            # This for loop uses enumerate to get the elements and their index in the row
+            for i, x in enumerate(row):
 
-                    variantCount += 1
-                    # If the condition is true then it appends i to the index list
-                    indexList.append(i)
+                # xhecks to see if the value of x is a string of 1 or 2
+                if x == '1' or x == '2':
 
-                    # This then starts another counter that iterates through the rest of the of the row by beginning at index i+1
-                    for j in range(i+1, len(row)):
+                    variantCount += 1  # Updates the variantCount by 1 if condition is true
 
-                        # Checks to see if row[j] == string 1 or 2
-                        if row[j] == '1' or row[j] == '2':
+                    # Appends the index to the list but adds six to account for splitting the row
+                    indexList.append(i+6)
 
-                            variantCount += 1
-                            # If true then it also appends this index to the indexList and then moves to the next j
-                            indexList.append(j)
+            # This line checks to see if the row had more than one variant
+            if variantCount > 1:
+                # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
+                indexTuple = tuple(indexList)
 
-                    if variantCount > 1:
-                        # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
-                        indexTuple = tuple(indexList)
+                if indexTuple in multiVarDict:  # This checks to see if the indexTuple is already a key in the multiVarDict
 
-                        if indexTuple in multiVarDict:  # This checks to see if the indexTuple is already a key in the multiVarDict
+                    # If true then it just appends the IID to the value of the multiVarDict
+                    multiVarDict[indexTuple].append(rowID[1])
 
-                            # If true then it just appends the IID to the value of the multiVarDict
-                            multiVarDict[indexTuple].append(row[1])
+                else:
 
-                        else:
-
-                            # If false then it creates a new multiVarDict input with that key and value
-                            multiVarDict[indexTuple] = [row[1]]
-
-                    # This then sets i to be the length of the row minus 1 so that the while loop will break and the function moves onto the next row.
-                    i = len(row)-1
-
-                # adds 1 to index i if the original if statement is false and the row[i] does not equal a string of 1 or 2
-                i += 1
+                    # If false then it creates a new multiVarDict input with that key and value
+                    multiVarDict[indexTuple] = [rowID[1]]
 
                 # This then passes the multiVarDict to the csvDictWriter function and ouptuts a csv file
             csvDictWriter(
                 multiVarDict, writePath, fileName)
 
             # This passes the multiVarDict to the individualCount function to determine how many individuals have each combination of variants
-    individualCount(multiVarDict)
+    individualCount(multiVarDict, writePath)
 
 
 ######################################################################################################
