@@ -83,23 +83,29 @@ def multiVariantAnalysis(filepath, writePath, fileName):
 
         for row in geno_file:  # This iterates through each row in the file
 
+            # This establishes a counter to keep track of how many variants there are in a row
             variantCount = 0
 
             row = row.split()  # This will split the row by white space
+
+            # These next two lines split the row into the rowID, which contains just the identifying info, and then the genotyping info in the row variable
             rowID = row[0:6]
             row = row[6:]
 
-            indexList = []
+            indexList = []  # This establishes an empty list to store the index position in
 
+            # This for loop uses enumerate to get the elements and their index in the row
             for i, x in enumerate(row):
 
-                # Checks to see if the value at row[i] is a string one or two
+                # xhecks to see if the value of x is a string of 1 or 2
                 if x == '1' or x == '2':
 
-                    variantCount += 1
-                    # If the condition is true then it appends i to the index list
+                    variantCount += 1  # Updates the variantCount by 1 if condition is true
+
+                    # Appends the index to the list but adds six to account for splitting the row
                     indexList.append(i+6)
 
+            # This line checks to see if the row had more than one variant
             if variantCount > 1:
                 # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
                 indexTuple = tuple(indexList)
