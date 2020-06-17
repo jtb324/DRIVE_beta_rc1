@@ -4,13 +4,18 @@ This is a repository for working on turning the MEGA project into a commandline 
 
 ## Goal
 
-The goal of this repository is to create a commandline tool that takes a raw file as input and then returns a list of all individual ids who contain a variant.
+The goal of this repository is to create a commandline tool that takes a raw file as input and then returns a list of all individual ids who contain a desired variant.
 
 ## Current Development
 
+<<<<<<< HEAD
+#TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested for loops that use enumerate.
+#TODO: Need to incorporate a function in the CLI to search through Pedigrees.
+=======
 #TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested while and for loops.
 
 #TODO: Need to incorporate a function in the CLI to search through Pedigrees
+>>>>>>> master
 
 ## Files in the Directory
 
