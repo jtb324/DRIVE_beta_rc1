@@ -8,14 +8,8 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Current Development
 
-<<<<<<< HEAD
 #TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested for loops that use enumerate.
 #TODO: Need to incorporate a function in the CLI to search through Pedigrees.
-=======
-#TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested while and for loops.
-
-#TODO: Need to incorporate a function in the CLI to search through Pedigrees
->>>>>>> master
 
 ## Files in the Directory
 
