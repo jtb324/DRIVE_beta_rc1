@@ -5,7 +5,7 @@ import os
 import csv
 ###################################################################################
 # Function to find the total number of variants
-# TODO: figure out how to convert the multiVariantAnalysis to an is in
+# TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
 
 
 def totalVariantID(filepath, writeLocation):
@@ -42,8 +42,34 @@ def totalVariantID(filepath, writeLocation):
         MyFile.close()
 
 ############################################################################################
-# This function determines the directory to write to
+# This function determines all the individuals who hace a specific variant
+# TODO: Want to form a dictionary where the key is a variant and the values are the IIDs of individuals with those variants
 
+
+# def singleVariant(filepath, writeLocation):
+#     with open(filepath) as geno_file:
+
+#         headerLine = next(geno_file)
+
+#         singleVariantDict = dict()
+
+#         singleVariantList = []
+
+#         for row in geno_file:
+
+#             row = row.split()
+
+#             genoRow = row[6:]
+
+#             row = row[0:5]
+
+#             for i in range(1, len(genoRow)):
+
+#                 if genoRow[i] == '1' or genoRow[i] == '2':
+
+
+############################################################################################
+# This function determines the directory to write to
 
 def writePath(writeLocation, fileName):
 
@@ -60,6 +86,9 @@ def individualCount(multiVarDict, writePath):
 
     individCountDict = dict()  # This creates an empty multiVarDict
 
+    # TODO: try to use a map function
+
+    map_iterator = map(len, multiVarDict)
     for key in multiVarDict:  # This goes through each key of the multiVarDict that was passed into the function
         # This line assigns the key to the key in the new multiVarDict and then finds the value in the old multiVarDict and uses the len() function to determine the # of individuals in the multiVarDict variable which then gets stored as the value in the individCountDict
         individCountDict[key] = len(multiVarDict[key])
@@ -92,21 +121,13 @@ def multiVariantAnalysis(filepath, writePath, fileName):
             rowID = row[0:6]
             row = row[6:]
 
-            indexList = []  # This establishes an empty list to store the index position in
-
             # This for loop uses enumerate to get the elements and their index in the row
-            for i, x in enumerate(row):
-
-                # xhecks to see if the value of x is a string of 1 or 2
-                if x == '1' or x == '2':
-
-                    variantCount += 1  # Updates the variantCount by 1 if condition is true
-
-                    # Appends the index to the list but adds six to account for splitting the row
-                    indexList.append(i+6)
+            # TODO: explore using list comprehension for this instead of loop
+            indexList = [i+6 for i,
+                         x in enumerate(row) if x == '1' or x == '2']
 
             # This line checks to see if the row had more than one variant
-            if variantCount > 1:
+            if len(indexList) > 1:
                 # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
                 indexTuple = tuple(indexList)
 
