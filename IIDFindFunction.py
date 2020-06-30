@@ -5,7 +5,7 @@ import os
 import csv
 ###################################################################################
 # Function to find the total number of variants
-# TODO: figure out how to convert the multiVariantAnalysis to an is in
+# TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
 
 
 def totalVariantID(filepath, writeLocation):
@@ -42,8 +42,45 @@ def totalVariantID(filepath, writeLocation):
         MyFile.close()
 
 ############################################################################################
-# This function determines the directory to write to
+# This function determines all the individuals who hace a specific variant
 
+
+def singleVariantAnalysis(filepath, writePath, fileName):
+    '''This function is going to return a dictionary'''
+    with open(filepath) as geno_file:
+
+        headerLine = next(geno_file)
+
+        singleVariantDict = dict()
+
+        singleVariantList = []
+
+        for row in geno_file:
+
+            row = row.split()
+
+            genoRow = row[6:]
+
+            row = row[0:5]
+
+            for i, j in enumerate(genoRow):
+
+                if j == '1' or j == '2':
+
+                    if i in singleVariantDict:
+
+                        singleVariantDict[i].append(row[1])
+
+                    else:
+
+                        singleVariantDict[i] = [row[1]]
+
+            csvDictWriter(
+                singleVariantDict, writePath, fileName)
+
+
+############################################################################################
+# This function determines the directory to write to
 
 def writePath(writeLocation, fileName):
 
@@ -58,14 +95,13 @@ def writePath(writeLocation, fileName):
 def individualCount(multiVarDict, writePath):
     '''This function will create a new multiVarDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
 
-    individCountDict = dict()  # This creates an empty multiVarDict
-
-    for key in multiVarDict:  # This goes through each key of the multiVarDict that was passed into the function
-        # This line assigns the key to the key in the new multiVarDict and then finds the value in the old multiVarDict and uses the len() function to determine the # of individuals in the multiVarDict variable which then gets stored as the value in the individCountDict
-        individCountDict[key] = len(multiVarDict[key])
+    # This uses a map function. The .items makes of tuple of key:value pairs and then
+    # the lambda function takes the items as a input and updates the original dictionary by
+    # by assigning the length of the second element of the tuple to the correct key
+    multiVarDict = dict(map(lambda x: (x[0], len(x[1])), multiVarDict.items()))
 
     # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
-    csvDictWriter(individCountDict,
+    csvDictWriter(multiVarDict,
                   writePath, "IndividualCount.csv")
 
 ################################################################################################
@@ -92,21 +128,12 @@ def multiVariantAnalysis(filepath, writePath, fileName):
             rowID = row[0:6]
             row = row[6:]
 
-            indexList = []  # This establishes an empty list to store the index position in
-
             # This for loop uses enumerate to get the elements and their index in the row
-            for i, x in enumerate(row):
-
-                # xhecks to see if the value of x is a string of 1 or 2
-                if x == '1' or x == '2':
-
-                    variantCount += 1  # Updates the variantCount by 1 if condition is true
-
-                    # Appends the index to the list but adds six to account for splitting the row
-                    indexList.append(i+6)
+            indexList = [i+6 for i,
+                         x in enumerate(row) if x == '1' or x == '2']
 
             # This line checks to see if the row had more than one variant
-            if variantCount > 1:
+            if len(indexList) > 1:
                 # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
                 indexTuple = tuple(indexList)
 
