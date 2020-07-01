@@ -1,6 +1,6 @@
 # MEGA_CLI_project
 
-This is a repository for working on turning the MEGA project into a commandline tool.
+This is a repository for working on turning the MEGA project into a commandline tool using the argparse package in python.
 
 ## Goal
 
@@ -38,3 +38,5 @@ There are several functions in it:
 - pedigreeCount: This function searches through the provided dictionary and will determine the number of individuals carrying each variant.
 
 - searchPedigree: This function matches IID from the provided variant file to IIDs in the provided pedigree and creates a csv file containing a list of IIDS for each variant, if the IID != equal the FID.
+
+* multiCarriers: this function determines if there are multiple individuals who carry one variant in the same pedigree. It outputs a csv file. This function is still in development and requires the use of "multiIndivid" as the argument in the analysis flag.

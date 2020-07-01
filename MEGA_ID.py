@@ -2,7 +2,7 @@
 
 import argparse
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
-from SearchPedigree import searchPedigree
+from SearchPedigree import searchPedigree, multiCarriers
 
 
 def run(args):
@@ -22,6 +22,10 @@ def run(args):
         print("generating a csv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output, 'IndividInPedigree.csv')
 
+    elif args.analysis == "multiIndivid":
+        print("generating a csv file of individuals in the same pedigree who also are carrying the same variant")
+        multiCarriers(args.input, args.output, 'multiIndivids.csv')
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -33,7 +37,7 @@ def main():
     parser.add_argument("--output", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)
 
-    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, and multi, matchPED", dest="analysis", type=str, default=False)
+    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, multiIndivid", dest="analysis", type=str, default=False)
     parser.set_defaults(func=run)
     args = parser.parse_args()
     args.func(args)

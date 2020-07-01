@@ -77,3 +77,37 @@ def searchPedigree(inputPath, outputPath, fileName):
             Ped_dict, outputPath, fileName)
 
     pedigreeCount(Ped_dict, outputPath)
+
+####################################################################
+
+
+def multiCarriers(inputPath, outputPath, fileName):
+    '''This function will output a list of individuals who carry the same variant and are in the same pedigree.'''
+
+    multiIndividDict = dict()
+
+    with open(inputPath[0]) as IndInPedigreeCSV:
+
+        for row in IndInPedigreeCSV:
+
+            row = row.split()
+
+            variant = row[0]
+
+            IIDList = row[1:]
+
+            if len(IIDList) > 1:
+
+                for i in range(0, len(IIDList)):
+
+                    individual_count = IIDList.count(IIDList[i][0])
+
+                    if individual_count > 1:
+
+                        if variant in Ped_dict:
+                            multiIndividDict[variant].update(IIDList[i])
+
+                        else:
+                            multiIndividDict[variant] = {IIDList[i]}
+    csvDictWriter(
+        multiIndividDict, outputPath, fileName)
