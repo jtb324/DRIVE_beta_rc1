@@ -29,14 +29,14 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 * **SearchPedigree.py**: This script contains a function to search through a provided .fam pedigree file. The function takes both a list of Variant IIDs and the .fam pedigre family as inputs as well as a filename for the output file.
 
-There are several functions in it:
+  There are several functions in it:
 
-- writePath: same as the IIDFindFunction.py
+  - writePath: same as the IIDFindFunction.py
 
-- csvDictWriter: the same as IIDFindFunction.py
+  - csvDictWriter: the same as IIDFindFunction.py
 
-- pedigreeCount: This function searches through the provided dictionary and will determine the number of individuals carrying each variant.
+  - pedigreeCount: This function searches through the provided dictionary and will determine the number of individuals carrying each variant.
 
-- searchPedigree: This function matches IID from the provided variant file to IIDs in the provided pedigree and creates a csv file containing a list of IIDS for each variant, if the IID != equal the FID.
+  - searchPedigree: This function matches IID from the provided variant file to IIDs in the provided pedigree and creates a csv file containing a list of IIDS for each variant, if the IID != equal the FID.
 
-* multiCarriers: this function determines if there are multiple individuals who carry one variant in the same pedigree. It outputs a csv file. This function is still in development and requires the use of "multiIndivid" as the argument in the analysis flag.
+  * multiCarriers: this function determines if there are multiple individuals who carry one variant in the same pedigree. It outputs a csv file. This function is still in development and requires the use of "multiIndivid" as the argument in the analysis flag.
