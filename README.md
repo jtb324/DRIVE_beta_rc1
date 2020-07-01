@@ -9,7 +9,7 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 ## Current Development
 
 #TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested for loops that use enumerate.
-#TODO: Need to incorporate a function in the CLI to search through Pedigrees.
+#TODO: Need to determine a way to identify if there are multiple individuals in the same pedigree who carry the same variants.
 
 ## Files in the Directory
 
@@ -27,4 +27,14 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
   * csvDictWriter: This function creates a csv file from dictionaries passed to it. It uses the write path function to create a path for the csv file to be written to. This function was also made to keep the DRY principle.
 
-* **FindIndPedigree.py:** attempt at iterating through the list of total variants and seeing if any of those are in the Pedigree. Currently it is not writing properly. This is a working progress
+* **SearchPedigree.py**: This script contains a function to search through a provided .fam pedigree file. The function takes both a list of Variant IIDs and the .fam pedigre family as inputs as well as a filename for the output file.
+
+There are several functions in it:
+
+- writePath: same as the IIDFindFunction.py
+
+- csvDictWriter: the same as IIDFindFunction.py
+
+- pedigreeCount: This function searches through the provided dictionary and will determine the number of individuals carrying each variant.
+
+- searchPedigree: This function matches IID from the provided variant file to IIDs in the provided pedigree and creates a csv file containing a list of IIDS for each variant, if the IID != equal the FID.
