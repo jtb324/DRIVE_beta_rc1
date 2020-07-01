@@ -8,10 +8,10 @@ import csv
 # TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
 
 
-def totalVariantID(filepath, writeLocation):
+def totalVariantID(recodeFile, writeLocation):
     '''this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row.'''
 
-    with open(filepath) as geno_file:
+    with open(recodeFile[0]) as geno_file:
 
         headerLine = next(geno_file)  # This skips the 1st row
 
@@ -45,9 +45,9 @@ def totalVariantID(filepath, writeLocation):
 # This function determines all the individuals who hace a specific variant
 
 
-def singleVariantAnalysis(filepath, writePath, fileName):
-    '''This function is going to return a dictionary'''
-    with open(filepath) as geno_file:
+def singleVariantAnalysis(recodeFile, writePath, fileName):
+    '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
+    with open(recodeFile[0]) as geno_file:
 
         headerLine = next(geno_file)
 
@@ -67,13 +67,13 @@ def singleVariantAnalysis(filepath, writePath, fileName):
 
                 if j == '1' or j == '2':
 
-                    if i in singleVariantDict:
+                    if i+7 in singleVariantDict:
 
-                        singleVariantDict[i].append(row[1])
+                        singleVariantDict[i+7].append(row[1])
 
                     else:
 
-                        singleVariantDict[i] = [row[1]]
+                        singleVariantDict[i+7] = [row[1]]
 
             csvDictWriter(
                 singleVariantDict, writePath, fileName)
@@ -83,11 +83,12 @@ def singleVariantAnalysis(filepath, writePath, fileName):
 # This function determines the directory to write to
 
 def writePath(writeLocation, fileName):
+    '''This function makes a path to write to. It takes the writeLocation and a file name and combines it to make a directory called totalVarDirectory'''
 
-    totalVarDirectory = os.path.join(
+    varDirectory = os.path.join(
         writeLocation, fileName)
 
-    return totalVarDirectory
+    return varDirectory
 ############################################################################################
 # Function that counts how many individuals carry a set of variants
 
@@ -108,10 +109,10 @@ def individualCount(multiVarDict, writePath):
 # Function that groups individuals by which variants they carry
 
 
-def multiVariantAnalysis(filepath, writePath, fileName):
+def multiVariantAnalysis(recodeFile, writePath, fileName):
     '''This function preforms the main multiple variant analysis and will make two dictionaries. One multiVarDict contains key that are the index of each variant from the original PLINK recode file (starts at the seventh position because the first 6 values are not important info in this function) and then the values are a list of individuals who contain those variants. The second multiVarDict contains the same keys, but the values are the number of individuals which carry those variants'''
 
-    with open(filepath) as geno_file:
+    with open(recodeFile[0]) as geno_file:
 
         headerLine = next(geno_file)  # This skips the 1st row
 
@@ -129,7 +130,7 @@ def multiVariantAnalysis(filepath, writePath, fileName):
             row = row[6:]
 
             # This for loop uses enumerate to get the elements and their index in the row
-            indexList = [i+6 for i,
+            indexList = [i+7 for i,
                          x in enumerate(row) if x == '1' or x == '2']
 
             # This line checks to see if the row had more than one variant

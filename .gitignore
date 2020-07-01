@@ -1,5 +1,6 @@
 __pycache__
 *.txt
 *.docx
-.pyc
-.csv
+*.pyc
+*.csv
+.DS_Store
