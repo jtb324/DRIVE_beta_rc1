@@ -3,6 +3,8 @@
 ###################################################################################
 import os
 import csv
+import pandas as pd
+import numpy as np
 ###################################################################################
 # Function to find the total number of variants
 # TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
@@ -47,36 +49,34 @@ def totalVariantID(recodeFile, writeLocation):
 
 def singleVariantAnalysis(recodeFile, writePath, fileName):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
-    with open(recodeFile[0]) as geno_file:
 
-        headerLine = next(geno_file)
+    raw_file = pd.read_csv(recodeFile[0], sep=" ")
 
-        singleVariantDict = dict()
+    column_list = list(raw_file.columns[6:].values)
 
-        singleVariantList = []
+    var_dict = dict()
 
-        for row in geno_file:
+    for column in column_list:
 
-            row = row.split()
+        iid_list = []
 
-            genoRow = row[6:]
+        index_list = raw_file.index[raw_file[column].isin([1, 2])].tolist()
 
-            row = row[0:5]
+        for i in index_list:
+            iid_list.append(raw_file.loc[i, "IID"])
 
-            for i, j in enumerate(genoRow):
+        if column in var_dict:  # This checks to see if the indexTuple is already a key in the multiVarDict
 
-                if j == '1' or j == '2':
+            # If true then it just appends the IID to the value of the multiVarDict
+            var_dict[column].append(iid_list)
 
-                    if i+7 in singleVariantDict:
+        else:
 
-                        singleVariantDict[i+7].append(row[1])
+            # If false then it creates a new multiVarDict input with that key and value
+            var_dict[column] = iid_list
 
-                    else:
-
-                        singleVariantDict[i+7] = [row[1]]
-
-            csvDictWriter(
-                singleVariantDict, writePath, fileName)
+    csvDictWriter(
+        var_dict, writePath, fileName)
 
 
 ############################################################################################
@@ -112,48 +112,39 @@ def individualCount(multiVarDict, writePath):
 def multiVariantAnalysis(recodeFile, writePath, fileName):
     '''This function preforms the main multiple variant analysis and will make two dictionaries. One multiVarDict contains key that are the index of each variant from the original PLINK recode file (starts at the seventh position because the first 6 values are not important info in this function) and then the values are a list of individuals who contain those variants. The second multiVarDict contains the same keys, but the values are the number of individuals which carry those variants'''
 
-    with open(recodeFile[0]) as geno_file:
+    raw_file = pd.read_csv(recodeFile[0], sep=" ")
 
-        headerLine = next(geno_file)  # This skips the 1st row
+    column_list = list(raw_file.columns[6:].values)
 
-        multiVarDict = dict()
+    multi_var_carriers = dict()
 
-        for row in geno_file:  # This iterates through each row in the file
+    for ind in raw_file.index:
+        index_1 = raw_file.loc[ind, column_list][raw_file.loc[ind,
+                                                              column_list] == 1].index.tolist()
 
-            # This establishes a counter to keep track of how many variants there are in a row
-            variantCount = 0
+        index_2 = raw_file.loc[ind, column_list][raw_file.loc[ind,
+                                                              column_list] == 2]. index.tolist()
 
-            row = row.split()  # This will split the row by white space
+        index_list = index_1 + index_2
 
-            # These next two lines split the row into the rowID, which contains just the identifying info, and then the genotyping info in the row variable
-            rowID = row[0:6]
-            row = row[6:]
+        index_tuple = tuple(index_list)
 
-            # This for loop uses enumerate to get the elements and their index in the row
-            indexList = [i+7 for i,
-                         x in enumerate(row) if x == '1' or x == '2']
+        if len(index_tuple) > 1:
 
-            # This line checks to see if the row had more than one variant
-            if len(indexList) > 1:
-                # This converts the indexList to a tuple so that it can be used as a key in the multiVarDict
-                indexTuple = tuple(indexList)
+            if index_tuple in multi_var_carriers:
 
-                if indexTuple in multiVarDict:  # This checks to see if the indexTuple is already a key in the multiVarDict
+                multi_var_carriers[index_tuple].append(
+                    raw_file.loc[ind, "IID"])
 
-                    # If true then it just appends the IID to the value of the multiVarDict
-                    multiVarDict[indexTuple].append(rowID[1])
+            else:
 
-                else:
+                multi_var_carriers[index_tuple] = [raw_file.loc[ind, "IID"]]
 
-                    # If false then it creates a new multiVarDict input with that key and value
-                    multiVarDict[indexTuple] = [rowID[1]]
+    csvDictWriter(
+        multi_var_carriers, writePath, fileName)
 
-                # This then passes the multiVarDict to the csvDictWriter function and ouptuts a csv file
-            csvDictWriter(
-                multiVarDict, writePath, fileName)
-
-            # This passes the multiVarDict to the individualCount function to determine how many individuals have each combination of variants
-    individualCount(multiVarDict, writePath)
+    # This passes the multiVarDict to the individualCount function to determine how many individuals have each combination of variants
+    individualCount(multi_var_carriers, writePath)
 
 
 ######################################################################################################
