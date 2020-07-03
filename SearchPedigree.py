@@ -3,6 +3,7 @@
 import os
 import csv
 import pandas as pd
+import numpy as np
 
 ###############################################################
 
@@ -37,6 +38,15 @@ def csvDictWriter(variantDict, directoryName, fileName):
 ###############################################################################
 
 
+def drop_variant(file, drop_list):
+    '''This function will drop specific rows in the dataframe containing certain variants that you specify'''
+
+    file = file.drop(drop_list, axis=0)
+
+    return file
+#############################################################################################
+
+
 def pedigreeCount(multiVarDict, writePath):
     '''This function will create a new multiVarDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
 
@@ -51,63 +61,93 @@ def pedigreeCount(multiVarDict, writePath):
 
 
 ###############################################################################
+
 def searchPedigree(inputPath, outputPath, fileName):
     '''This function will search through the provided pedigree file and output two csv files. One file is a list of the variant index positions and a list of individuals with that variant. Then another file is made with the variant index and then the number of individuals that are parts of pedigrees that carry that variant.'''
 
-    IdList = pd.read_csv(
-        inputPath[0], skiprows=2, header=None)  # TODO: need to adjust the skiprows so that it is customizable depending on inputs.
+    # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
+    ind_var_carrier_df = pd.read_csv(
+        inputPath[0], sep=",", header=None, names=["MEGA_ID", "IID"])  # Read in the csv will all the carriers of a variant
 
-    Ped_dict = dict()
+    drop_list = ind_var_carrier_df[ind_var_carrier_df["MEGA_ID"].isin(
+        ["7:117199645-ATCT-A_D", "7:117199646-TCTT-T_D"])].index.tolist()
 
-    with open(inputPath[1]) as pedigree_file:
-        for row in pedigree_file:
+    # This is the function used to drop variants
+    ind_var_carrier_df = drop_variant(ind_var_carrier_df, drop_list)
 
-            row = row.split()
+    # This next part reads in the pedigree file
+    pedigree_df = pd.read_csv(inputPath[1], sep="\t")
 
-            for i, j in IdList.iterrows():
+    pedigree_iid_dict = dict()
 
-                if row[1] in j[1] and row[1] != row[0]:
+    for ind in ind_var_carrier_df.index:
 
-                    if j[0] in Ped_dict:
-                        Ped_dict[j[0]].update({row[0]: row[1]})
-                    else:
-                        Ped_dict[j[0]] = {row[0]: row[1]}
+        id_list = ind_var_carrier_df.loc[ind, "IID"].strip(
+            "[]").replace("'", "").replace(" ", "").split(",")
 
-        csvDictWriter(
-            Ped_dict, outputPath, fileName)
+        index = pedigree_df[pedigree_df["IID"].isin(id_list)].index.tolist()
 
-    pedigreeCount(Ped_dict, outputPath)
+        iid_in_pedigree_list = pedigree_df.loc[index, "IID"].values.tolist()
+
+        if ind_var_carrier_df.loc[ind, "MEGA_ID"] in pedigree_iid_dict:
+
+            pedigree_iid_dict[ind_var_carrier_df.loc[ind,
+                                                     "MEGA_ID"]].append(iid_in_pedigree_list)
+
+        else:
+
+            pedigree_iid_dict[ind_var_carrier_df.loc[ind,
+                                                     "MEGA_ID"]] = iid_in_pedigree_list
+
+    # with open(inputPath[1]) as pedigree_file:
+    #     for row in pedigree_file:
+
+    #         row = row.split()
+
+    #         for i, j in IdList.iterrows():
+
+    #             if row[1] in j[1] and row[1] != row[0]:
+
+    #                 if j[0] in Ped_dict:
+    #                     Ped_dict[j[0]].update({row[0]: row[1]})
+    #                 else:
+    #                     Ped_dict[j[0]] = {row[0]: row[1]}
+
+    csvDictWriter(
+        pedigree_iid_dict, outputPath, fileName)
+
+    pedigreeCount(pedigree_iid_dict, outputPath)
 
 ####################################################################
 
 
-def multiCarriers(inputPath, outputPath, fileName):
-    '''This function will output a list of individuals who carry the same variant and are in the same pedigree.'''
+# def multiCarriers(inputPath, outputPath, fileName):
+#     '''This function will output a list of individuals who carry the same variant and are in the same pedigree.'''
 
-    multiIndividDict = dict()
+#     multiIndividDict = dict()
 
-    with open(inputPath[0]) as IndInPedigreeCSV:
+#     with open(inputPath[0]) as IndInPedigreeCSV:
 
-        for row in IndInPedigreeCSV:
+#         for row in IndInPedigreeCSV:
 
-            row = row.split()
+#             row = row.split()
 
-            variant = row[0]
+#             variant = row[0]
 
-            IIDList = row[1:]
+#             IIDList = row[1:]
 
-            if len(IIDList) > 1:
+    #         if len(IIDList) > 1:
 
-                for i in range(0, len(IIDList)):
+    #             for i in range(0, len(IIDList)):
 
-                    individual_count = IIDList.count(IIDList[i][0])
+    #                 individual_count = IIDList.count(IIDList[i][0])
 
-                    if individual_count > 1:
+    #                 if individual_count > 1:
 
-                        if variant in Ped_dict:
-                            multiIndividDict[variant].update(IIDList[i])
+    #                     if variant in Ped_dict:
+    #                         multiIndividDict[variant].update(IIDList[i])
 
-                        else:
-                            multiIndividDict[variant] = {IIDList[i]}
-    csvDictWriter(
-        multiIndividDict, outputPath, fileName)
+    #                     else:
+    #                         multiIndividDict[variant] = {IIDList[i]}
+    # csvDictWriter(
+    #     multiIndividDict, outputPath, fileName)

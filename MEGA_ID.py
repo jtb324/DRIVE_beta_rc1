@@ -2,7 +2,7 @@
 
 import argparse
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
-from SearchPedigree import searchPedigree, multiCarriers
+from SearchPedigree import searchPedigree  # , multiCarriers
 
 
 def run(args):
