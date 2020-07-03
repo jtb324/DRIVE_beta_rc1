@@ -8,7 +8,6 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Current Development
 
-#TODO: Need to figure out how to make the multiVariantAnalysis run faster but trying to incorporate is in versus the nested for loops that use enumerate.
 #TODO: Need to determine a way to identify if there are multiple individuals in the same pedigree who carry the same variants.
 
 ## Files in the Directory
@@ -40,3 +39,5 @@ The goal of this repository is to create a commandline tool that takes a raw fil
   - searchPedigree: This function matches IID from the provided variant file to IIDs in the provided pedigree and creates a csv file containing a list of IIDS for each variant, if the IID != equal the FID.
 
   * multiCarriers: this function determines if there are multiple individuals who carry one variant in the same pedigree. It outputs a csv file. This function is still in development and requires the use of "multiIndivid" as the argument in the analysis flag.
+
+  * drop_variant: this function just allows for the user to drop specific variants from the SingleVariantList.csv if they wished to for what ever reason
