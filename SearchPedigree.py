@@ -99,20 +99,6 @@ def searchPedigree(inputPath, outputPath, fileName):
             pedigree_iid_dict[ind_var_carrier_df.loc[ind,
                                                      "MEGA_ID"]] = iid_in_pedigree_list
 
-    # with open(inputPath[1]) as pedigree_file:
-    #     for row in pedigree_file:
-
-    #         row = row.split()
-
-    #         for i, j in IdList.iterrows():
-
-    #             if row[1] in j[1] and row[1] != row[0]:
-
-    #                 if j[0] in Ped_dict:
-    #                     Ped_dict[j[0]].update({row[0]: row[1]})
-    #                 else:
-    #                     Ped_dict[j[0]] = {row[0]: row[1]}
-
     csvDictWriter(
         pedigree_iid_dict, outputPath, fileName)
 
