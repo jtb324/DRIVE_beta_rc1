@@ -62,18 +62,20 @@ def pedigreeCount(multiVarDict, writePath):
 
 ###############################################################################
 
-def searchPedigree(inputPath, outputPath, fileName):
+def searchPedigree(inputPath, outputPath, drop_value, fileName):
     '''This function will search through the provided pedigree file and output two csv files. One file is a list of the variant index positions and a list of individuals with that variant. Then another file is made with the variant index and then the number of individuals that are parts of pedigrees that carry that variant.'''
 
     # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
     ind_var_carrier_df = pd.read_csv(
         inputPath[0], sep=",", header=None, names=["MEGA_ID", "IID"])  # Read in the csv will all the carriers of a variant
 
-    drop_list = ind_var_carrier_df[ind_var_carrier_df["MEGA_ID"].isin(
-        ["7:117199645-ATCT-A_D", "7:117199646-TCTT-T_D"])].index.tolist()
+    if drop_value != None:
 
-    # This is the function used to drop variants
-    ind_var_carrier_df = drop_variant(ind_var_carrier_df, drop_list)
+        drop_list = ind_var_carrier_df[ind_var_carrier_df["MEGA_ID"].isin(
+            drop_value)].index.tolist()
+
+        # This is the function used to drop variants
+        ind_var_carrier_df = drop_variant(ind_var_carrier_df, drop_list)
 
     # This next part reads in the pedigree file
     pedigree_df = pd.read_csv(inputPath[1], sep="\t")

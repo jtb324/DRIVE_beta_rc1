@@ -20,7 +20,8 @@ def run(args):
 
     elif args.analysis == "matchPED":
         print("generating a csv file of individuals found within the Pedigree...")
-        searchPedigree(args.input, args.output, 'IndividInPedigree.csv')
+        searchPedigree(args.input, args.output,
+                       args.drop_var, 'IndividInPedigree.csv')
 
     elif args.analysis == "multiIndivid":
         print("generating a csv file of individuals in the same pedigree who also are carrying the same variant")
@@ -32,7 +33,7 @@ def main():
         description="This identifies individuals who have a specific variant in a raw file from PLINK")
 
     parser.add_argument("--input", help="This is the pathway for the PLINK recoded input file. If you use the matchPED analysis argument then you should provide two input paths. The first is to the list of all variants. This should be a csv file and will have a list of the variant index and then a list of individuals who carry that variant. The second path is to the Pedigree file.At current development, this should be a .fam file",
-                        dest="input", nargs='+', type=str, required=True)
+                        dest="input", nargs="+", type=str, required=True)
 
     parser.add_argument("--output", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)
@@ -41,6 +42,9 @@ def main():
     parser.set_defaults(func=run)
     args = parser.parse_args()
     args.func(args)
+
+    parser.add_argument("--drop_var", help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
+                        dest="drop_var", type=str, nargs="+")
 
 
 if __name__ == "__main__":
