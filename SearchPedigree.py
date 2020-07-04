@@ -47,13 +47,13 @@ def drop_variant(file, drop_list):
 #############################################################################################
 
 
-def pedigreeCount(multiVarDict, writePath):
-    '''This function will create a new multiVarDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
+def pedigreeCount(pedigreeDict, writePath):
+    '''This function will create a new pedigreeDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
 
     # This uses a map function. The .items makes of tuple of key:value pairs and then
     # the lambda function takes the items as a input and updates the original dictionary by
     # by assigning the length of the second element of the tuple to the correct key
-    multiVarDict = dict(map(lambda x: (x[0], len(x[1])), multiVarDict.items()))
+    pedigreeDict = dict(map(lambda x: (x[0], len(x[1])), pedigreeDict.items()))
 
     # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
     csvDictWriter(multiVarDict,
