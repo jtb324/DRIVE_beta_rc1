@@ -39,12 +39,13 @@ def main():
                         dest="output", type=str, required=True)
 
     parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, multiIndivid", dest="analysis", type=str, default=False)
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
 
     parser.add_argument("--drop_var", help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
                         dest="drop_var", type=str, nargs="+")
+
+    parser.set_defaults(func=run)
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":
