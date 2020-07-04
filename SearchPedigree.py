@@ -91,15 +91,18 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
 
         iid_in_pedigree_list = pedigree_df.loc[index, "IID"].values.tolist()
 
+        fid_in_pedigree_list = pedigree_df.loc[index, "FID"].values.tolist()
+
         if ind_var_carrier_df.loc[ind, "MEGA_ID"] in pedigree_iid_dict:
 
             pedigree_iid_dict[ind_var_carrier_df.loc[ind,
-                                                     "MEGA_ID"]].append(iid_in_pedigree_list)
+                                                     "MEGA_ID"]].append({fid_in_pedigree_list:
+                                                                         iid_in_pedigree_list})
 
         else:
 
             pedigree_iid_dict[ind_var_carrier_df.loc[ind,
-                                                     "MEGA_ID"]] = iid_in_pedigree_list
+                                                     "MEGA_ID"]] = {fid_in_pedigree_list: iid_in_pedigree_list}
 
     csvDictWriter(
         pedigree_iid_dict, outputPath, fileName)
