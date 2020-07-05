@@ -141,7 +141,7 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
         pedigree_iid_dict, outputPath, fileName)
 
     pedigreeCount(pedigree_iid_dict, outputPath)
-    print(index_list)
+
     network_sizes(pedigree_df.loc[np.unique(index_list)], outputPath)
 
     multi_ind_in_pedigree(
