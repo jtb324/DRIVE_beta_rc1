@@ -2,7 +2,7 @@
 
 import argparse
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
-from SearchPedigree import searchPedigree  # , multiCarriers
+from SearchPedigree import searchPedigree
 
 
 def run(args):
@@ -12,20 +12,17 @@ def run(args):
 
     elif args.analysis == "multi":
         print("generating list of individuals carrying multiple variants....")
-        multiVariantAnalysis(args.input, args.output, 'MultiVariantList.csv')
+        multiVariantAnalysis(args.input, args.output, 'multi_variant_list.csv')
 
     elif args.analysis == "single":
         print("generating list of individuals at each variant index")
-        singleVariantAnalysis(args.input, args.output, 'SingleVariantList.csv')
+        singleVariantAnalysis(args.input, args.output,
+                              'single_variant_list.csv')
 
     elif args.analysis == "matchPED":
-        print("generating a csv file of individuals found within the Pedigree...")
+        print("generating acsv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
-                       args.drop_var, 'IndividInPedigree.csv')
-
-    elif args.analysis == "multiIndivid":
-        print("generating a csv file of individuals in the same pedigree who also are carrying the same variant")
-        multiCarriers(args.input, args.output, 'multiIndivids.csv')
+                       args.drop_var, 'ind_in_pedigree.csv')
 
 
 def main():
