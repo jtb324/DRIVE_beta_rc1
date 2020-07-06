@@ -8,8 +8,6 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Current Development
 
-#TODO: Need to determine a way to identify if there are multiple individuals in the same pedigree who carry the same variants.
-
 ## Files in the Directory
 
 - **shell_script**: This is a folder containing shell script I run. The idea behind this was it may help with reproducibility because I can put what files I used for input, what the output path was, etc..
