@@ -47,7 +47,7 @@ def drop_variant(file, drop_list):
 #############################################################################################
 
 
-def pedigreeCount(pedigreeDict, writePath):
+def pedigreeCount(pedigreeDict, writePath, file_name):
     '''This function will create a new pedigreeDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
 
     print("generating a file containing the number of individuals found within the pedigree for each variant...")
@@ -58,7 +58,7 @@ def pedigreeCount(pedigreeDict, writePath):
 
     # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
     csvDictWriter(pedigreeDict,
-                  writePath, "pedigree_count.csv")
+                  writePath, file_name)
 
     individual_sum = sum(pedigreeDict.values())
 
@@ -68,12 +68,12 @@ def pedigreeCount(pedigreeDict, writePath):
 
 ###############################################################################
 
-def network_sizes(pedigree_file, output_path):
+def network_sizes(pedigree_file, output_path, counts_file_name, list_file_name):
     '''This function will just output a file that gives you an idea of the size of the network. '''
 
     print("generating a file containing the size of each network...")
 
-    count_directory = writePath(output_path, "network_counts.csv")
+    count_directory = writePath(output_path, counts_file_name)
 
     network_counts = pedigree_file.groupby(
         "FID").count()  # This is a groupby object
@@ -82,7 +82,7 @@ def network_sizes(pedigree_file, output_path):
 
     print("generating a list of all individual carrier in each network...")
 
-    list_directory = writePath(output_path, "network_list.csv")
+    list_directory = writePath(output_path, list_file_name)
 
     network_list = pedigree_file.groupby(
         "FID")["IID"].apply(list)
@@ -135,27 +135,29 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
                                                      "MEGA_ID"]] = iid_in_pedigree_list
 
     ##################################################
-    # TODO: this section is not working. I need to determine how to filter the pedigree to values where the IID column are not the same as the FID value
+    # This creates a subset of the network file where the FID does not equal the IID. This is because the individuals are only part of a network if the FID is different than the IID
 
-    # pedigree = pedigree_df.loc[np.unique(
-    #     index_list)]
+    network_subset = pedigree_df.loc[np.unique(
+        index_list)]
 
-    # print(pedigree["FID"][(["FID"] != pedigree["IID"])])
+    network_subset = network_subset.query("FID != IID")
+
     #####################################################
     csvDictWriter(
         pedigree_iid_dict, outputPath, fileName)
 
-    pedigreeCount(pedigree_iid_dict, outputPath)
+    pedigreeCount(pedigree_iid_dict, outputPath, "pedigree_count.csv")
 
-    network_sizes(pedigree_df.loc[np.unique(index_list)], outputPath)
+    network_sizes(network_subset, outputPath,
+                  "ind_network_counts.csv", "ind_network_list.csv")
 
     multi_ind_in_pedigree(
-        pedigree_iid_dict, pedigree_df.loc[np.unique(index_list)], outputPath)
+        pedigree_iid_dict, network_subset, outputPath)
 
 ####################################################################
 
 
-def multi_ind_in_pedigree(carrier_dict, pedigree, outputpath):
+def multi_ind_in_pedigree(carrier_dict, pedigree, output_path):
     '''This function will output a list of individuals who carry the same variant and are in the same pedigree.'''
 
     print("generating a csv file of networks containing multiple individuals who carry the same variant...")
@@ -192,4 +194,6 @@ def multi_ind_in_pedigree(carrier_dict, pedigree, outputpath):
                     carrier_dict[indexTuple] = pedigree_df["IID"][pedigree_df["FID"]
                                                                   == fid].values.tolist()
 
-    csvDictWriter(carrier_dict, outputpath, "multiple_ind_in_pedigree.csv")
+    csvDictWriter(carrier_dict, output_path, "multiple_ind_in_pedigree.csv")
+
+    pedigreeCount(carrier_dict, output_path, "multi_ped_count.csv")

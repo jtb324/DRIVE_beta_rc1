@@ -22,7 +22,7 @@ def run(args):
     elif args.analysis == "matchPED":
         print("generating acsv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
-                       args.drop_var, 'ind_in_pedigree.csv')
+                       args.drop_var, 'all_ind_in_pedigree.csv')
 
 
 def main():
