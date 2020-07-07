@@ -10,7 +10,7 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 ## Files in the Directory
 
-- **shell_script**: This is a folder containing shell script I run. The idea behind this was it may help with reproducibility because I can put what files I used for input, what the output path was, etc..
+- **shell_script**: This is a folder containing shell script I run. The ∏keyidea behind this was it may help with reproducibility because I can put what files I used for input, what the output path was, etc..
 
   - **MEGA_ID_sh_script.sh**: This was a script used to run the matchPED analysis in the MEGA_ID.py program. It took two file inputs. The first input was file path to the csv file containing two columns, where one is MEGA_ex array variant id and then the other column is a list of IIDs who carry that variant. The second input is a pedigree file. This was run using a .fam file. The the output directory is specified. The analysis type was "matchPED" which is used to identify all individuals in the provided pedigree file and pairs them to the corresponding variant id. This analysis type also provides other information about which indiivduals are in the network and then it determines if there are multiple individuals in the same network who also carry the same variant.
 
