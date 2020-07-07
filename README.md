@@ -14,6 +14,8 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
   - **MEGA_ID_sh_script.sh**: This was a script used to run the matchPED analysis in the MEGA_ID.py program. It took two file inputs. The first input was file path to the csv file containing two columns, where one is MEGA_ex array variant id and then the other column is a list of IIDs who carry that variant. The second input is a pedigree file. This was run using a .fam file. The the output directory is specified. The analysis type was "matchPED" which is used to identify all individuals in the provided pedigree file and pairs them to the corresponding variant id. This analysis type also provides other information about which indiivduals are in the network and then it determines if there are multiple individuals in the same network who also carry the same variant.
 
+  * **determining_network_size.sh**: This script is used to try to determine the size of all the networks. It takes a network_count.csv that list the FID's and the directory of networks as input and then tries to determine the size of each using the --analysis determine_network_size
+
 * **MEGA_ID.py:** contains the argparse script to make the CLI. At the current development the program uses recodeA files from PLINK. Contains functions to determine the total # of individuals containing at least one variant and a function to find individuals containing multiple variants
 
 * **IIDFindFunction.py:** contains five major functions to determine the number of individuals with at least one variant and the number of individuals with multiple variants.
