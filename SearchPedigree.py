@@ -4,7 +4,7 @@ import os
 import csv
 import pandas as pd
 import numpy as np
-
+from NetworkSize import determine_network_sizes
 ###############################################################
 
 
@@ -69,26 +69,28 @@ def pedigreeCount(pedigreeDict, writePath, file_name):
 
 ###############################################################################
 
-def network_sizes(pedigree_file, output_path, counts_file_name, list_file_name):
+def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name, full_pedigree_file):
     '''This function will just output a file that gives you an idea of the size of the network. '''
 
     print("generating a file containing the size of each network...")
 
     count_directory = writePath(output_path, counts_file_name)
 
-    network_counts = pedigree_file.groupby(
+    network_counts = pedigree_subset.groupby(
         "FID").count()  # This is a groupby object
 
-    network_counts.reset_index().to_csv(count_directory)
+    network_counts.reset_index().to_csv(count_directory, index=False)
 
     print("generating a list of all individual carrier in each network...")
 
     list_directory = writePath(output_path, list_file_name)
 
-    network_list = pedigree_file.groupby(
+    network_list = pedigree_subset.groupby(
         "FID")["IID"].apply(list)
 
-    network_list.reset_index().to_csv(list_directory)
+    network_list.reset_index().to_csv(list_directory, index=False)
+
+    determine_network_sizes(count_directory, full_pedigree_file, output_path)
 
 ###############################################################################
 
@@ -150,7 +152,8 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
     pedigreeCount(pedigree_iid_dict, outputPath, "pedigree_count.csv")
 
     network_sizes(network_subset, outputPath,
-                  "ind_network_counts.csv", "ind_network_list.csv")
+                  "ind_network_counts.csv", "ind_network_list.csv",
+                  pedigree_df)
 
     multi_ind_in_pedigree(
         pedigree_iid_dict, network_subset, outputPath)

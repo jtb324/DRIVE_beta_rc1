@@ -25,22 +25,18 @@ def run(args):
         searchPedigree(args.input, args.output,
                        args.drop_var, 'all_ind_in_pedigree.csv')
 
-    elif args.analysis == "determine_network_size":
-        print("determining the size of the specified networks...")
-        determine_network_sizes(args.input, args.output, 'network_sizes.csv')
-
 
 def main():
     parser = argparse.ArgumentParser(
         description="This identifies individuals who have a specific variant in a raw file from PLINK")
 
-    parser.add_argument("--input", help="This is the pathway for the PLINK recoded input file. If you use the matchPED analysis argument then you should provide two input paths. The first is to the list of all variants. This should be a csv file and will have a list of the variant index and then a list of individuals who carry that variant. The second path is to the Pedigree file.At current development, this should be a .fam file. For the determine_network_size, the first argument will be () and the second argument will be the directory that has all the pedigrees.",
+    parser.add_argument("--input", help="This is the pathway for the PLINK recoded input file. If you use the matchPED analysis argument then you should provide two input paths. The first is to the list of all variants. This should be a csv file and will have a list of the variant index and then a list of individuals who carry that variant. The second path is to the Pedigree file.At current development, this should be a .fam file.",
                         dest="input", nargs="+", type=str, required=True)
 
     parser.add_argument("--output", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)
 
-    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, multiIndivid, determine_network_size", dest="analysis", type=str, default=False)
+    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, multiIndivid", dest="analysis", type=str, default=False)
 
     parser.add_argument("--drop_var", help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
                         dest="drop_var", type=str, nargs="+")
