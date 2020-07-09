@@ -13,11 +13,12 @@ def run(args):
 
     elif args.analysis == "multi":
         print("generating list of individuals carrying multiple variants....")
-        multiVariantAnalysis(args.input, args.output, 'multi_variant_list.csv')
+        multiVariantAnalysis(args.input, args.output,
+                             args.compatible_format, 'multi_variant_list.csv')
 
     elif args.analysis == "single":
         print("generating list of individuals at each variant index")
-        singleVariantAnalysis(args.input, args.output,
+        singleVariantAnalysis(args.input, args.output, args.compatible_format,
                               'single_variant_list.csv')
 
     elif args.analysis == "matchPED":
@@ -40,6 +41,9 @@ def main():
 
     parser.add_argument("--drop_var", help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
                         dest="drop_var", type=str, nargs="+")
+
+    parser.add_argument("--format", help="This argument will enable several additional output files to be created that are easier for non python programs to interact with",
+                        dest="compatible_format", type=bool, default=False)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

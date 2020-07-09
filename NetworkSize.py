@@ -18,13 +18,14 @@ def writePath(write_location, file_name):
 
 
 def determine_network_sizes(network_count_filepath, pedigree_df, output_path):
+    '''This function determines the size of the matched networks. The function takes a path to a network count files, a dataframe of the pedigree, and then takes an output path. This function is used within the network_sizes functions in the searchPedigree.py file.'''
 
     # Making a directory for this out put
     network_directory = writePath(output_path, "network_sizes")
 
     try:
         os.mkdir(network_directory)
-        print("{} successfully created".format(network_directory))
+        print("Successfully created the {} directory".format(network_directory))
 
     except FileExistsError:
         print("{} is already an existing directory".format(network_directory))

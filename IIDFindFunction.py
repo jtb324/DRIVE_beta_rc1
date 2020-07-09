@@ -6,6 +6,17 @@ import csv
 import pandas as pd
 import numpy as np
 ###################################################################################
+# This function determines the directory to write to
+
+
+def writePath(writeLocation, fileName):
+    '''This function makes a path to write to. It takes the writeLocation and a file name and combines it to make a directory called totalVarDirectory'''
+
+    varDirectory = os.path.join(
+        writeLocation, fileName)
+
+    return varDirectory
+############################################################################################
 # Function to find the total number of variants
 # TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
 
@@ -47,7 +58,7 @@ def totalVariantID(recodeFile, writeLocation):
 # This function determines all the individuals who hace a specific variant
 
 
-def singleVariantAnalysis(recodeFile, writePath, fileName):
+def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
 
     raw_file = pd.read_csv(recodeFile[0], sep=" ")
@@ -55,6 +66,12 @@ def singleVariantAnalysis(recodeFile, writePath, fileName):
     column_list = list(raw_file.columns[6:].values)
 
     var_dict = dict()
+
+    var_dict_reformat = dict()
+
+    iid_list_reformat = []
+
+    variant_list_reformat = []
 
     for column in column_list:
 
@@ -75,20 +92,31 @@ def singleVariantAnalysis(recodeFile, writePath, fileName):
             # If false then it creates a new multiVarDict input with that key and value
             var_dict[column] = iid_list
 
+        if reformat == True:
+
+            for i in index_list:
+
+                if "IID" and "Variant ID" in var_dict_reformat:
+
+                    var_dict_reformat["IID"].append(raw_file.loc[i, "IID"])
+
+                    var_dict_reformat["Variant ID"].append(column)
+
+                else:
+
+                    var_dict_reformat["IID"] = [raw_file.loc[i, "IID"]]
+                    var_dict_reformat["Variant ID"] = [column]
+
+    var_reformat_df = pd.DataFrame(
+        var_dict_reformat, columns=["IID", "Variant ID"])
+
+    var_reformat_df.to_csv(
+        writePath(write_path, "single_var_list_reformat.csv"), index=False)
+
     csvDictWriter(
-        var_dict, writePath, fileName)
+        var_dict, write_path, fileName)
 
 
-############################################################################################
-# This function determines the directory to write to
-
-def writePath(writeLocation, fileName):
-    '''This function makes a path to write to. It takes the writeLocation and a file name and combines it to make a directory called totalVarDirectory'''
-
-    varDirectory = os.path.join(
-        writeLocation, fileName)
-
-    return varDirectory
 ############################################################################################
 # Function that counts how many individuals carry a set of variants
 
@@ -109,7 +137,7 @@ def individualCount(multiVarDict, writePath):
 # Function that groups individuals by which variants they carry
 
 
-def multiVariantAnalysis(recodeFile, writePath, fileName):
+def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function preforms the main multiple variant analysis and will make two dictionaries. One multiVarDict contains key that are the index of each variant from the original PLINK recode file (starts at the seventh position because the first 6 values are not important info in this function) and then the values are a list of individuals who contain those variants. The second multiVarDict contains the same keys, but the values are the number of individuals which carry those variants'''
 
     raw_file = pd.read_csv(recodeFile[0], sep=" ")
@@ -118,7 +146,10 @@ def multiVariantAnalysis(recodeFile, writePath, fileName):
 
     multi_var_carriers = dict()
 
+    multi_var_carriers_reformat = dict()
+
     for ind in raw_file.index:
+
         index_1 = raw_file.loc[ind, column_list][raw_file.loc[ind,
                                                               column_list] == 1].index.tolist()
 
@@ -140,11 +171,32 @@ def multiVariantAnalysis(recodeFile, writePath, fileName):
 
                 multi_var_carriers[index_tuple] = [raw_file.loc[ind, "IID"]]
 
+            if reformat == True:
+
+                if "IID" and "Variant List" in multi_var_carriers_reformat:
+
+                    multi_var_carriers_reformat["IID"].append(
+                        raw_file.loc[ind, "IID"])
+                    multi_var_carriers_reformat["Variant List"].append(
+                        index_list)
+
+                else:
+
+                    multi_var_carriers_reformat["IID"] = [
+                        raw_file.loc[ind, "IID"]]
+                    multi_var_carriers_reformat["Variant List"] = [index_list]
+
+    reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
+                               "IID", "Variant List"])
+
+    reformat_df.to_csv(
+        writePath(write_path, "multi_var_reformated.csv"), index=False)
+
     csvDictWriter(
-        multi_var_carriers, writePath, fileName)
+        multi_var_carriers, write_path, fileName)
 
     # This passes the multiVarDict to the individualCount function to determine how many individuals have each combination of variants
-    individualCount(multi_var_carriers, writePath)
+    individualCount(multi_var_carriers, write_path)
 
 
 ######################################################################################################
