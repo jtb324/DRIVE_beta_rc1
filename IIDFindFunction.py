@@ -5,20 +5,10 @@ import os
 import csv
 import pandas as pd
 import numpy as np
+from write_path import writePath
+from check_directory import check_dir
 ###################################################################################
-# This function determines the directory to write to
-
-
-def writePath(writeLocation, fileName):
-    '''This function makes a path to write to. It takes the writeLocation and a file name and combines it to make a directory called totalVarDirectory'''
-
-    varDirectory = os.path.join(
-        writeLocation, fileName)
-
-    return varDirectory
-############################################################################################
 # Function to find the total number of variants
-# TODO: figure out how to convert the multiVariantAnalysis to an is in or parallel
 
 
 def totalVariantID(recodeFile, writeLocation):
@@ -41,7 +31,7 @@ def totalVariantID(recodeFile, writeLocation):
 
                 totalVariantList.append(row[1])
 
-        print("The total number of individual carrier at least one desired variant is: {}".format(
+        print("The total number of individual carrier of at least one desired variant is: {}".format(
             len(totalVariantList)))
 
         writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
@@ -110,8 +100,10 @@ def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
     var_reformat_df = pd.DataFrame(
         var_dict_reformat, columns=["IID", "Variant ID"])
 
+    reformat_directory = check_dir(write_path, "reformated")
+
     var_reformat_df.to_csv(
-        writePath(write_path, "single_var_list_reformat.csv"), index=False)
+        writePath(reformat_directory, "single_var_list_reformat.csv"), index=False)
 
     csvDictWriter(
         var_dict, write_path, fileName)
@@ -186,12 +178,17 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
                         raw_file.loc[ind, "IID"]]
                     multi_var_carriers_reformat["Variant List"] = [index_list]
 
+    # This converts the reformated dictionary to a dataframe
     reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
                                "IID", "Variant List"])
 
-    reformat_df.to_csv(
-        writePath(write_path, "multi_var_reformated.csv"), index=False)
+    reformat_directory = check_dir(write_path, "reformated")
 
+    # This writes the reformated dataframe as a csv file
+    reformat_df.to_csv(
+        writePath(reformat_directory, "multi_var_reformated.csv"), index=False)
+
+    # This writes the original formated multivar_carrier dictionary to a csv
     csvDictWriter(
         multi_var_carriers, write_path, fileName)
 

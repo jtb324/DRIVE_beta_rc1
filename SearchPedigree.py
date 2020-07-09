@@ -5,19 +5,9 @@ import csv
 import pandas as pd
 import numpy as np
 from NetworkSize import determine_network_sizes
+from write_path import writePath
+from check_directory import check_dir
 ###############################################################
-
-
-def writePath(write_location, file_name):
-    '''This section creates a function that creates a write path that can be used. This helps keep the code DRY'''
-
-    # This line just joins the path of the directory to write to and the filename for a complete string.
-    total_var_directory = os.path.join(
-        write_location, file_name)
-
-    return total_var_directory
-
-################################################################
 
 
 def csvDictWriter(variantDict, directoryName, fileName):
@@ -45,6 +35,7 @@ def drop_variant(file, drop_list):
     file = file.drop(drop_list, axis=0)
 
     return file
+
 #############################################################################################
 
 
@@ -95,7 +86,7 @@ def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name
 ###############################################################################
 
 
-def searchPedigree(inputPath, outputPath, drop_value, fileName):
+def searchPedigree(inputPath, outputPath, drop_value, reformat, fileName):
     '''This function will search through the provided pedigree file and output two csv files. One file is a list of the variant index positions and a list of individuals with that variant. Then another file is made with the variant index and then the number of individuals that are parts of pedigrees that carry that variant.'''
 
     # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
@@ -113,9 +104,12 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
     # This next part reads in the pedigree file
     pedigree_df = pd.read_csv(inputPath[1], sep="\t")
 
+    ############################
+    # Creating necessary global variables
     pedigree_iid_dict = dict()
 
     index_list = []
+    ###########################
 
     for ind in ind_var_carrier_df.index:
 
@@ -133,7 +127,6 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
             iid_in_pedigree_list = ' '.join(map(str, iid_in_pedigree_list)).strip(
                 "[]").replace("] [", " ").replace("'", "").split(" ")
 
-            # This if/else section creates a dictionary that list all individuals found in the pedigree file.
             pedigree_iid_dict[ind_var_carrier_df.loc[ind,
                                                      "MEGA_ID"]] = iid_in_pedigree_list
 
@@ -144,6 +137,27 @@ def searchPedigree(inputPath, outputPath, drop_value, fileName):
         index_list)]
 
     network_subset = network_subset.query("FID != IID")
+
+    ##################################################
+    # This section will
+
+    if reformat == True:
+
+        file_directory = check_dir(outputPath, "reformated")
+
+        print("producing a file more conducive output file format for ")
+
+        single_var_df = pd.read_csv(
+            writePath(inputPath[2], "single_var_list_reformat.csv"), sep=",")
+
+        single_var_df = single_var_df[single_var_df["IID"].isin(
+            network_subset["IID"].values.tolist())]
+
+        network_subset_reformat = pd.merge(
+            network_subset, single_var_df, on="IID")
+
+        network_subset_reformat.to_csv(
+            writePath(file_directory, "ind_in_ped-reformat.csv"), index=False)
 
     #####################################################
     csvDictWriter(
