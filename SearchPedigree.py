@@ -1,32 +1,20 @@
 #################################################
-# Import packages
+# importing packages
 import os
 import csv
 import pandas as pd
 import numpy as np
-from NetworkSize import determine_network_sizes
+import copy
+
+###################################################################################
+# importing necessary functions from other files
+
+from NetworkSize import network_sizes
 from write_path import writePath
 from check_directory import check_dir
+from csv_dict_writer import csvDictWriter
+
 ###############################################################
-
-
-def csvDictWriter(variantDict, directoryName, fileName):
-    '''This function writes a dictionary to a csv file. The function takes a dictionary, a directory path, and a fileName as inputs and outputs a csv file at that directory'''
-
-    # This line opens the csv file with write permissions
-    with open(writePath(directoryName, fileName), 'w') as csvfile:
-
-        # this line creates a writer object that the multiVarDict will be written to
-        writer = csv.writer(csvfile)
-
-        for key, value in variantDict.items():  # This line iterates through the keys and values in the multiVarDict
-
-            # This line writes the keys and values to a row
-            writer.writerow([key, value])
-
-    csvfile.close()  # This closes the csv file
-
-###############################################################################
 
 
 def drop_variant(file, drop_list):
@@ -40,9 +28,10 @@ def drop_variant(file, drop_list):
 
 
 def pedigreeCount(pedigreeDict, writePath, file_name):
-    '''This function will create a new pedigreeDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
+    '''This function will determine the number of individuals found for each combination of variant. It will create a new pedigreeDict where the keys are the index of each variant and the values are the number of individuals containing those variants.'''
 
     print("generating a file containing the number of individuals found within the pedigree for each variant...")
+
     # This uses a map function. The .items makes of tuple of key:value pairs and then
     # the lambda function takes the items as a input and updates the original dictionary by
     # by assigning the length of the second element of the tuple to the correct key
@@ -60,33 +49,8 @@ def pedigreeCount(pedigreeDict, writePath, file_name):
 
 ###############################################################################
 
-def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name, full_pedigree_file):
-    '''This function will just output a file that gives you an idea of the size of the network. '''
 
-    print("generating a file containing the size of each network...")
-
-    count_directory = writePath(output_path, counts_file_name)
-
-    network_counts = pedigree_subset.groupby(
-        "FID").count()  # This is a groupby object
-
-    network_counts.reset_index().to_csv(count_directory, index=False)
-
-    print("generating a list of all individual carrier in each network...")
-
-    list_directory = writePath(output_path, list_file_name)
-
-    network_list = pedigree_subset.groupby(
-        "FID")["IID"].apply(list)
-
-    network_list.reset_index().to_csv(list_directory, index=False)
-
-    determine_network_sizes(count_directory, full_pedigree_file, output_path)
-
-###############################################################################
-
-
-def searchPedigree(inputPath, outputPath, drop_value, reformat, fileName):
+def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, fileName):
     '''This function will search through the provided pedigree file and output two csv files. One file is a list of the variant index positions and a list of individuals with that variant. Then another file is made with the variant index and then the number of individuals that are parts of pedigrees that carry that variant.'''
 
     # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
@@ -136,6 +100,8 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, fileName):
     network_subset = pedigree_df.loc[np.unique(
         index_list)]
 
+    full_network_subset = copy.deepcopy(network_subset)
+
     network_subset = network_subset.query("FID != IID")
 
     ##################################################
@@ -145,10 +111,28 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, fileName):
 
         file_directory = check_dir(outputPath, "reformated")
 
-        print("producing a file more conducive output file format for ")
-
         single_var_df = pd.read_csv(
             writePath(inputPath[2], "single_var_list_reformat.csv"), sep=",")
+
+        # This will produce a list of every individual in the pedigree if it is wanted
+        if pedigree_size == "full":
+
+            print("producing a list of all matching individuals within the fam file...")
+
+            full_single_var_df = copy.deepcopy(single_var_df)
+
+            full_single_var_df = full_single_var_df[full_single_var_df["IID"].isin(
+                full_network_subset["IID"].values.tolist())]
+
+            full_network_subset_reformat = pd.merge(
+                full_network_subset, full_single_var_df, on="IID")
+
+            full_network_subset_reformat.to_csv(
+                writePath(file_directory, "all_ind_in_ped-reformat.csv"), index=False)
+
+        # This section only produces a list of individuals where the FID does not equal the IID
+
+        print("producing a file with only individuals where IID does not equal FID...")
 
         single_var_df = single_var_df[single_var_df["IID"].isin(
             network_subset["IID"].values.tolist())]

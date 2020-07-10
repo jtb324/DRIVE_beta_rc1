@@ -1,5 +1,12 @@
+#####################################################################
+# importing modules
+
 import os
 import pandas as pd
+
+#####################################################################
+# importing necessary functions from other files
+
 from write_path import writePath
 from check_directory import check_dir
 
@@ -7,8 +14,34 @@ from check_directory import check_dir
 #####################################################################
 
 
-def determine_network_sizes(network_count_filepath, pedigree_df, output_path):
-    '''This function determines the size of the matched networks. The function takes a path to a network count files, a dataframe of the pedigree, and then takes an output path. This function is used within the network_sizes functions in the searchPedigree.py file.'''
+def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name, full_pedigree_file):
+    '''This function will just output a file that gives you an idea of the size of the number of individuals matched in each network and then the distribution of the number of matched individuals in the networks.'''
+
+    print("generating a file containing the size of each network...")
+
+    count_directory = writePath(output_path, counts_file_name)
+
+    network_counts = pedigree_subset.groupby(
+        "FID").count()  # This is a groupby object
+
+    network_counts.reset_index().to_csv(count_directory, index=False)
+
+    print("generating a list of all individual carrier in each network...")
+
+    list_directory = writePath(output_path, list_file_name)
+
+    network_list = pedigree_subset.groupby(
+        "FID")["IID"].apply(list)
+
+    network_list.reset_index().to_csv(list_directory, index=False)
+
+    total_network_sizes(count_directory, full_pedigree_file, output_path)
+
+###############################################################################
+
+
+def total_network_sizes(network_count_filepath, pedigree_df, output_path):
+    '''This function determines the full size of the matched networks. This size includes individuals who are not carrying variants. The function takes a path to a network count files, a dataframe of the pedigree, and then takes an output path. This function is used within the network_sizes functions in the searchPedigree.py file.'''
 
     # Making a directory for the output files
     network_directory = check_dir(output_path, "network_sizes")

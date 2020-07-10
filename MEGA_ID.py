@@ -3,7 +3,6 @@
 import argparse
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
 from SearchPedigree import searchPedigree
-from NetworkSize import determine_network_sizes
 
 
 def run(args):
@@ -24,7 +23,7 @@ def run(args):
     elif args.analysis == "matchPED":
         print("generating acsv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
-                       args.drop_var, args.compatible_format, 'all_ind_in_pedigree.csv')
+                       args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
 
 def main():
@@ -44,6 +43,8 @@ def main():
 
     parser.add_argument("--format", help="This argument will enable several additional output files to be created that are easier for non python programs to interact with",
                         dest="compatible_format", type=bool, default=False)
+
+    parser.add_argument("--pedigreeSubset", help="This option can be set so that the output either returns a list of individuals filtered by if the IID does not equal the FID or if it returns every individual found within the provided network file. By selecting '--pedigreeSubset Full' then it will list the full size of the pedigree.", dest="pedigreeSubset", type=str, default=False)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

@@ -1,12 +1,19 @@
 # This file contains the functions used to determine how many toatl individuals contain some variant and how many individuals contain multiple variants
 
 ###################################################################################
+# importing modules
+
 import os
 import csv
 import pandas as pd
 import numpy as np
+
+###################################################################################
+# importing necessary functions from other files
+
 from write_path import writePath
 from check_directory import check_dir
+from csv_dict_writer import csvDictWriter
 ###################################################################################
 # Function to find the total number of variants
 
@@ -45,7 +52,7 @@ def totalVariantID(recodeFile, writeLocation):
         MyFile.close()
 
 ############################################################################################
-# This function determines all the individuals who hace a specific variant
+# This function determines all the individuals who have a specific variant
 
 
 def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
@@ -111,7 +118,6 @@ def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
 
 ############################################################################################
 # Function that counts how many individuals carry a set of variants
-
 
 def individualCount(multiVarDict, writePath):
     '''This function will create a new multiVarDict where the keys are the index of each variant and the values are the number of individuals containing those variants'''
@@ -194,23 +200,3 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
 
     # This passes the multiVarDict to the individualCount function to determine how many individuals have each combination of variants
     individualCount(multi_var_carriers, write_path)
-
-
-######################################################################################################
-# Function that writes multiVarDict to a csv file
-
-# This function writes the passed multiVarDict to a file whose title is given by the name argument
-def csvDictWriter(multiVarDict, directoryName, fileName):
-
-    # This line opens the csv file with write permissions
-    with open(writePath(directoryName, fileName), 'w') as csvfile:
-
-        # this line creates a writer object that the multiVarDict will be written to
-        writer = csv.writer(csvfile)
-
-        for key, value in multiVarDict.items():  # This line iterates through the keys and values in the multiVarDict
-
-            # This line writes the keys and values to a row
-            writer.writerow([key, value])
-
-    csvfile.close()  # This closes the csv file
