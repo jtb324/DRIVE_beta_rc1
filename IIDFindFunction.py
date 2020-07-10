@@ -170,19 +170,21 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
                 multi_var_carriers[index_tuple] = [raw_file.loc[ind, "IID"]]
 
             if reformat == True:
+                for index in index_tuple:
 
-                if "IID" and "Variant List" in multi_var_carriers_reformat:
+                    if "IID" and "Variant List" in multi_var_carriers_reformat:
 
-                    multi_var_carriers_reformat["IID"].append(
-                        raw_file.loc[ind, "IID"])
-                    multi_var_carriers_reformat["Variant List"].append(
-                        index_list)
+                        multi_var_carriers_reformat["IID"].append(
+                            raw_file.loc[ind, "IID"])
+                        multi_var_carriers_reformat["Variant List"].append(
+                            index)
 
-                else:
+                    else:
 
-                    multi_var_carriers_reformat["IID"] = [
-                        raw_file.loc[ind, "IID"]]
-                    multi_var_carriers_reformat["Variant List"] = [index_list]
+                        multi_var_carriers_reformat["IID"] = [
+                            raw_file.loc[ind, "IID"]]
+                        multi_var_carriers_reformat["Variant List"] = [
+                            index]
 
     # This converts the reformated dictionary to a dataframe
     reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
