@@ -65,5 +65,3 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 ### Important Notes
 
 An important note for the singleVariantAnalysis, the multiVariantAnalysis, and the searchPedigree functions is that these functions accept an argument called reformat. This reformat comes from the --format flag. If "--flag True" is passed in the CLI, then three files, single_var_list_reformat.csv, multi_var_reformated.csv, and ind_in_ped-reformat.csv, are formed. These three files are easier for non-python programs to deal with.
-
-_The multi_var_reformated.csv still needs to be adjusted a bit more to make the file easier for other programs._
