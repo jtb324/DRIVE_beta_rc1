@@ -62,6 +62,10 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
   - total_network_sizes: It groups the original full network file by a list of all the found networks, FIDs, and then shows the count for each one, so that we know the size of each network. It groups this dataframe by the counts to determine how many networks there are for each count value, making a distribution. This files are titled "network_size.csv" and "network_distribution_count.csv", respectively.
 
+* **allele_count.py**: This script determines the number of alleles for each variant in each network.
+
+  - allele_counts: This function takes the recoded raw file and the multi_ind_in_ped.csv file that list the all individuals who carry a specific variant in a specific network. This outputs a file called {ADD FILE NAME}.
+
 ### Important Notes
 
 An important note for the singleVariantAnalysis, the multiVariantAnalysis, and the searchPedigree functions is that these functions accept an argument called reformat. This reformat comes from the --format flag. If "--flag True" is passed in the CLI, then three files, single_var_list_reformat.csv, multi_var_reformated.csv, and ind_in_ped-reformat.csv, are formed. These three files are easier for non-python programs to deal with.
