@@ -3,6 +3,7 @@
 import argparse
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
 from SearchPedigree import searchPedigree
+from allele_count import allele_counts
 
 
 def run(args):
@@ -25,6 +26,10 @@ def run(args):
         searchPedigree(args.input, args.output,
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
+    elif args.analysis == "allele_counts":
+        print("generating list of the allele counts for eac network...")
+        allele_counts(args.input, args.output)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -36,7 +41,7 @@ def main():
     parser.add_argument("--output", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)
 
-    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, multiIndivid", dest="analysis", type=str, default=False)
+    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, allele_counts", dest="analysis", type=str, default=False)
 
     parser.add_argument("--drop_var", help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
                         dest="drop_var", type=str, nargs="+")

@@ -60,6 +60,10 @@ def total_network_sizes(network_count_filepath, pedigree_df, output_path):
 
     network_size_df = matched_pedigree_df.groupby("FID").count().reset_index()
 
+    network_list = matched_pedigree_df.groupby("FID")["IID"]
+
+    print(network_list)
+
     network_size_df = network_size_df.rename(
         columns={"IID": "Length of Network"})
 
@@ -75,5 +79,13 @@ def total_network_sizes(network_count_filepath, pedigree_df, output_path):
 
     network_dist_df = network_dist_df.rename(
         columns={"IID": "Size of Network", "FID": "Number of Networks"})
+
+    # determining a percentage of networks as a third column
+    sum_of_networks = network_dist_df["Number of Networks"].values.sum()
+
+    network_dist_df["Percentage of Networks"] = network_dist_df["Number of Networks"].values / \
+        sum_of_networks*100
+
+    network_dist_df = network_dist_df.round({"Percentage of Networks": 1})
 
     network_dist_df.to_csv(network_dist_path, index=False)
