@@ -27,7 +27,7 @@ def run(args):
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
     elif args.analysis == "allele_counts":
-        print("generating list of the allele counts for eac network...")
+        print("generating list of the allele counts for each network...")
         allele_counts(args.input, args.output)
 
 

@@ -60,10 +60,6 @@ def total_network_sizes(network_count_filepath, pedigree_df, output_path):
 
     network_size_df = matched_pedigree_df.groupby("FID").count().reset_index()
 
-    network_list = matched_pedigree_df.groupby("FID")["IID"]
-
-    print(network_list)
-
     network_size_df = network_size_df.rename(
         columns={"IID": "Length of Network"})
 
