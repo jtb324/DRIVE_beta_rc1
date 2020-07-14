@@ -86,11 +86,16 @@ def allele_counts(input_path, output_path):
         allele_count_dict, columns=["Network", "Variant ID", "Allele Count"])
 
     allele_count_df.drop_duplicates(
-        keep="first", inplace=True)
+        keep="last", inplace=True)
 
     reformat_directory = check_dir(output_path, "reformated")
 
     allele_count_df.to_csv(
         writePath(reformat_directory, "allele_count.csv"), index=False)
 
-    print(allele_count_df)
+    # Grouping the resulting output by Allele_count
+
+    count_groups_df = allele_count_df.groupby("Allele Count").count()
+
+    count_groups_df.to_csv(
+        writePath(reformat_directory, "grouped_allele_counts.csv"), index=False)
