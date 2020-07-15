@@ -22,7 +22,7 @@ def run(args):
                               'single_variant_list.csv')
 
     elif args.analysis == "matchPED":
-        print("generating acsv file of individuals found within the Pedigree...")
+        print("generating a csv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 

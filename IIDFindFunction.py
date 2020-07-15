@@ -1,4 +1,4 @@
-# This file contains the functions used to determine how many toatl individuals contain some variant and how many individuals contain multiple variants
+# This file contains the functions used to determine how many total individuals contain some variant and how many individuals contain multiple variants
 
 ###################################################################################
 # importing modules
