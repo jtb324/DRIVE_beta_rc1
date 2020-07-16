@@ -95,7 +95,7 @@ def allele_counts(input_path, fam_file_path, output_path):
     grouped_df = allele_count_df.groupby(level=0, group_keys=False).apply(
         lambda x: x.loc[x['Network'] == x["Network"].max()])
 
-    # TODO: This .to_csv is only here to compare the grouped_df before and after the duplicates are dropped
+    # TODO: This first grouped_df.to_csv is only here to compare the grouped_df before and after the duplicates are dropped
     grouped_df.to_csv(writePath(reformat_directory,
                                 "compare_allele_counts.csv"), index=False)
 
