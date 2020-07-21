@@ -5,7 +5,7 @@
 
 import os
 import csv
-import modin.pandas as pd
+import pandas as pd
 import numpy as np
 
 ###################################################################################
@@ -104,13 +104,19 @@ def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
                     var_dict_reformat["IID"] = [raw_file.loc[i, "IID"]]
                     var_dict_reformat["Variant ID"] = [column]
 
-    var_reformat_df = pd.DataFrame(
-        var_dict_reformat, columns=["IID", "Variant ID"])
+    if var_dict_reformat:
 
-    reformat_directory = check_dir(write_path, "reformated")
+        var_reformat_df = pd.DataFrame(
+            var_dict_reformat, columns=["IID", "Variant ID"])
 
-    var_reformat_df.to_csv(
-        writePath(reformat_directory, "single_var_list_reformat.csv"), index=False)
+        reformat_directory = check_dir(write_path, "reformated")
+
+        var_reformat_df.to_csv(
+            writePath(reformat_directory, "single_var_list_reformat.csv"), index=False)
+
+    elif reformat and not bool(var_dict_reformat):
+
+        print("There were no individuals found so there dictionary was not written to a csv file.")
 
     csvDictWriter(
         var_dict, write_path, fileName)
@@ -187,14 +193,20 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
                             index]
 
     # This converts the reformated dictionary to a dataframe
-    reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
-                               "IID", "Variant List"])
+    if multi_var_carriers_reformat:
 
-    reformat_directory = check_dir(write_path, "reformated")
+        reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
+            "IID", "Variant List"])
 
-    # This writes the reformated dataframe as a csv file
-    reformat_df.to_csv(
-        writePath(reformat_directory, "multi_var_reformated.csv"), index=False)
+        reformat_directory = check_dir(write_path, "reformated")
+
+        # This writes the reformated dataframe as a csv file
+        reformat_df.to_csv(
+            writePath(reformat_directory, "multi_var_reformated.csv"), index=False)
+
+    elif reformat and not bool(multi_var_carriers_reformat):
+
+        print("There were no individuals found within the reformated csv so the dictionary was not written to a csv file.")
 
     # This writes the original formated multivar_carrier dictionary to a csv
     csvDictWriter(
