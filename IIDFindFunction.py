@@ -4,6 +4,8 @@
 # importing modules
 
 import os
+from os import path
+import sys
 import csv
 import pandas as pd
 import numpy as np
@@ -14,6 +16,7 @@ import numpy as np
 from write_path import writePath
 from check_directory import check_dir
 from csv_dict_writer import csvDictWriter
+
 ###################################################################################
 # Function to find the total number of variants
 
@@ -21,35 +24,41 @@ from csv_dict_writer import csvDictWriter
 def totalVariantID(recodeFile, writeLocation):
     '''this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row.'''
 
-    with open(recodeFile[0]) as geno_file:
+    if path.exist(recodeFile):
 
-        headerLine = next(geno_file)  # This skips the 1st row
+        with open(recodeFile[0]) as geno_file:
 
-        # This next two lines create lists for the total variants and the multivariants ids
-        totalVariantList = []
+            headerLine = next(geno_file)  # This skips the 1st row
 
-        for row in geno_file:  # This iterates through each row in the file
+            # This next two lines create lists for the total variants and the multivariants ids
+            totalVariantList = []
 
-            row = row.split()  # This will split the row by white space
+            for row in geno_file:  # This iterates through each row in the file
 
-            genoRow = row[6:]
+                row = row.split()  # This will split the row by white space
 
-            if '1' in genoRow or '2' in genoRow:
+                genoRow = row[6:]
 
-                totalVariantList.append(row[1])
+                if '1' in genoRow or '2' in genoRow:
 
-        print("The total number of individual carrier of at least one desired variant is: {}".format(
-            len(totalVariantList)))
+                    totalVariantList.append(row[1])
 
-        writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
+            print("The total number of individual carrier of at least one desired variant is: {}".format(
+                len(totalVariantList)))
 
-        MyFile = open(
-            writeDirectory, 'w')
+            writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
 
-        for element in totalVariantList:
-            MyFile.write(element)
-            MyFile.write('\n')
-        MyFile.close()
+            MyFile = open(
+                writeDirectory, 'w')
+
+            for element in totalVariantList:
+                MyFile.write(element)
+                MyFile.write('\n')
+            MyFile.close()
+
+    else:
+
+        print("The raw recoded file at {} was not found.".format())
 
 ############################################################################################
 # This function determines all the individuals who have a specific variant
@@ -58,7 +67,16 @@ def totalVariantID(recodeFile, writeLocation):
 def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
 
-    raw_file = pd.read_csv(recodeFile[0], sep=" ")
+    try:
+
+        raw_file = pd.read_csv(recodeFile[0], sep=" ")
+
+    except FileNotFoundError:
+
+        print("The raw recoded file at {} was not found.".format(
+            recodeFile))
+
+        sys.exit(1)
 
     column_list = list(raw_file.columns[6:].values)
 
@@ -138,7 +156,16 @@ def individualCount(multiVarDict, writePath):
 def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function preforms the main multiple variant analysis and will make two dictionaries. One multiVarDict contains key that are the index of each variant from the original PLINK recode file (starts at the seventh position because the first 6 values are not important info in this function) and then the values are a list of individuals who contain those variants. The second multiVarDict contains the same keys, but the values are the number of individuals which carry those variants'''
 
-    raw_file = pd.read_csv(recodeFile[0], sep=" ")
+    try:
+
+        raw_file = pd.read_csv(recodeFile[0], sep=" ")
+
+    except FileNotFoundError:
+
+        print("The raw recoded file at {} was not found.".format(
+            recodeFile))
+
+        sys.exit(1)
 
     column_list = list(raw_file.columns[6:].values)
 

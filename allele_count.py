@@ -1,6 +1,7 @@
 # Determining the allele count in families
 import pandas as pd
 import numpy as np
+import sys
 
 ################################################
 from check_directory import check_dir
@@ -13,11 +14,29 @@ def allele_counts(input_path, fam_file_path, output_path):
     '''This function determines the allele counts for specific variants in each family'''
 
     #Reading in the files ##########################
-    raw_file = pd.read_csv(input_path[0], sep=" ")
+    try:
+        raw_file = pd.read_csv(input_path[0], sep=" ")
 
-    networks_df = pd.read_csv(input_path[1], sep=",")
+    except FileNotFoundError:
+        print("The raw recoded file at {} was not found.".format(
+            input_path[0]))
+        sys.exit(1)
 
-    pedigree_df = pd.read_csv(fam_file_path, sep="\t")
+    try:
+        networks_df = pd.read_csv(input_path[1], sep=",")
+
+    except FileNotFoundError:
+        print("The list of matched network file at {} was not found.".format(
+            input_path[1]))
+        sys.exit(1)
+
+    try:
+        pedigree_df = pd.read_csv(fam_file_path, sep="\t")
+
+    except FileNotFoundError:
+        print("The full network pedigree file at {} was not found.".format(
+            fam_file_path))
+        sys.exit(1)
 
     ################################################
     # Getting the names of all the columns to iterate through
@@ -28,11 +47,9 @@ def allele_counts(input_path, fam_file_path, output_path):
 
     ###################################################
     # Iterating through all the rows of the pedigree data
-    for tuple in networks_df.itertuples(index=False):
+    network_list = networks_df["FID"].values.tolist()
 
-        # This gets the network FID from the pedigree row
-        network = tuple[0].strip("[]").replace(")", "").replace(
-            "'", "").replace(" ", "").split(",")[1]
+    for network in network_list:
 
         # Next two lines create a subset of the pedigree for a specific network and then it pulls all the
         # iids from that network into a list
