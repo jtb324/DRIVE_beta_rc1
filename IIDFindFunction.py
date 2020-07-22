@@ -162,6 +162,7 @@ def individualCount(multiVarDict, writePath):
 def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function preforms the main multiple variant analysis and will make two dictionaries. One multiVarDict contains key that are the index of each variant from the original PLINK recode file (starts at the seventh position because the first 6 values are not important info in this function) and then the values are a list of individuals who contain those variants. The second multiVarDict contains the same keys, but the values are the number of individuals which carry those variants'''
 
+    #Reading in the file ########################################
     try:
 
         raw_file = pd.read_csv(recodeFile[0], sep=" ")
@@ -172,6 +173,8 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
             recodeFile))
 
         sys.exit(1)
+
+    #############################################################
 
     column_list = list(raw_file.columns[6:].values)
 

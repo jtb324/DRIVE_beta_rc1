@@ -102,7 +102,7 @@ def allele_counts(input_path, fam_file_path, output_path):
     allele_count_df = pd.DataFrame(
         allele_count_dict, columns=["Network", "Variant ID", "Allele Count"])
 
-    reformat_directory = check_dir(output_path, "reformated")
+    reformat_directory = check_dir(output_path, "allele_counts")
 
     allele_count_df.to_csv(
         writePath(reformat_directory, "allele_count.csv"), index=False)
@@ -111,10 +111,6 @@ def allele_counts(input_path, fam_file_path, output_path):
 
     grouped_df = allele_count_df.groupby(level=0, group_keys=False).apply(
         lambda x: x.loc[x['Network'] == x["Network"].max()])
-
-    # TODO: This first grouped_df.to_csv is only here to compare the grouped_df before and after the duplicates are dropped
-    grouped_df.to_csv(writePath(reformat_directory,
-                                "compare_allele_counts.csv"), index=False)
 
     grouped_df = grouped_df.drop_duplicates(subset='Network', keep='first')
 
