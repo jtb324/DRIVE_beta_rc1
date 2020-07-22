@@ -1,4 +1,5 @@
 import os
+import logging
 
 
 def writePath(write_location, file_name):

@@ -1,27 +1,79 @@
 #! /usr/bin/env python
-
+import logging
 import argparse
+from write_path import writePath
 from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
 from SearchPedigree import searchPedigree
 from allele_count import allele_counts
 
 
 def run(args):
+
     if args.analysis == "total":
+        log_format = '%(asctime)-15s %(message)s'
+
+        logging.basicConfig(
+            filename=args.output+'/total_variant_analysis.log', level=logging.INFO,
+            format=log_format)
+
+        logging.info(
+            'Generating a list of IIDs who carry a desired variant...')
+
         print("generating list of IIDs who carry a desired variant....")
+
         totalVariantID(args.input, args.output)
 
+        logging.info(
+            'Finished creating a list of individuals carrying multiple variants')
+
     elif args.analysis == "multi":
+
+        log_format = '%(asctime)s - %(levelname)s : %(message)s'
+
+        logging.basicConfig(
+            filename=args.output+'/multi_variant_analysis.log', level=logging.INFO,
+            format=log_format)
+
+        logging.info(
+            'Generating a list of IIDs who carry multiple variants...')
+
         print("generating list of individuals carrying multiple variants....")
+
         multiVariantAnalysis(args.input, args.output,
                              args.compatible_format, 'multi_variant_list.csv')
 
+        logging.info(
+            'Finished creating a list of individuals carrying multiple variants')
+
     elif args.analysis == "single":
-        print("generating list of individuals at each variant index")
+
+        log_format = '%(asctime)s - %(levelname)s : %(message)s'
+
+        logging.basicConfig(filename=args.output +
+                            '/single_variant_analysis.log', level=logging.INFO,
+                            format=log_format)
+
+        logging.info("generating list of individuals at each probe id...")
+
+        print("generating list of individuals at each probe id...")
+
         singleVariantAnalysis(args.input, args.output, args.compatible_format,
                               'single_variant_list.csv')
 
+        logging.info(
+            'Finished creating a file of individuals for each probe id')
+
     elif args.analysis == "matchPED":
+
+        log_format = '%(asctime)s - %(levelname)s : %(message)s'
+
+        logging.basicConfig(filename=args.output +
+                            '/search_pedigree_analysis.log', level=logging.INFO,
+                            format=log_format)
+
+        logging.info(
+            "identifying carriers within the provided pedigree,{}". format(args.output[1]))
+
         print("generating a csv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
