@@ -117,8 +117,6 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
         # This will produce a list of every individual in the pedigree if it is wanted
         if pedigree_size == "full":
 
-            print("producing a list of all matching individuals within the fam file...")
-
             full_single_var_df = copy.deepcopy(single_var_df)
 
             full_single_var_df = full_single_var_df[full_single_var_df["IID"].isin(
@@ -127,8 +125,14 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
             full_network_subset_reformat = pd.merge(
                 full_network_subset, full_single_var_df, on="IID")
 
+            write_directory = writePath(
+                file_directory, "all_ind_in_ped-reformat.csv")
+
             full_network_subset_reformat.to_csv(
-                writePath(file_directory, "all_ind_in_ped-reformat.csv"), index=False)
+                write_directory, index=False)
+
+            print("producing a file at {} of IIDs of all carriers of interest within\
+                  the fam file...".format(write_directory))
 
         # This section only produces a list of individuals where the FID does not equal the IID
 
@@ -140,19 +144,31 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
         network_subset_reformat = pd.merge(
             network_subset, single_var_df, on="IID")
 
+        subset_write_directory = writePath(
+            file_directory, "ind_in_ped-reformat.csv")
+
         network_subset_reformat.to_csv(
-            writePath(file_directory, "ind_in_ped-reformat.csv"), index=False)
+            subset_write_directory, index=False)
+
+        print("producing a file at {} with only individuals where IID does not \
+            equal FID...".format(subset_write_directory))
 
     #####################################################
+    # This section creates the useful python formated documents.
+
+    # This first function writes a dictionary of all individuals found for each variant in the pedigree to a csv file
     csvDictWriter(
         pedigree_iid_dict, outputPath, fileName)
 
+    # This function creates a csv file of the number of IIDs found within the .fam file for each variant
     pedigreeCount(pedigree_iid_dict, outputPath, "pedigree_count.csv")
 
+    # This function outputs a csv file of the number of individuals found per network and it list the IIDs of the individuals found per network
     network_sizes(network_subset, outputPath,
                   "ind_network_counts.csv", "ind_network_list.csv",
                   pedigree_df)
 
+    # This function just passes the pedigree_iid_dict to the next function to determine if there are multiple individuals in a specific network who carry the same variant.
     multi_ind_in_pedigree(
         pedigree_iid_dict, network_subset, outputPath)
 

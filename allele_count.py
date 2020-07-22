@@ -1,6 +1,7 @@
 # Determining the allele count in families
 import pandas as pd
 import numpy as np
+import sys
 
 ################################################
 from check_directory import check_dir
@@ -9,13 +10,33 @@ from write_path import writePath
 ################################################
 
 
-def allele_counts(input_path, output_path):
+def allele_counts(input_path, fam_file_path, output_path):
     '''This function determines the allele counts for specific variants in each family'''
 
     #Reading in the files ##########################
-    raw_file = pd.read_csv(input_path[0], sep=" ")
+    try:
+        raw_file = pd.read_csv(input_path[0], sep=" ")
 
-    pedigree_df = pd.read_csv(input_path[1], sep=",")
+    except FileNotFoundError:
+        print("The raw recoded file at {} was not found.".format(
+            input_path[0]))
+        sys.exit(1)
+
+    try:
+        networks_df = pd.read_csv(input_path[1], sep=",")
+
+    except FileNotFoundError:
+        print("The list of matched network file at {} was not found.".format(
+            input_path[1]))
+        sys.exit(1)
+
+    try:
+        pedigree_df = pd.read_csv(fam_file_path, sep="\t")
+
+    except FileNotFoundError:
+        print("The full network pedigree file at {} was not found.".format(
+            fam_file_path))
+        sys.exit(1)
 
     ################################################
     # Getting the names of all the columns to iterate through
@@ -26,19 +47,15 @@ def allele_counts(input_path, output_path):
 
     ###################################################
     # Iterating through all the rows of the pedigree data
-    for tuple in pedigree_df.itertuples(index=False):
+    network_list = networks_df["FID"].values.tolist()
 
-        # This get the lists of all IID's from the pedigree file
-        iid_list = tuple[1].strip("[]").replace(
-            "'", "").replace(" ", "").split(",")
+    for network in network_list:
 
-        # This gets the variant from the dataframe row
-        variant = tuple[0].strip("[]").replace("(", "").replace(
-            "'", "").replace(" ", "").split(",")[0]
+        # Next two lines create a subset of the pedigree for a specific network and then it pulls all the
+        # iids from that network into a list
+        pedigree_subset_df = pedigree_df[pedigree_df["FID"] == network]
 
-        # This gets the network FID from the pedigree row
-        network = tuple[0].strip("[]").replace(")", "").replace(
-            "'", "").replace(" ", "").split(",")[1]
+        iid_list = pedigree_subset_df["IID"].values.tolist()
 
         # This subsets the full raw file for only those value also in the row from the pedigree
         raw_file_subset = raw_file[raw_file["IID"].isin(iid_list)]
@@ -70,7 +87,7 @@ def allele_counts(input_path, output_path):
 
                     allele_count_dict["Network"].append(network)
 
-                    allele_count_dict["Variant ID"].append(variant)
+                    allele_count_dict["Variant ID"].append(column)
 
                     allele_count_dict["Allele Count"].append(allele_count)
 
@@ -78,15 +95,12 @@ def allele_counts(input_path, output_path):
 
                     allele_count_dict["Network"] = [network]
 
-                    allele_count_dict["Variant ID"] = [variant]
+                    allele_count_dict["Variant ID"] = [column]
 
                     allele_count_dict["Allele Count"] = [allele_count]
 
     allele_count_df = pd.DataFrame(
         allele_count_dict, columns=["Network", "Variant ID", "Allele Count"])
-
-    allele_count_df.drop_duplicates(
-        keep="last", inplace=True)
 
     reformat_directory = check_dir(output_path, "reformated")
 
@@ -95,7 +109,14 @@ def allele_counts(input_path, output_path):
 
     # Grouping the resulting output by Allele_count
 
-    count_groups_df = allele_count_df.groupby("Allele Count").count()
+    grouped_df = allele_count_df.groupby(level=0, group_keys=False).apply(
+        lambda x: x.loc[x['Network'] == x["Network"].max()])
 
-    count_groups_df.to_csv(
+    # TODO: This first grouped_df.to_csv is only here to compare the grouped_df before and after the duplicates are dropped
+    grouped_df.to_csv(writePath(reformat_directory,
+                                "compare_allele_counts.csv"), index=False)
+
+    grouped_df = grouped_df.drop_duplicates(subset='Network', keep='first')
+
+    grouped_df.to_csv(
         writePath(reformat_directory, "grouped_allele_counts.csv"), index=False)

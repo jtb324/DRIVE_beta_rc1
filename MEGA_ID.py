@@ -22,13 +22,13 @@ def run(args):
                               'single_variant_list.csv')
 
     elif args.analysis == "matchPED":
-        print("generating acsv file of individuals found within the Pedigree...")
+        print("generating a csv file of individuals found within the Pedigree...")
         searchPedigree(args.input, args.output,
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
     elif args.analysis == "allele_counts":
         print("generating list of the allele counts for each network...")
-        allele_counts(args.input, args.output)
+        allele_counts(args.input, args.fam_file, args.output)
 
 
 def main():
@@ -50,6 +50,9 @@ def main():
                         dest="compatible_format", type=bool, default=False)
 
     parser.add_argument("--pedigreeSubset", help="This option can be set so that the output either returns a list of individuals filtered by if the IID does not equal the FID or if it returns every individual found within the provided network file. By selecting '--pedigreeSubset Full' then it will list the full size of the pedigree.", dest="pedigreeSubset", type=str, default=False)
+
+    parser.add_argument("--fam_file", help="This provides a path to the desired .fam of networks. This argument is used in the allele_count script",
+                        dest="fam_file", type=str, default=False)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

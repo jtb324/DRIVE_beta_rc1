@@ -17,9 +17,12 @@ from check_directory import check_dir
 def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name, full_pedigree_file):
     '''This function will just output a file that gives you an idea of the size of the number of individuals matched in each network and then the distribution of the number of matched individuals in the networks.'''
 
-    print("generating a file containing the size of each network...")
+    network_directory = check_dir(output_path, "network_sizes")
 
-    count_directory = writePath(output_path, counts_file_name)
+    print("generating a file containing the size of each network\
+         at {}...".format(network_directory))
+
+    count_directory = writePath(network_directory, counts_file_name)
 
     network_counts = pedigree_subset.groupby(
         "FID").count()  # This is a groupby object
@@ -28,7 +31,7 @@ def network_sizes(pedigree_subset, output_path, counts_file_name, list_file_name
 
     print("generating a list of all individual carrier in each network...")
 
-    list_directory = writePath(output_path, list_file_name)
+    list_directory = writePath(network_directory, list_file_name)
 
     network_list = pedigree_subset.groupby(
         "FID")["IID"].apply(list)
