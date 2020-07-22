@@ -5,6 +5,8 @@ import csv
 import pandas as pd
 import numpy as np
 import copy
+import logging
+import sys
 
 ###################################################################################
 # importing necessary functions from other files
@@ -54,19 +56,51 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
     '''This function will search through the provided pedigree file and output two csv files. One file is a list of the variant index positions and a list of individuals with that variant. Then another file is made with the variant index and then the number of individuals that are parts of pedigrees that carry that variant.'''
 
     # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
-    ind_var_carrier_df = pd.read_csv(
-        inputPath[0], sep=",", header=None, names=["MEGA_ID", "IID"])  # Read in the csv will all the carriers of a variant
+    try:
+
+        ind_var_carrier_df = pd.read_csv(
+            inputPath[0], sep=",", header=None, names=["MEGA_ID", "IID"])  # Read in the csv will all the carriers of a variant
+
+    except FileNotFoundError:
+
+        print('There was no file containing a list of carriers found at {}'.format(
+            inputPath[1]))
+
+        logging.error('There was no file containing a list of carriers found at {}'.format(
+            inputPath[1]))
+
+        sys.exit(1)
+
+    #This section is purely for dropping any variants that may be overwhelming in the sample ##############
 
     if drop_value != None:
 
         drop_list = ind_var_carrier_df[ind_var_carrier_df["MEGA_ID"].isin(
             drop_value)].index.tolist()
 
+        logging.info(
+            'The two probes {} were dropped from the results'.format(drop_value))
+
         # This is the function used to drop variants
         ind_var_carrier_df = drop_variant(ind_var_carrier_df, drop_list)
 
+    ###########################################################################
+
     # This next part reads in the pedigree file
-    pedigree_df = pd.read_csv(inputPath[1], sep="\t")
+    try:
+        pedigree_df = pd.read_csv(inputPath[1], sep="\t")
+
+    except FileNotFoundError:
+
+        print('The provided network file was not found at {}'.format(
+            inputPath[1]))
+
+        logging.error('The provided network file was not found at {}'.format(
+            inputPath[1]))
+
+        sys.exit(1)
+
+    logging.info('Using the network file found at {}'.format(inputPath[1]))
 
     ############################
     # Creating necessary global variables
@@ -86,6 +120,7 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
 
         iid_in_pedigree_list = pedigree_df.loc[index,
                                                ["IID"]].values
+
         if len(iid_in_pedigree_list) > 0:
 
             iid_in_pedigree_list = ' '.join(map(str, iid_in_pedigree_list)).strip(

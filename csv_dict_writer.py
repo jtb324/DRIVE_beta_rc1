@@ -2,6 +2,7 @@
 ##################################################################
 # Importing modules
 import csv
+import logging
 
 ##################################################################
 # importing necessary function from other files
@@ -10,9 +11,12 @@ from write_path import writePath
 ##################################################################
 
 
-def csvDictWriter(multiVarDict, directoryName, fileName):
+def csvDictWriter(multiVarDict, directoryName, fileName, logger):
 
     # This line opens the csv file with write permissions
+    logger.info('Writing the dictionary to the file path {}'.format(
+        writePath(directoryName, fileName)))
+
     with open(writePath(directoryName, fileName), 'w') as csvfile:
 
         # this line creates a writer object that the multiVarDict will be written to
