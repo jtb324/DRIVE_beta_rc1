@@ -80,7 +80,18 @@ def run(args):
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
     elif args.analysis == "allele_counts":
+
+        log_format = '%(asctime)s - %(levelname)s : %(message)s'
+
+        logging.basicConfig(filename=args.output +
+                            '/allele_count_analysis.log', level=logging.INFO,
+                            format=log_format)
+
+        logging.info(
+            "determining the allele_counts each variant for families containing carriers within the provided network file...")
+
         print("generating list of the allele counts for each network...")
+
         allele_counts(args.input, args.fam_file, args.output)
 
 

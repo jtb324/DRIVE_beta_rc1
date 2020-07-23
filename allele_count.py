@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import logging
 
 ################################################
 from check_directory import check_dir
@@ -13,30 +14,54 @@ from write_path import writePath
 def allele_counts(input_path, fam_file_path, output_path):
     '''This function determines the allele counts for specific variants in each family'''
 
+    logger = logging.getLogger(output_path+"/allele_count_analysis.log")
+
     #Reading in the files ##########################
     try:
         raw_file = pd.read_csv(input_path[0], sep=" ")
 
     except FileNotFoundError:
+
         print("The raw recoded file at {} was not found.".format(
             input_path[0]))
+
+        logger.info("The raw recoded file at {} was not found.".format(
+            input_path[0]))
+
         sys.exit(1)
+
+    logger.info("Using the raw recoded file at {}".format(input_path[0]))
 
     try:
         networks_df = pd.read_csv(input_path[1], sep=",")
 
     except FileNotFoundError:
+
         print("The list of matched network file at {} was not found.".format(
             input_path[1]))
+
+        logger.info("The file containing lists of individuals per network was not found at {}.".format(
+            input_path[1]))
+
         sys.exit(1)
+
+    logger.info("Using the file containing lists of individuals found in each network. This file is found at {}.".format(
+        input_path[1]))
 
     try:
         pedigree_df = pd.read_csv(fam_file_path, sep="\t")
 
     except FileNotFoundError:
+
         print("The full network pedigree file at {} was not found.".format(
             fam_file_path))
+
+        logger.info("The network file at {} was not found.".format(
+            fam_file_path))
+
         sys.exit(1)
+
+    logger.info("Using the network file found at {}.".format(fam_file_path))
 
     ################################################
     # Getting the names of all the columns to iterate through
@@ -103,6 +128,8 @@ def allele_counts(input_path, fam_file_path, output_path):
         allele_count_dict, columns=["Network", "Variant ID", "Allele Count"])
 
     reformat_directory = check_dir(output_path, "allele_counts")
+
+    logger.info("Writing two files to the directory {}. The first file contains the variant with the highest number of alleles per network. This file is called 'allele_count.csv'. The second file just drops any variants where there are multiple variants that have the same max allele count. this file is called 'grouped_allele_counts.csv'.")
 
     allele_count_df.to_csv(
         writePath(reformat_directory, "allele_count.csv"), index=False)
