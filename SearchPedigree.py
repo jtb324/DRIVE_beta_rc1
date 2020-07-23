@@ -218,8 +218,6 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
 
     # This function outputs a csv file of the number of individuals found per network and it list the IIDs of the individuals found per network
 
-    logger.info("Determining a list of individuals found per network and the number of individuals found per network. These files are found at ind_network_counts.csv and ind_network_list.csv")
-
     network_sizes(network_subset, outputPath,
                   "ind_network_counts.csv", "ind_network_list.csv",
                   pedigree_df)
