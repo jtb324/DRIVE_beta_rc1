@@ -10,7 +10,7 @@ from allele_count import allele_counts
 def run(args):
 
     if args.analysis == "total":
-        log_format = '%(asctime)-15s %(message)s'
+        log_format = '%(asctime)-15s - %(levelname)s : %(message)s'
 
         logging.basicConfig(
             filename=args.output+'/total_variant_analysis.log', level=logging.INFO,
@@ -75,6 +75,7 @@ def run(args):
             "identifying carriers within the provided pedigree,{}". format(args.output[1]))
 
         print("generating a csv file of individuals found within the Pedigree...")
+
         searchPedigree(args.input, args.output,
                        args.drop_var, args.compatible_format, args.pedigreeSubset, 'all_ind_in_pedigree.csv')
 
