@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 import logging
+import sidetable
 
 ################################################
 from check_directory import check_dir
@@ -17,6 +18,8 @@ def allele_counts(input_path, fam_file_path, output_path):
     logger = logging.getLogger(output_path+"/allele_count_analysis.log")
 
     #Reading in the files ##########################
+
+    # Reading in the recoded raw file
     try:
         raw_file = pd.read_csv(input_path[0], sep=" ")
 
@@ -32,6 +35,7 @@ def allele_counts(input_path, fam_file_path, output_path):
 
     logger.info("Using the raw recoded file at {}".format(input_path[0]))
 
+    # reading in the file of list of individuals per network
     try:
         networks_df = pd.read_csv(input_path[1], sep=",")
 
@@ -48,6 +52,7 @@ def allele_counts(input_path, fam_file_path, output_path):
     logger.info("Using the file containing lists of individuals found in each network. This file is found at {}.".format(
         input_path[1]))
 
+    # Reading in the network .fam file
     try:
         pedigree_df = pd.read_csv(fam_file_path, sep="\t")
 
@@ -88,25 +93,43 @@ def allele_counts(input_path, fam_file_path, output_path):
         # This iterates through the columns of the dataframe row
         for column in column_list:
 
-            # This starts a counter to determine the number of alleles for each variant
-            allele_count = 0
+            ############################################
 
-            # This finds the index of any spot with a 1 in the recoding
-            index_list_1 = raw_file_subset.index[raw_file_subset[column].isin([
-                1])].tolist()
+            variant_allele_frequency = raw_file_subset.stb.freq([column])
 
-            # This finds the index of any spot with a 2 in the recoding
-            index_list_2 = raw_file_subset.index[raw_file_subset[column].isin([
-                2])].tolist()
+            variant_allele_count = 0
 
-            # This determines the allele count for the variant
-            allele_count = len(index_list_1) + len(index_list_2)*2
+            major_allele_count = 0
 
-            # This forms the total index list of each individual with the variant
-            index_list = index_list_1 + index_list_2
+            try:
+                major_allele_count = variant_allele_frequency[variant_allele_frequency[column]
+                                                              == 0.0].iloc[0]['count']*2
+
+            except IndexError:
+                pass
+
+            if 1.0 in variant_allele_frequency[column].unique():
+
+                subset = variant_allele_frequency[variant_allele_frequency[column] == 1.0]
+
+                subset_count = subset.iloc[0]['count']
+
+                variant_allele_count = subset_count
+
+                major_allele_count += subset_count
+
+            if 2.0 in variant_allele_frequency[column].unique():
+
+                subset = variant_allele_frequency[variant_allele_frequency[column] == 2.0]
+
+                subset_count = subset.iloc[0]['count']
+
+                variant_allele_count = subset_count*2
+
+            ############################################
 
             # Checks if the index_list is not empty
-            if index_list:
+            if variant_allele_count != 0:
 
                 if "IID" and "Network" and "Variant ID" in allele_count_dict:
 
@@ -114,7 +137,11 @@ def allele_counts(input_path, fam_file_path, output_path):
 
                     allele_count_dict["Variant ID"].append(column)
 
-                    allele_count_dict["Allele Count"].append(allele_count)
+                    allele_count_dict["Variant Allele Count"].append(
+                        int(variant_allele_count))
+
+                    allele_count_dict["Major Allele Count"].append(
+                        int(major_allele_count))
 
                 else:
 
@@ -122,10 +149,19 @@ def allele_counts(input_path, fam_file_path, output_path):
 
                     allele_count_dict["Variant ID"] = [column]
 
-                    allele_count_dict["Allele Count"] = [allele_count]
+                    allele_count_dict["Variant Allele Count"] = [
+                        int(variant_allele_count)]
+
+                    allele_count_dict["Major Allele Count"] = [
+                        int(major_allele_count)]
 
     allele_count_df = pd.DataFrame(
-        allele_count_dict, columns=["Network", "Variant ID", "Allele Count"])
+        allele_count_dict, columns=["Network", "Variant ID", "Variant Allele Count", "Major Allele Count"])
+
+    # Determining the allele frequency for the variant allele:
+    allele_count_df["Variant Allele Frequency"] = allele_count_df['Variant Allele Count'] / \
+        (allele_count_df['Variant Allele Count'] +
+         allele_count_df['Major Allele Count'])
 
     reformat_directory = check_dir(output_path, "allele_counts")
 
@@ -134,12 +170,27 @@ def allele_counts(input_path, fam_file_path, output_path):
     allele_count_df.to_csv(
         writePath(reformat_directory, "allele_count.csv"), index=False)
 
-    # Grouping the resulting output by Allele_count
+    # Grouping the resulting output by Allele_counts so that there are no duplicate rows for networks that have the same number of alleles for multiple variants
 
     grouped_df = allele_count_df.groupby(level=0, group_keys=False).apply(
         lambda x: x.loc[x['Network'] == x["Network"].max()])
 
     grouped_df = grouped_df.drop_duplicates(subset='Network', keep='first')
 
+    grouped_df = grouped_df.drop(["Variant ID", "Major Allele Count",
+                                  "Variant Allele Frequency"], axis=1)
+
     grouped_df.to_csv(
         writePath(reformat_directory, "grouped_allele_counts.csv"), index=False)
+
+    # Grouping the output by Allele count so that we know the number of networks that carry a certain number of variant alleles
+
+    dist_of_alleles_df = grouped_df.stb.freq(['Variant Allele Count'])
+
+    dist_of_alleles_df = dist_of_alleles_df.drop(
+        ["cumulative_count", "cumulative_percent"], axis=1)
+
+    dist_of_alleles_df = dist_of_alleles_df.round(2)
+
+    dist_of_alleles_df.to_csv(
+        writePath(reformat_directory, "allele_count_distribution.csv"), index=False)
