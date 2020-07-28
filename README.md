@@ -64,7 +64,9 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
 * **allele_count.py**: This script determines the number of alleles for each variant in each network.
 
-  - _allele_counts_: This function takes the recoded raw file and the multi_ind_in_ped.csv file that list the all individuals who carry a specific variant in a specific network. This outputs a file called {ADD FILE NAME}.
+  - This script first creates a directory called allele_counts:
+
+    - _allele_counts_: This function takes the recoded raw file and the multi_ind_in_ped.csv file that list the all individuals who carry a specific variant in a specific network. This outputs a file called allele_counts.csv. This file list the FID, the IID, the Variant Allele Count, the Major Allele Count, and the Variant Allele Frequency for the family. There are multiple rows for the same network if the network has multiple variant with the same allele count. This dataframe is then grouped by the allele count and only the first row is kept in those networks that have duplicates, all columns are then dropped except the FID and the variant allele count. This file is then written to grouped_allele_counts.csv. Then the sidetable package is used determine the distribution of each network size. The columns for cumulative_count and cumulative_percentage are then dropped to output a file called allele_count_distribution.csv which contains the allele count, the number of networks per allele counts, and the percentage of networks with that allele count. This file is found at allele_count_distribution.csv.
 
 ### Important Notes
 
