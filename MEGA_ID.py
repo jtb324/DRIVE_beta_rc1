@@ -2,9 +2,10 @@
 import logging
 import argparse
 from write_path import writePath
-from IIDFindFunction import totalVariantID, multiVariantAnalysis, singleVariantAnalysis
+from identify_single_var_carrier import totalVariantID, singleVariantAnalysis
 from SearchPedigree import searchPedigree
 from allele_count import allele_counts
+from identify_multi_var_carriers import multiVariantAnalysis
 
 
 def run(args):

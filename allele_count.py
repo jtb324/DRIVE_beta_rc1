@@ -8,6 +8,7 @@ import sidetable
 ################################################
 from check_directory import check_dir
 from write_path import writePath
+from file_exist_checker import Check_File_Exist
 
 ################################################
 
@@ -20,51 +21,24 @@ def allele_counts(input_path, fam_file_path, output_path):
     #Reading in the files ##########################
 
     # Reading in the recoded raw file
-    try:
-        raw_file = pd.read_csv(input_path[0], sep=" ")
+    recode_file_checker = Check_File_Exist(input_path[0], logger)
 
-    except FileNotFoundError:
-
-        print("The raw recoded file at {} was not found.".format(
-            input_path[0]))
-
-        logger.info("The raw recoded file at {} was not found.".format(
-            input_path[0]))
-
-        sys.exit(1)
+    raw_file = recode_file_checker.check_file_exist()
 
     logger.info("Using the raw recoded file at {}".format(input_path[0]))
 
     # reading in the file of list of individuals per network
-    try:
-        networks_df = pd.read_csv(input_path[1], sep=",")
+    network_file_checker = Check_File_Exist(input_path[1], logger)
 
-    except FileNotFoundError:
-
-        print("The list of matched network file at {} was not found.".format(
-            input_path[1]))
-
-        logger.info("The file containing lists of individuals per network was not found at {}.".format(
-            input_path[1]))
-
-        sys.exit(1)
+    networks_df = network_file_checker.check_file_exist(separator=",")
 
     logger.info("Using the file containing lists of individuals found in each network. This file is found at {}.".format(
         input_path[1]))
 
     # Reading in the network .fam file
-    try:
-        pedigree_df = pd.read_csv(fam_file_path, sep="\t")
+    pedigree_file_checker = Check_File_Exist(fam_file_path, logger)
 
-    except FileNotFoundError:
-
-        print("The full network pedigree file at {} was not found.".format(
-            fam_file_path))
-
-        logger.info("The network file at {} was not found.".format(
-            fam_file_path))
-
-        sys.exit(1)
+    pedigree_df = pedigree_file_checker.check_file_exist(separator="\t")
 
     logger.info("Using the network file found at {}.".format(fam_file_path))
 
@@ -163,12 +137,14 @@ def allele_counts(input_path, fam_file_path, output_path):
         (allele_count_df['Variant Allele Count'] +
          allele_count_df['Major Allele Count'])
 
-    reformat_directory = check_dir(output_path, "allele_counts")
+    allele_count_directory = check_dir(output_path, "allele_counts")
 
-    logger.info("Writing two files to the directory {}. The first file contains the variant with the highest number of alleles per network. This file is called 'allele_count.csv'. The second file just drops any variants where there are multiple variants that have the same max allele count. this file is called 'grouped_allele_counts.csv'.")
+    logger.info("Writing two files to the directory {}. The first file contains the variant with the highest number of alleles per network. This file is called 'allele_count.csv'. The second file just drops any variants where there are multiple variants that have the same max allele count. this file is called 'grouped_allele_counts.csv'.".format(allele_count_directory))
+
+    allele_count_df = allele_count_df.round(2)
 
     allele_count_df.to_csv(
-        writePath(reformat_directory, "allele_count.csv"), index=False)
+        writePath(allele_count_directory, "allele_count.csv"), index=False)
 
     # Grouping the resulting output by Allele_counts so that there are no duplicate rows for networks that have the same number of alleles for multiple variants
 
@@ -181,7 +157,7 @@ def allele_counts(input_path, fam_file_path, output_path):
                                   "Variant Allele Frequency"], axis=1)
 
     grouped_df.to_csv(
-        writePath(reformat_directory, "grouped_allele_counts.csv"), index=False)
+        writePath(allele_count_directory, "grouped_allele_counts.csv"), index=False)
 
     # Grouping the output by Allele count so that we know the number of networks that carry a certain number of variant alleles
 
@@ -193,4 +169,4 @@ def allele_counts(input_path, fam_file_path, output_path):
     dist_of_alleles_df = dist_of_alleles_df.round(2)
 
     dist_of_alleles_df.to_csv(
-        writePath(reformat_directory, "allele_count_distribution.csv"), index=False)
+        writePath(allele_count_directory, "allele_count_distribution.csv"), index=False)
