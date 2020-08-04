@@ -117,7 +117,7 @@ def main():
         description="This identifies individuals who have a specific variant in a raw file from PLINK")
 
     parser.add_argument("--input", help="This is the pathway for the PLINK recoded input file. If you use the matchPED analysis argument then you should provide two input paths. The first is to the list of all variants. This should be a csv file and will have a list of the variant index and then a list of individuals who carry that variant. The second path is to the Pedigree file.At current development, this should be a .fam file.",
-                        dest="input", nargs="+", type=str, required=True)
+                        dest="input", nargs="+", type=str)
 
     parser.add_argument("--output", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)

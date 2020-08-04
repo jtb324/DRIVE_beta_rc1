@@ -38,6 +38,10 @@ class Network_Img_Maker(Check_File_Exist):
         '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions'''
 
         ##########################################################
+        # Logging message
+        self.log_file.info(
+            "Creating the pdfs of network images and writing them to a directory called network_images")
+        ##########################################################
         # Drawing the graph
         related_graph = Digraph(comment="Shared Segment Network", strict=True)
 
