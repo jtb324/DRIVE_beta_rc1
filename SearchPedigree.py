@@ -14,7 +14,8 @@ import sys
 from NetworkSize import network_sizes
 from write_path import writePath
 from check_directory import check_dir
-from csv_dict_writer import csvDictWriter
+from csv_writer_class import Csv_Writer_Object
+from file_exist_checker import Check_File_Exist
 
 ###############################################################
 
@@ -39,9 +40,13 @@ def pedigreeCount(pedigreeDict, writePath, file_name, logger):
     # by assigning the length of the second element of the tuple to the correct key
     pedigreeDict = dict(map(lambda x: (x[0], len(x[1])), pedigreeDict.items()))
 
-    # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
-    csvDictWriter(pedigreeDict,
-                  writePath, file_name, logger)
+    csv_writer = Csv_Writer_Object(
+        pedigreeDict,
+        writePath, file_name, logger)
+
+    csv_writer.log_file_path()
+
+    csv_writer.write_to_csv()
 
     individual_sum = sum(pedigreeDict.values())
 
@@ -60,25 +65,16 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
 
     logger = logging.getLogger(outputPath+'/search_pedigree_analysis.log')
 
-    # These next lines read in the list of carriers for each variant as a dataframe and can drop any variant from the dataframe
-    try:
+    # Checking to see if the provided csv file of variantsexist
+    file_checker = Check_File_Exist(inputPath[0], logger)
 
-        ind_var_carrier_df = pd.read_csv(
-            inputPath[0], sep=",", header=None, names=["MEGA_ID", "IID"])  # Read in the csv will all the carriers of a variant
-
-    except FileNotFoundError:
-
-        print('There was no file containing a list of carriers found at {}'.format(
-            inputPath[1]))
-
-        logger.error('There was no file containing a list of carriers found at {}'.format(
-            inputPath[1]))
-
-        sys.exit(1)
+    ind_var_carrier_df = file_checker.check_file_exist(
+        column_names=["MEGA_ID", "IID"], separator=",")
 
     logger.info(
         'Using the list of individual carriers found at {}.'.format(inputPath[0]))
 
+    #####################################################################
     #This section is purely for dropping any variants that may be overwhelming in the sample ##############
 
     if drop_value != None:
@@ -92,30 +88,21 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
         # This is the function used to drop variants
         ind_var_carrier_df = drop_variant(ind_var_carrier_df, drop_list)
 
-    ###########################################################################
+    ######################################################################
 
-    # This next part reads in the pedigree file
-    try:
-        pedigree_df = pd.read_csv(inputPath[1], sep="\t")
+    # This next part checks if the provided network file exist and then reads it in.
+    pedigree_file_checker = Check_File_Exist(inputPath[1], logger)
 
-    except FileNotFoundError:
-
-        print('The provided network file was not found at {}'.format(
-            inputPath[1]))
-
-        logger.error('The provided network file was not found at {}'.format(
-            inputPath[1]))
-
-        sys.exit(1)
+    pedigree_df = pedigree_file_checker.check_file_exist(separator="\t")
 
     logger.info('Using the network file found at {}'.format(inputPath[1]))
 
-    ############################
+    ######################################################################
     # Creating necessary global variables
     pedigree_iid_dict = dict()
 
     index_list = []
-    ###########################
+    ######################################################################
 
     for ind in ind_var_carrier_df.index:
 
@@ -207,8 +194,12 @@ def searchPedigree(inputPath, outputPath, drop_value, reformat, pedigree_size, f
     # This first function writes a dictionary of all individuals found for each variant in the pedigree to a csv file
     logger.info("Writing the dictionary containing all individual carriers found within the provided network file to a csv file titled 'all_ind_in_pedigree.csv'.")
 
-    csvDictWriter(
+    csv_writer = Csv_Writer_Object(
         pedigree_iid_dict, outputPath, fileName, logger)
+
+    csv_writer.log_file_path()
+
+    csv_writer.write_to_csv()
 
     # This function creates a csv file of the number of IIDs found within the .fam file for each variant
     logger.info(
@@ -268,8 +259,13 @@ def multi_ind_in_pedigree(carrier_dict, pedigree, output_path, logger):
     logger.info(
         "Determining which networks contain multiple individuals that carry the same variant...")
 
-    csvDictWriter(carrier_dict, output_path,
-                  "multiple_ind_in_pedigree.csv", logger)
+    csv_writer = Csv_Writer_Object(
+        carrier_dict, output_path,
+        "multiple_ind_in_pedigree.csv", logger)
+
+    csv_writer.log_file_path()
+
+    csv_writer.write_to_csv()
 
     logger.info("Determining a list of multiple individuals that carry the same variants found per network and the number of individuals found per network. These files are found at ind_network_counts.csv and ind_network_list.csv")
 
