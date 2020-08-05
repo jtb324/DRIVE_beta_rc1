@@ -22,9 +22,13 @@ from file_exist_checker import Check_File_Exist
 def totalVariantID(recodeFile, writeLocation):
     '''this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row.'''
 
-    logging.info('Using raw recode file found at {}'.format(recodeFile))
+    logger = logging.getLogger(writeLocation+'/single_variant_analysis.log')
 
-    if path.exist(recodeFile):
+    logger.info('Determining just a list of all individuals who have carriers')
+
+    logger.info('Using raw recode file found at {}'.format(recodeFile))
+
+    if path.exists(recodeFile[0]):
 
         with open(recodeFile[0]) as geno_file:
 
@@ -46,7 +50,7 @@ def totalVariantID(recodeFile, writeLocation):
             print("The total number of individual carrier of at least one desired variant is: {}".format(
                 len(totalVariantList)))
 
-            logging.info("The total number of individual carrier of at least one desired variant is: {}".format(
+            logger.info("The total number of individual carrier of at least one desired variant is: {}".format(
                 len(totalVariantList)))
 
             writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
@@ -62,7 +66,7 @@ def totalVariantID(recodeFile, writeLocation):
     else:
 
         print("The raw recoded file at {} was not found.".format())
-        logging.error("The raw recoded file at {} was not found.".format())
+        logger.error("The raw recoded file at {} was not found.".format())
 
 ############################################################################################
 # This function determines all the individuals who have a specific variant
@@ -70,6 +74,8 @@ def totalVariantID(recodeFile, writeLocation):
 
 def singleVariantAnalysis(recodeFile, write_path, reformat, fileName):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
+
+    totalVariantID(recodeFile, write_path)
 
     logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 

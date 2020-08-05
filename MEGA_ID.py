@@ -109,7 +109,8 @@ def run(args):
 
         print("generating pdf files of networks of individuals who share segments...")
 
-        create_networks(args.segments_file, args.output)
+        create_networks(args.segments_file, args.var_file,
+                        args.var, args.output)
 
 
 def main():
@@ -137,6 +138,12 @@ def main():
 
     parser.add_argument("--shared_segments_file", help="This argument provides a path to the list of shared segments that can be used to form networks",
                         dest="segments_file", type=str, default=False)
+
+    parser.add_argument("--variant_file", help="This argument provides a path to a file that list all individuals that carry a specific variant",
+                        dest="var_file", type=str, default=False)
+
+    parser.add_argument("--var_of_interest", help="This argument passes a variant of interest that can filter down dataframes when trying to draw networks.",
+                        dest="var", type=str, default=False)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
