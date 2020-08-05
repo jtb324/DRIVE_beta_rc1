@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import re
 from graphviz import Digraph
 from check_directory import check_dir
 from file_exist_checker import Check_File_Exist
@@ -6,12 +8,28 @@ from file_exist_checker import Check_File_Exist
 
 class Network_Img_Maker(Check_File_Exist):
 
-    def __init__(self, segments_file, output_path, logger):
+    def __init__(self, segments_file, variant_file, output_path, logger):
         self.file = segments_file
+        # This comes from previous singleVariantAnalysis so the file will exist
+        self.variant_file_list = variant_file
         self.log_file = logger
         self.output_path = output_path
 
-    def isolate_ids(self, loaded_df):
+    def isolate_variant_list(self, variant_of_interest):
+        '''This function will create a list of IIDs who carry a specific variant.'''
+
+        # This uses the reformated variant file
+        variant_df = pd.read_csv(self.variant_file_list, sep=",")
+
+        # Isolating the variant_df for the variant of interest
+        variant_df_subset = variant_df[variant_df["Variant ID"]
+                                       == variant_of_interest]
+
+        iid_list = variant_df_subset["IID"].values.tolist()
+
+        return iid_list
+
+    def isolate_ids(self, loaded_df, iid_list):
         '''This function removes the IBD software identifier (The GERMLINE, iLASH, or HapIBD) creates two new rows in the provided dataframe for each set of ids. The function takes the loaded df of individuals as an input'''
         ########################################################
         # Removing the "GERMLINE", "iLASH", and "hapibd" from the Pairs value and then splitting the list:
@@ -20,6 +38,19 @@ class Network_Img_Maker(Check_File_Exist):
             "Creating two new columns in the provide segment file for the two id pairs.")
 
         loaded_df["Pair_id1"] = loaded_df["Pairs"].str.split(":")
+
+        # Regular expression used to drop GERMLINEq:
+
+        reg_expression = re.compile(
+            r'(?=.*GERMLINE)(?=.*iLASH)|(?=.*hapibd)|(?=.*iLASH).*')
+
+        regmatch = np.vectorize(lambda x: bool(reg_expression.match(x)))
+
+        bool_array = regmatch(loaded_df["Pairs"].values)
+
+        loaded_df = loaded_df[bool_array]
+
+        ##########################################################
 
         for index, row in loaded_df.iterrows():
 
@@ -32,7 +63,17 @@ class Network_Img_Maker(Check_File_Exist):
             row['Pair_id1'] = row['Pair_id2'][0]
             row['Pair_id2'] = row['Pair_id2'][1]
 
-        return loaded_df
+        # Now have to filter down the file so that all the rows are
+        # individuals who are found in the iid_list. Should return a
+        # file where Pair_id1 and Pair_id2 are both carriers
+
+        final_df = loaded_df[loaded_df["Pair_id1"].isin(iid_list)]
+
+        final_df = loaded_df[loaded_df["Pair_id2"].isin(iid_list)]
+
+        return final_df
+
+    ################################################################
 
     def draw_networks(self, reformated_df):
         '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions'''

@@ -5,3 +5,4 @@ __pycache__
 *.csv
 .DS_Store
 network_images/
+network_imgs/
