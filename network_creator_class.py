@@ -71,6 +71,8 @@ class Network_Img_Maker(Check_File_Exist):
 
         final_df = loaded_df[loaded_df["Pair_id2"].isin(iid_list)]
 
+        final_df.to_csv("filter_shared_segment_dataframe.csv")
+
         return final_df
 
     ################################################################
@@ -84,65 +86,96 @@ class Network_Img_Maker(Check_File_Exist):
             "Creating the pdfs of network images and writing them to a directory called network_images")
         ##########################################################
         # Drawing the graph
-        related_graph = Digraph(comment="Shared Segment Network", strict=True)
 
         # getting a list of all unique IDs in the Pair_id1 column to iterate through
         id_list = reformated_df['Pair_id1'].unique().tolist()
 
         nodes_visited = []
+        edges_drawn = []
 
         # Creating the nodes
         for id1 in id_list:
-            current_node_name = id1
+
+            related_graph = Digraph(
+                comment="Shared Segment Network", strict=True)
+
+            # Limit the passed dataframe to only those that have a relationship with id1. Only need to Pair_id1 and
+            # Pair_id2 columns to make nodes
+            nodes_constructed = set()
 
             if id1 not in nodes_visited:
 
-                related_graph.node(id1, label=id1)
+                segments_file_subset = reformated_df[(reformated_df['Pair_id1']
+                                                      == id1) | (reformated_df['Pair_id2'] == id1)][["Pair_id1", "Pair_id2"]]
 
-            segments_file_subset = reformated_df[(reformated_df['Pair_id1']
-                                                  == id1) | (reformated_df['Pair_id2'] == id1)]
+                for row in segments_file_subset.itertuples():
 
-            id2_list = segments_file_subset["Pair_id2"].unique().tolist()
+                    Pair_id1 = row[1]
+                    Pair_id2 = row[2]
 
-            unique_id_list = np.setdiff1d(
-                segments_file_subset["Pair_id1"], id2_list).tolist()
+                    if Pair_id1 not in nodes_visited:
 
-            nodes_visited.append(id1)
+                        related_graph.node(Pair_id1, label=Pair_id1)
 
-            for id2 in id2_list:
+                        # Keeping track of what nodes have been made
+                        nodes_visited.append(Pair_id1)
 
-                if id2 not in nodes_visited and id2 != id1:
+                        nodes_constructed.add(Pair_id1)
 
-                    related_graph.node(id2, label=id2)
+                    else:
+                        nodes_constructed.add(Pair_id1)
 
-                related_graph.edge(id1, id2)
+                    if Pair_id2 not in nodes_visited:
 
-                nodes_visited.append(id2)
+                        related_graph.node(Pair_id2, label=Pair_id2)
 
-            for variant_id in unique_id_list:
+                        nodes_visited.append(Pair_id2)
 
-                related_graph.node(variant_id, label=variant_id)
+                        nodes_constructed.add(Pair_id2)
 
-                related_graph.edge(variant_id, id1)
+                    else:
+                        nodes_constructed.add(Pair_id2)
 
-                nodes_visited.append(variant_id)
+                    if (Pair_id1, Pair_id2) not in edges_drawn:
 
-            # This section will try to match up the ids in unique_id_list where
-            # the id in Pair_id2 column does not match id1
+                        related_graph.edge(Pair_id1, Pair_id2)
 
-            segments_file_subset2 = reformated_df[(
-                reformated_df['Pair_id1'].isin(unique_id_list)) & (reformated_df['Pair_id2'].isin(id2_list))]
+                        # Keeping track of edges drawn and the inverse edge
+                        edges_drawn.append((Pair_id1, Pair_id2))
 
-            for row in segments_file_subset2[['Pair_id1', 'Pair_id2']].itertuples():
+                        edges_drawn.append((Pair_id2, Pair_id1))
 
-                if row[1] not in nodes_visited or row[2] not in nodes_visited:
+                # Catching relationships between nodes that are second degree related to id1
 
-                    related_graph.node(row[1], label=row[1])
+                segments_file_subset2 = reformated_df[
+                    reformated_df['Pair_id1'].isin(list(nodes_constructed))]
 
-                    related_graph.node(row[2], label=row[2])
+                segments_file_subset2 = segments_file_subset2[
+                    segments_file_subset2['Pair_id2'].isin(list(nodes_constructed))]
 
-                related_graph.edge(row[1], row[2])
+                segments_file_subset2 = segments_file_subset2[(
+                    segments_file_subset2['Pair_id1'] != id1)]
 
-            img_directory = check_dir(self.output_path, "network_images")
+                segments_file_subset2 = segments_file_subset2[(
+                    segments_file_subset2['Pair_id2'] != id1)][["Pair_id1", "Pair_id2"]]
 
-            related_graph.render(img_directory+"/"+id1+'.gv')
+                for row in segments_file_subset2.itertuples():
+
+                    Pair_id1 = row[1]
+                    Pair_id2 = row[2]
+
+                    # Checking to see if these second degree edges have
+                    # already been drawn. If not the edge is drawn and
+                    # then the tuple is appended to the list of edges_drawn
+
+                    related_graph.edge(Pair_id1, Pair_id2)
+
+                    edges_drawn.append((Pair_id1, Pair_id2))
+
+                    edges_drawn.append((Pair_id2, Pair_id1))
+
+                img_directory = check_dir(self.output_path, "network_images")
+
+                related_graph.render(img_directory+"/"+id1+'.gv')
+
+                related_graph.clear()
