@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.numeric import NaN
 import pandas as pd
 import re
 from graphviz import Digraph
@@ -28,6 +29,16 @@ class Network_Img_Maker(Check_File_Exist):
         iid_list = variant_df_subset["IID"].values.tolist()
 
         return iid_list
+
+    def drop_empty_rows(self, loaded_df):
+        '''This function just drops empty rows in the dataframe'''
+        print(f"dropping empty rows in file {self.file}...")
+
+        nan_value = float("NaN")
+        loaded_df.replace("", nan_value, inplace=True)
+        loaded_df.dropna(subset=["Pairs"], inplace=True)
+
+        return loaded_df
 
     def isolate_ids(self, loaded_df, iid_list):
         '''This function removes the IBD software identifier (The GERMLINE, iLASH, or HapIBD) creates two new rows in the provided dataframe for each set of ids. The function takes the loaded df of individuals as an input'''
@@ -71,7 +82,12 @@ class Network_Img_Maker(Check_File_Exist):
 
         final_df = loaded_df[loaded_df["Pair_id2"].isin(iid_list)]
 
-        final_df.to_csv("filter_shared_segment_dataframe.csv")
+        print(
+            f"There were {len(final_df)} carriers found within the segment file at {self.file}")
+        print("\n")
+
+        self.log_file.info(
+            f"There {final_df} carriers found within the segment file at {self.file}")
 
         return final_df
 
@@ -176,6 +192,11 @@ class Network_Img_Maker(Check_File_Exist):
 
                 img_directory = check_dir(self.output_path, "network_images")
 
+                # making the graphs undirected
+                related_graph.edge_attr.update(arrowhead="none")
+
+                # rendering the graphs
                 related_graph.render(img_directory+"/"+id1+'.gv')
 
+                # Clearing the graph for the next loop
                 related_graph.clear()
