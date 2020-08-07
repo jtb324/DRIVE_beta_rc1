@@ -65,8 +65,10 @@ def totalVariantID(recodeFile, writeLocation):
 
     else:
 
-        print("The raw recoded file at {} was not found.".format())
-        logger.error("The raw recoded file at {} was not found.".format())
+        print("The raw recoded file at {} was not found.".format(
+            recodeFile[0]))
+        logger.error(
+            "The raw recoded file at {} was not found.".format(recodeFile[0]))
 
 ############################################################################################
 # This function determines all the individuals who have a specific variant

@@ -18,6 +18,10 @@ def create_networks(segments_file, variant_file, variant_of_interest, output_pat
     loaded_segments_file = loaded_segments_file.drop(
         [0], axis=1).rename(columns={1: "Pairs"})
 
+    if loaded_segments_file["Pairs"].isnull().any():
+        loaded_segments_file = network_drawer.drop_empty_rows(
+            loaded_segments_file)
+
     network_drawer_df = network_drawer.isolate_ids(
         loaded_segments_file, iid_list)
 
