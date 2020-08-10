@@ -6,13 +6,11 @@ import getopt  # This is a commandline parser
 import argparse
 import gzip
 import multiprocessing as mp
-#import tqdm
-#import os
 
 min_cM = 3
 cpu = 1
-# read argument
 ####################################################################################################
+# necessary classes
 
 
 class newPOS:
