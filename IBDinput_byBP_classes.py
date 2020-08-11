@@ -140,7 +140,7 @@ class Shared_Segment_Convert(newPOS):
 
         # This catches the KeyError raised because unit is only found in GERMLINE files
         try:
-            unit = int(parameter_dict["unit"])
+            unit = parameter_dict["unit"]
         except KeyError:
             pass
 
