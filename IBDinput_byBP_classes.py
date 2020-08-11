@@ -23,11 +23,11 @@ class newPOS:
 class Shared_Segment_Convert(newPOS):
 
     def __init__(self, shared_segment_file, iid_file, output_path, ibd_program_used, min_cM_threshold, thread, base_position):
-        self.segment_file = shared_segment_file
-        self.iid_file = iid_file
-        self.output = output_path
-        self.format = ibd_program_used
-        self.min_cM = min_cM_threshold
+        self.segment_file = str(shared_segment_file)
+        self.iid_file = str(iid_file)
+        self.output = str(output_path)
+        self.format = str(ibd_program_used)
+        self.min_cM = int(min_cM_threshold)
         self.thread = int(thread)
         self.bp = int(base_position)
         # This gets the name of the variant of interest assuming it is input as a text file
@@ -43,7 +43,6 @@ class Shared_Segment_Convert(newPOS):
 
     def generate_parameters(self):
         '''This will get some of the parameters used later'''
-
         parameter_dict = {
             "id1_indx": 0,
             "id2_indx": 2,
@@ -125,6 +124,7 @@ class Shared_Segment_Convert(newPOS):
         IBDdata = {str(i): {} for i in range(1, 23)}
         IBDindex = {str(i): {'start': 999999999, 'end': 0, 'allpos': []}
                     for i in range(1, 23)}
+
         return IBDdata, IBDindex
 
     def IBDsumm(self, i, IBDdata, IBDindex, parameter_dict, uniqID):
@@ -137,7 +137,12 @@ class Shared_Segment_Convert(newPOS):
         str_indx = int(parameter_dict["str_indx"])
         end_indx = int(parameter_dict["end_indx"])
         cM_indx = int(parameter_dict["cM_indx"])
-        unit = int(parameter_dict["unit"])
+
+        # This catches the KeyError raised because unit is only found in GERMLINE files
+        try:
+            unit = int(parameter_dict["unit"])
+        except KeyError:
+            pass
 
         # Figuring out if the IBD estimate files are gunzipped
 
@@ -166,7 +171,7 @@ class Shared_Segment_Convert(newPOS):
             if id1 not in uniqID and id2 not in uniqID:
                 continue  # ignores ids that are not in the uniqID
 
-            elif float(cM) < min_cM or ('unit' in vars() and str(line[unit]) != 'cM'):
+            elif float(cM) < self.min_cM or ('unit' in vars() and str(line[unit]) != 'cM'):
                 continue  # also ignores if the cM distance is less then the specified threshold or if the unit is not specified as cM
 
             elif start < self.bp and end > self.bp:  # Checks to see if the segment starts before the variant position and then if it ends after the variant position
@@ -210,6 +215,8 @@ class Shared_Segment_Convert(newPOS):
                 elif int(start) in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
                     IBDdata[CHR][str(start)].add.append(str(pair))
                     IBDdata[CHR][str(end)].rem.append(str(pair))
+
+        data.close()
 
         # writing output
         print('identified ' +
@@ -263,7 +270,10 @@ class Shared_Segment_Convert(newPOS):
         IBDdata[str(i)] = []
         out.close()
 
+        print("entering the IBDsumm function...")
+
     def run_parallel(self, IBDdata, IBDindex, parameter_dict, uniqID):
+        print("initializing the parallel run")
 
         pool = mp.Pool(self.thread)
 

@@ -14,9 +14,10 @@ from IBDinput_byBP_classes import Shared_Segment_Convert
 def run(args):
     print("running")
     for variant__info_tuple in zip(args.pheno, args.bp):
-        pheno_file = variant__info_tuple[0]
 
-        variant_position = variant__info_tuple[1]
+        pheno_file = str(variant__info_tuple[0])
+
+        variant_position = int(variant__info_tuple[1])
 
         ibd_file_converter = Shared_Segment_Convert(
             args.input, pheno_file, args.output, args.format, args.min, args.thread, variant_position)
