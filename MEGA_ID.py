@@ -23,7 +23,7 @@ def run(args):
 
         print("generating list of IIDs who carry a desired variant....")
 
-        totalVariantID(args.input, args.output)
+        totalVariantID(args.input, args.output, args.pop_info, args.pop_code)
 
         logging.info(
             'Finished creating a list of individuals carrying multiple variants')
@@ -60,7 +60,7 @@ def run(args):
         print("generating list of individuals at each probe id...")
 
         singleVariantAnalysis(args.input, args.output, args.compatible_format,
-                              'single_variant_list.csv')
+                              'single_variant_list.csv', args.pop_info, args.pop_code)
 
         logging.info(
             'Finished creating a file of individuals for each probe id')
@@ -144,6 +144,11 @@ def main():
 
     parser.add_argument("--var_of_interest", help="This argument passes a variant of interest that can filter down dataframes when trying to draw networks.",
                         dest="var", type=str, default=False)
+
+    parser.add_argument("--pop_info", help="This argument provides the file path to a file containing the population distribution of a dataset for each grid. This file should be a text file and at least contain two columns, where one column is 'Pop', the population code for each grid based on 1000 genomes, and then the second column is 'grid', which list the IIDs for each each grid.", dest="pop_info", type=str, required=False)
+
+    parser.add_argument("--pop_code", help="This argument can be a single population code or a list of population codes that someone is looking for. Population codes have to match the 1000 genomes.",
+                        dest="pop_code", type=str, required=False, nargs="+")
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

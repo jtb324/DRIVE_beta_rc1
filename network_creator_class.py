@@ -28,6 +28,16 @@ class Network_Img_Maker(Check_File_Exist):
 
         iid_list = variant_df_subset["IID"].values.tolist()
 
+        MyFile = open(
+            self.output_path+"/carrierlist.txt", 'w')
+
+        for element in iid_list:
+            MyFile.write(element)
+            MyFile.write('\n')
+        MyFile.close()
+
+        print(f"The number of carriers identified are {len(iid_list)}")
+
         return iid_list
 
     def drop_empty_rows(self, loaded_df):
@@ -78,16 +88,21 @@ class Network_Img_Maker(Check_File_Exist):
         # individuals who are found in the iid_list. Should return a
         # file where Pair_id1 and Pair_id2 are both carriers
 
-        final_df = loaded_df[loaded_df["Pair_id1"].isin(iid_list)]
+        final_df = loaded_df[(loaded_df["Pair_id1"].isin(iid_list)) & (
+            loaded_df["Pair_id2"].isin(iid_list))]
 
-        final_df = loaded_df[loaded_df["Pair_id2"].isin(iid_list)]
+        print(final_df["Pair_id1"].isin(iid_list).all())
+        print(final_df["Pair_id2"].isin(iid_list).all())
 
         print(
-            f"There were {len(final_df)} carriers found within the segment file at {self.file}")
+            f"There were {len(final_df)} pairs found within the segment file at {self.file}")
         print("\n")
 
         self.log_file.info(
-            f"There {final_df} carriers found within the segment file at {self.file}")
+            f"There where {final_df} pairs found within the segment file at {self.file}")
+
+        print(self.output_path+"/pairs2.csv")
+        final_df.to_csv(self.output_path+"/pairs.csv")
 
         return final_df
 
