@@ -68,6 +68,68 @@ The goal of this repository is to create a commandline tool that takes a raw fil
 
     - _allele_counts_: This function takes the recoded raw file and the multi_ind_in_ped.csv file that list the all individuals who carry a specific variant in a specific network. This outputs a file called allele_counts.csv. This file list the FID, the IID, the Variant Allele Count, the Major Allele Count, and the Variant Allele Frequency for the family. There are multiple rows for the same network if the network has multiple variant with the same allele count. This dataframe is then grouped by the allele count and only the first row is kept in those networks that have duplicates, all columns are then dropped except the FID and the variant allele count. This file is then written to grouped_allele_counts.csv. Then the sidetable package is used determine the distribution of each network size. The columns for cumulative_count and cumulative_percentage are then dropped to output a file called allele_count_distribution.csv which contains the allele count, the number of networks per allele counts, and the percentage of networks with that allele count. This file is found at allele_count_distribution.csv.
 
+## Description of the MEGA_ID.py parser:
+
+### Structure of the parser file:
+
+- **Lines 2-11**: These lines just show the imports necessary. Current necessary dependencies are:
+
+  - _logging_: This writes file paths and some necessary information to log files to look back on later.
+
+  - _argparse_: This is the module required for the argparse commandline
+
+  - _os.path_ and _path from os_: These modules enable the script to check if provided directories exist and then to create the directory if it does not.
+
+  The next five imports just import necessary functions from other python files
+
+  - _from identify_single_var_carrier import totalVariantID, singleVariantAnalysis_
+
+  - _from SearchPedigree import searchPedigree_
+
+  - _from allele_count import allele_counts_
+
+  - _from identify_multi_var_carriers import multiVariantAnalysis_
+
+  - _from create_networks import create_networks_
+
+* **Lines 14-111**: These lines contain the run function for the parser. It uses an if/else statement to check what analysis is being requested. The optional analysis statements are:
+
+  - _single_: This analysis determines a list of all individuals that carry at least one single variant
+
+  - _multi_: This analysis determines a list of all individuals that carry more than one variant. It outputs a csv file of all IIDs for a comb ination of variants
+
+  - _matchPED_: This analysis determines which carriers are in a pedigree
+
+  - _allele_counts_: This analysis gives the allele counts for the networks
+
+  - _draw_networks_: This analysis actually draws networks of individuals who shared segments.
+
+* **Lines 114-157**: These are the main function lines that actually contain the arguments for the parser. The accepted arguments are:
+
+  - _--input_
+
+  - _--output_
+
+  - _--analysis_
+
+  - _--drop_var_
+
+  - _--format_
+
+  - _--pedigreeSubset_
+
+  - _--fam_file_
+
+  - _--shared_segments_file_
+
+  - _--variant_file_
+
+  - _--var_of_interest_
+
+  - _--pop_info_
+
+  - _--pop_code_
+
 ### Important Notes
 
 An important note for the singleVariantAnalysis, the multiVariantAnalysis, and the searchPedigree functions is that these functions accept an argument called reformat. This reformat comes from the --format flag. If "--flag True" is passed in the CLI, then three files, single_var_list_reformat.csv, multi_var_reformated.csv, and ind_in_ped-reformat.csv, are formed. These three files are easier for non-python programs to deal with.
