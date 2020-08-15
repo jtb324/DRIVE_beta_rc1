@@ -1,6 +1,7 @@
-#import statements
+# import statements
 import sys
 import gzip
+from numpy.core.numeric import NaN
 import pandas as pd
 import itertools
 import argparse
@@ -8,27 +9,33 @@ import argparse
 
 class Output_Comparer:
 
-    def __init__(self, output, variant_position, var_of_interest):
+    def __init__(self, output, variant_position, var_of_interest, input_dir):
         self.output = output
         self.variant_pos = variant_position
         self.var_of_interest = var_of_interest
+        self.input_dir = input_dir
 
     def check_arguments(self, args_list):
         if len(args_list) == 0:
             sys.exit('this.py output format1:file1 format2:file2 ... ...')
 
     def create_file_dict(self, args_list, var_of_interest):
+        print(len(args_list))
         files = {}
         for f in range(0, len(args_list)):
+            print(args_list[f])
             # making the files match the variant
             underscore_pos = args_list[f].split(":")[1].find("_")
             dot_pos = args_list[f].split(":")[1].find(".")
             software_name = args_list[f].split(":")[1][:underscore_pos]
             file_tag = args_list[f].split(":")[1][dot_pos:]
-            filename = software_name+"_"+var_of_interest+file_tag
-            print(filename)
+
+            filename = "".join([software_name, "_", var_of_interest, file_tag])
+
+            full_filename = "".join([self.input_dir, "/", filename])
+
             # writing the software name and file name to a dictionary
-            files[args_list[f].split(':')[0]] = filename
+            files[args_list[f].split(':')[0]] = full_filename
 
         print('input {0} files: {1}'.format(
             len(files), ' '.join(files.keys())))
@@ -142,7 +149,7 @@ class Output_Comparer:
 
         allagree = open(self.output+'.allpair.txt', 'w')
 
-        allagree_path = self.output+'.allpair.txt'
+        allagree_path = "".join([self.output, '.allpair.txt'])
 
         sumtab.write('chr\tpos\tsource\t{}\n'.format(
             '\t'.join(allcomb.keys())))
@@ -232,61 +239,79 @@ class Output_Comparer:
         dataframe_to_write = allpair_df_max_pairs[allpair_df_max_pairs["pos"]
                                                   == bp_before_variant]
 
-        df_columns_list = list(dataframe_to_write.columns)
+        write_path = "".join([self.output, ".", str(bp_before_variant),
+                              "_", str(bp_after_variant), ".allpair.txt"])
 
-        write_path = self.output+"."+str(bp_before_variant) + \
-            "_"+str(bp_after_variant)+".allpair.txt"
         print(f"writing to {write_path}")
 
         dataframe_to_write.to_csv(
             write_path, header=False, sep=" ", index=None, mode='a', na_rep='NA')
 
+        self.reformat_file(allpair_file_path, str(
+            bp_before_variant), str(bp_after_variant))
 
-def run(args):
-    print("running")
-    for variant_info_tuple in zip(args.output, args.var_pos, args.var_of_interest):
+    def reformat_file(self, file: str, bp_before_variant: str, bp_after_variant: str):
 
-        print(variant_info_tuple)
+        shared_segment_file = None
 
-        output = str(variant_info_tuple[0])
+        write_path = "".join([self.output, ".", bp_before_variant,
+                              "_", bp_after_variant, ".allpair.new.txt"])
 
-        var_pos = variant_info_tuple[1]
+        print(write_path)
 
-        var_of_interest = str(variant_info_tuple[2])
+        try:
+            shared_segment_file = pd.read_csv(file, sep=" ", header=None)
 
-        x = Output_Comparer(output, var_pos, var_of_interest)
+        except FileNotFoundError:
+            print("The file {} was not found.".format(file))
 
-        x.check_arguments(args.input)
+        except:
+            print("The file {} requires a different delimiter".format(file))
 
-        file_dict = x.create_file_dict(args.input, var_of_interest)
+            shared_segment_file = pd.read_csv(file, sep="\t", header=None)
 
-        first_line_dict = x.read_first_line(file_dict)
+        shared_segment_file = shared_segment_file.dropna()
 
-        allcomb, combtab = x.define_input_combinations(file_dict)
+        new_df = pd.DataFrame()
 
-        x.write_to_file(allcomb, combtab, first_line_dict)
+        for i in range(0, len(shared_segment_file)):
 
+            row = shared_segment_file.iloc[i]
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="This script compares the output of the Shared_segment_Formatter_CLI.py to each other and combines them into one")
+            top_df = row[:4].to_frame().rename({i: "Pairs"}, axis=1)
 
-    parser.add_argument("-o", '--output', help="This argument just list the output terms that the files will be written to",
-                        dest="output", type=str, nargs="+", required=True)
+            if row[4] == NaN:
+                continue
 
-    parser.add_argument("-i", '--input', help="This argument just list the different files as input",
-                        dest="input", type=str, nargs="+", required=True)
+            row2 = row[4].split(" ")
 
-    parser.add_argument("-p", "--var_pos", help="This argument tells the variant position. It is used to chose a position range for the pair.list.",
-                        dest="var_pos", type=int, nargs="+", required=True)
+            bottom_df = pd.DataFrame(row2, columns=["Pairs"])
 
-    parser.add_argument("-v", "--var_of_interest", help="This argument list which variants are being investigated",
-                        dest="var_of_interest", nargs="+", type=str, required=True)
+            total_df = pd.concat([top_df, bottom_df], axis=0)
 
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
+            if new_df.empty:
+                new_df = total_df
 
+            else:
+                new_df = pd.concat([new_df, total_df], axis=0)
 
-if __name__ == "__main__":
-    main()
+        new_df = new_df.reset_index().drop(["index"], axis=1)
+
+        # new_df.to_csv(input("Enter File name: "), na_rep="NA")
+
+        shared_segment_file = shared_segment_file.T.reset_index()
+        shared_segment_file = shared_segment_file.drop(["index"], axis=1)
+
+        first_row = shared_segment_file.iloc[0].str.split(
+            "\t")
+
+        first_row_df = pd.DataFrame(first_row[0])
+        first_row_df = first_row_df.rename(columns={0: "Pairs"})
+
+        shared_segment_file = shared_segment_file.rename(columns={
+            0: "Pairs"})
+
+        new_df = pd.concat(
+            [first_row_df, shared_segment_file.iloc[1:]], axis=0)
+
+        new_df.to_csv(write_path)

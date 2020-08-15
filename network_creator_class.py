@@ -2,6 +2,9 @@ import numpy as np
 from numpy.core.numeric import NaN
 import pandas as pd
 import re
+import os.path
+from os import path
+
 from graphviz import Digraph
 from check_directory import check_dir
 from file_exist_checker import Check_File_Exist
@@ -9,7 +12,7 @@ from file_exist_checker import Check_File_Exist
 
 class Network_Img_Maker(Check_File_Exist):
 
-    def __init__(self, segments_file, variant_file, output_path, logger):
+    def __init__(self, segments_file, variant_file, output_path: str, logger):
         self.file = segments_file
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file
@@ -27,14 +30,6 @@ class Network_Img_Maker(Check_File_Exist):
                                        == variant_of_interest]
 
         iid_list = variant_df_subset["IID"].values.tolist()
-
-        MyFile = open(
-            self.output_path+"/carrierlist.txt", 'w')
-
-        for element in iid_list:
-            MyFile.write(element)
-            MyFile.write('\n')
-        MyFile.close()
 
         print(f"The number of carriers identified are {len(iid_list)}")
 
@@ -91,9 +86,6 @@ class Network_Img_Maker(Check_File_Exist):
         final_df = loaded_df[(loaded_df["Pair_id1"].isin(iid_list)) & (
             loaded_df["Pair_id2"].isin(iid_list))]
 
-        print(final_df["Pair_id1"].isin(iid_list).all())
-        print(final_df["Pair_id2"].isin(iid_list).all())
-
         print(
             f"There were {len(final_df)} pairs found within the segment file at {self.file}")
         print("\n")
@@ -101,10 +93,28 @@ class Network_Img_Maker(Check_File_Exist):
         self.log_file.info(
             f"There where {final_df} pairs found within the segment file at {self.file}")
 
-        print(self.output_path+"/pairs2.csv")
         final_df.to_csv(self.output_path+"/pairs.csv")
 
         return final_df
+    ################################################################
+
+    def carriers_in_network(self, iid_list, subset_df, ind_in_networks_df, var_of_interest):
+        '''This function tells the percent of carriers who are in these networks'''
+
+        id1_set = set(subset_df.Pair_id1.values.tolist())
+
+        id2_set = set(subset_df.Pair_id2.values.tolist())
+
+        total_carriers_set = id1_set | id2_set
+
+        carriers_in_network = sum(
+            item in total_carriers_set for item in set(iid_list))
+
+        percent_in_networks = carriers_in_network/len(iid_list)*100
+
+        ind_in_networks_df[var_of_interest] = percent_in_networks
+
+        return ind_in_networks_df
 
     ################################################################
 

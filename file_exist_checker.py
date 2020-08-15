@@ -20,8 +20,8 @@ class Check_File_Exist:
 
         try:
 
-            file = pd.read_csv(self.file, sep=separator,
-                               names=column_names, header=header_value, skiprows=skip_rows)
+            file_df = pd.read_csv(self.file, sep=separator,
+                                  names=column_names, header=header_value, skiprows=skip_rows)
 
         except FileNotFoundError:
 
@@ -33,4 +33,4 @@ class Check_File_Exist:
 
             sys.exit(1)
 
-        return file
+        return file_df

@@ -1,39 +1,25 @@
 #! /usr/bin/env python
 import logging
 import argparse
+import os.path
+from os import path
 
 from identify_single_var_carrier import totalVariantID, singleVariantAnalysis
 from SearchPedigree import searchPedigree
 from allele_count import allele_counts
 from identify_multi_var_carriers import multiVariantAnalysis
 from create_networks import create_networks
+from csv_writer_class import Csv_Writer_Object
 
 
 def run(args):
 
-    if args.analysis == "total":
-        log_format = '%(asctime)-15s - %(levelname)s : %(message)s'
-
-        logging.basicConfig(
-            filename=args.output+'/total_variant_analysis.log', level=logging.INFO,
-            format=log_format)
-
-        logging.info(
-            'Generating a list of IIDs who carry a desired variant...')
-
-        print("generating list of IIDs who carry a desired variant....")
-
-        totalVariantID(args.input, args.output, args.pop_info, args.pop_code)
-
-        logging.info(
-            'Finished creating a list of individuals carrying multiple variants')
-
-    elif args.analysis == "multi":
+    if args.analysis == "multi":
 
         log_format = '%(asctime)s - %(levelname)s : %(message)s'
 
         logging.basicConfig(
-            filename=args.output+'/multi_variant_analysis.log', level=logging.INFO,
+            filename="".join([args.output, '/multi_variant_analysis.log']), level=logging.INFO,
             format=log_format)
 
         logging.info(
@@ -51,8 +37,8 @@ def run(args):
 
         log_format = '%(asctime)s - %(levelname)s : %(message)s'
 
-        logging.basicConfig(filename=args.output +
-                            '/single_variant_analysis.log', level=logging.INFO,
+        logging.basicConfig(filename="".join([args.output,
+                                              '/single_variant_analysis.log']), level=logging.INFO,
                             format=log_format)
 
         logging.info("generating list of individuals at each probe id...")
@@ -69,8 +55,8 @@ def run(args):
 
         log_format = '%(asctime)s - %(levelname)s : %(message)s'
 
-        logging.basicConfig(filename=args.output +
-                            '/search_pedigree_analysis.log', level=logging.INFO,
+        logging.basicConfig(filename="".join([args.output,
+                                              '/search_pedigree_analysis.log']), level=logging.INFO,
                             format=log_format)
 
         logging.info(
@@ -85,8 +71,8 @@ def run(args):
 
         log_format = '%(asctime)s - %(levelname)s : %(message)s'
 
-        logging.basicConfig(filename=args.output +
-                            '/allele_count_analysis.log', level=logging.INFO,
+        logging.basicConfig(filename="".join([args.output,
+                                              '/allele_count_analysis.log']), level=logging.INFO,
                             format=log_format)
 
         logging.info(
@@ -98,19 +84,43 @@ def run(args):
 
     elif args.analysis == "draw_networks":
 
-        log_format = '%(asctime)s - %(levelname)s : %(message)s'
-
-        logging.basicConfig(filename=args.output +
-                            '/drawing_networks.log', level=logging.INFO,
-                            format=log_format)
-
-        logging.info(
-            "Drawing networks for all individuals identified as shared segments...")
-
         print("generating pdf files of networks of individuals who share segments...")
 
-        create_networks(args.segments_file, args.var_file,
-                        args.var, args.output)
+        # being able to draw networks for numerous variants
+        carrier_in_network_dict = dict()
+
+        for info_tuple in zip(args.segments_file, args.var_file, args.var):
+
+            print(info_tuple)
+            segment_file = info_tuple[0]
+            variant_file = info_tuple[1]
+            var_of_interest = info_tuple[2]
+            output = "".join([args.output, var_of_interest])
+
+            if not path.exists(output):
+                os.mkdir(output)
+
+            log_format = '%(asctime)s - %(levelname)s : %(message)s'
+
+            logging.basicConfig(filename="".join([output,
+                                                  '/drawing_networks.log']), level=logging.INFO,
+                                format=log_format)
+
+            logging.info(
+                "Drawing networks for all individuals identified as shared segments...")
+
+            carrier_in_network_dict = create_networks(segment_file, variant_file, carrier_in_network_dict,
+                                                      var_of_interest, output)
+
+        logger = logging.getLogger(args.output+'/carriers_in_network.log')
+
+        # Writing the dictionary to a csv file
+        csv_writer = Csv_Writer_Object(
+            carrier_in_network_dict, args.output, "carriers_in_networks.csv", logger)
+
+        csv_writer.log_file_path()
+
+        csv_writer.write_to_csv()
 
 
 def main():
@@ -137,13 +147,13 @@ def main():
                         dest="fam_file", type=str, default=False)
 
     parser.add_argument("--shared_segments_file", help="This argument provides a path to the list of shared segments that can be used to form networks",
-                        dest="segments_file", type=str, default=False)
+                        dest="segments_file", type=str, nargs="+", default=False)
 
     parser.add_argument("--variant_file", help="This argument provides a path to a file that list all individuals that carry a specific variant",
-                        dest="var_file", type=str, default=False)
+                        dest="var_file", nargs="+", type=str, default=False)
 
     parser.add_argument("--var_of_interest", help="This argument passes a variant of interest that can filter down dataframes when trying to draw networks.",
-                        dest="var", type=str, default=False)
+                        dest="var", type=str, nargs="+", default=False)
 
     parser.add_argument("--pop_info", help="This argument provides the file path to a file containing the population distribution of a dataset for each grid. This file should be a text file and at least contain two columns, where one column is 'Pop', the population code for each grid based on 1000 genomes, and then the second column is 'grid', which list the IIDs for each each grid.", dest="pop_info", type=str, required=False)
 

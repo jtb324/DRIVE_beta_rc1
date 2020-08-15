@@ -22,7 +22,7 @@ class newPOS:
 
 class Shared_Segment_Convert(newPOS):
 
-    def __init__(self, shared_segment_file, iid_file, output_path, ibd_program_used, min_cM_threshold, thread, base_position):
+    def __init__(self, shared_segment_file, iid_file, output_path, ibd_program_used, min_cM_threshold, thread, base_position, variant_id):
         self.segment_file = str(shared_segment_file)
         self.iid_file = str(iid_file)
         self.output = str(output_path)
@@ -31,8 +31,7 @@ class Shared_Segment_Convert(newPOS):
         self.thread = int(thread)
         self.bp = int(base_position)
         # This gets the name of the variant of interest assuming it is input as a text file
-        self.variant_name = re.findall(
-            "shared_segment_variants/(.*)", self.iid_file)[0][:-4]
+        self.variant_name = variant_id
 
         # Printing the initialized
         print('Input: {0}'.format(self.segment_file))
@@ -224,10 +223,8 @@ class Shared_Segment_Convert(newPOS):
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
-        write_path = self.output + '_' + self.variant_name + \
-            '.chr' + str(CHR) + '.small.txt.gz'
-
-        print(write_path)
+        write_path = "".join([self.output, '_', self.variant_name,
+                              '.chr', str(CHR), '.small.txt.gz'])
 
         out = gzip.open(write_path, 'wt')
 
@@ -270,10 +267,7 @@ class Shared_Segment_Convert(newPOS):
         IBDdata[str(i)] = []
         out.close()
 
-        print("entering the IBDsumm function...")
-
     def run_parallel(self, IBDdata, IBDindex, parameter_dict, uniqID):
-        print("initializing the parallel run")
 
         pool = mp.Pool(self.thread)
 

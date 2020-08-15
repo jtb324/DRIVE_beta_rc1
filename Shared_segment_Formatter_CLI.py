@@ -1,9 +1,8 @@
 #!/usr/bin/python
 
-import sys  # THese are modules used
+# THese are modules used
 import argparse
-import gzip
-import multiprocessing as mp
+import pandas as pd
 
 from IBDinput_byBP_classes import Shared_Segment_Convert
 
@@ -13,14 +12,24 @@ from IBDinput_byBP_classes import Shared_Segment_Convert
 
 def run(args):
     print("running")
-    for variant__info_tuple in zip(args.pheno, args.bp):
+    # reading the variant baseposition txt file into a dataframe
+    variant_bp_df = pd.read_csv(args.bp, header=None, names=[
+                                "output_file_name", "variant_bp", "variant_id"], sep=" ")
+
+    variant_bp_list = variant_bp_df.variant_bp.values.tolist()
+
+    variant_id_list = variant_bp_df.variant_id.values.tolist()
+    # splitting the variant basepair positions into a list
+    for variant__info_tuple in zip(args.pheno, variant_bp_list, variant_id_list):
 
         pheno_file = str(variant__info_tuple[0])
 
         variant_position = int(variant__info_tuple[1])
 
+        variant_id = str(variant__info_tuple[2])
+
         ibd_file_converter = Shared_Segment_Convert(
-            args.input, pheno_file, args.output, args.format, args.min, args.thread, variant_position)
+            args.input, pheno_file, args.output, args.format, args.min, args.thread, variant_position, variant_id)
 
         parameter_dict = ibd_file_converter.generate_parameters()
 
@@ -55,7 +64,7 @@ def main():
                         dest="thread", type=str, required=True)
 
     parser.add_argument(
-        "-b", "--bp", help="This argument specifies the nucleotide position of the variant of interest", dest="bp", nargs="+", type=str, required=True)
+        "-b", "--bp", help="This argument specifies the nucleotide position of the variant of interest", dest="bp", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

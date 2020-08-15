@@ -30,10 +30,14 @@ def totalVariantID(recodeFile, writeLocation, pop_info, pop_code):
 
     logger.info('Using raw recode file found at {}'.format(recodeFile[0]))
 
-    recode_file = recodeFile[0]
+    # checking if the recoded file exist
+    file_exist_checker = Check_File_Exist(recodeFile[0], logger)
+
+    recode_file_df = file_exist_checker.check_file_exist()
+
     # Check to subset the recodeFile
     if pop_code:
-        dataset_filter = Pop_Filter(pop_info, recodeFile[0])
+        dataset_filter = Pop_Filter(pop_info, recode_file_df)
 
         pop_info_df, recode_df = dataset_filter.load_files()
 
@@ -43,47 +47,29 @@ def totalVariantID(recodeFile, writeLocation, pop_info, pop_code):
         recode_file_df = dataset_filter.filter_recode_df(
             pop_info_subset_df, recode_df)
 
-    if path.exists(recodeFile[0]):
+    variant_str = recode_file_df.columns.tolist()[6]
 
-        with open(recodeFile[0]) as geno_file:
+    variant_df_subset = recode_file_df[recode_file_df[variant_str].isin([
+                                                                        1, 2])]
 
-            headerLine = next(geno_file)  # This skips the 1st row
+    iid_list = variant_df_subset.IID.values.tolist()
 
-            # This next two lines create lists for the total variants and the multivariants ids
-            totalVariantList = []
+    print("The total number of individual carrier of at least one desired variant is: {}".format(
+        len(iid_list)))
 
-            for row in geno_file:  # This iterates through each row in the file
+    logger.info("The total number of individual carrier of at least one desired variant is: {}".format(
+        len(iid_list)))
 
-                row = row.split()  # This will split the row by white space
+    writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
 
-                genoRow = row[6:]
+    MyFile = open(
+        writeDirectory, 'w')
 
-                if '1' in genoRow or '2' in genoRow:
+    for element in iid_list:
+        MyFile.write(element)
+        MyFile.write('\n')
+    MyFile.close()
 
-                    totalVariantList.append(row[1])
-
-            print("The total number of individual carrier of at least one desired variant is: {}".format(
-                len(totalVariantList)))
-
-            logger.info("The total number of individual carrier of at least one desired variant is: {}".format(
-                len(totalVariantList)))
-
-            writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
-
-            MyFile = open(
-                writeDirectory, 'w')
-
-            for element in totalVariantList:
-                MyFile.write(element)
-                MyFile.write('\n')
-            MyFile.close()
-
-    else:
-
-        print("The raw recoded file at {} was not found.".format(
-            recodeFile[0]))
-        logger.error(
-            "The raw recoded file at {} was not found.".format(recodeFile[0]))
 
 ############################################################################################
 # This function determines all the individuals who have a specific variant
@@ -92,7 +78,7 @@ def totalVariantID(recodeFile, writeLocation, pop_info, pop_code):
 def singleVariantAnalysis(recodeFile, write_path, reformat, fileName, pop_info, pop_code):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
 
-    # totalVariantID(recodeFile, write_path)
+    totalVariantID(recodeFile, write_path, pop_info, pop_code)
 
     logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 
