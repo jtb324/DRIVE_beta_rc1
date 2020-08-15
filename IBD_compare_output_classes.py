@@ -254,11 +254,14 @@ class Output_Comparer:
 
         shared_segment_file = None
 
+        # Creating a write path for the new file that includes the bp before and after the variant and adds an ending
+        # .allpair.new.txt
         write_path = "".join([self.output, ".", bp_before_variant,
                               "_", bp_after_variant, ".allpair.new.txt"])
 
-        print(write_path)
-
+        # This try and except statement first tries to read teh file in just using a regular delimiter
+        # If that fails because of a FileNotFoundError then it says that the file at the provided
+        # directory was not found. If it fails for any other reason than it tries a different tab delimiter instead.
         try:
             shared_segment_file = pd.read_csv(file, sep=" ", header=None)
 
@@ -268,50 +271,66 @@ class Output_Comparer:
         except:
             print("The file {} requires a different delimiter".format(file))
 
-            shared_segment_file = pd.read_csv(file, sep="\t", header=None)
+            shared_segment_file = pd.read_csv(file, sep=" ", header=None, names=[
+                                              "chr", "pos", "count", "npairs", "pairs"])
 
+        # This line just insures that the shared segment file has no duplicate rows
         shared_segment_file = shared_segment_file.dropna()
 
+        # this line creates a new dataframe that will contain the reformated pairs
         new_df = pd.DataFrame()
 
-        for i in range(0, len(shared_segment_file)):
+        # This line iterates through the shared segment file
 
-            row = shared_segment_file.iloc[i]
+        pair_series = shared_segment_file.pairs
 
-            top_df = row[:4].to_frame().rename({i: "Pairs"}, axis=1)
+        print(pair_series)
 
-            if row[4] == NaN:
-                continue
+        with open(write_path, "w") as file:
 
-            row2 = row[4].split(" ")
+            for pair in pair_series:
 
-            bottom_df = pd.DataFrame(row2, columns=["Pairs"])
+                file.write("%s\n" % pair)
 
-            total_df = pd.concat([top_df, bottom_df], axis=0)
+            file.close()
 
-            if new_df.empty:
-                new_df = total_df
+        # for i in range(0, len(shared_segment_file)):
 
-            else:
-                new_df = pd.concat([new_df, total_df], axis=0)
+        #     #It pulls out the row
+        #     row = shared_segment_file.iloc[i]
 
-        new_df = new_df.reset_index().drop(["index"], axis=1)
+        #     top_df = row[:4].to_frame().rename({i: "Pairs"}, axis=1)
 
-        # new_df.to_csv(input("Enter File name: "), na_rep="NA")
+        #     if row[4] == NaN:
+        #         continue
 
-        shared_segment_file = shared_segment_file.T.reset_index()
-        shared_segment_file = shared_segment_file.drop(["index"], axis=1)
+        #     row2 = row[4].split(" ")
 
-        first_row = shared_segment_file.iloc[0].str.split(
-            "\t")
+        #     bottom_df = pd.DataFrame(row2, columns=["Pairs"])
 
-        first_row_df = pd.DataFrame(first_row[0])
-        first_row_df = first_row_df.rename(columns={0: "Pairs"})
+        #     total_df = pd.concat([top_df, bottom_df], axis=0)
 
-        shared_segment_file = shared_segment_file.rename(columns={
-            0: "Pairs"})
+        #     if new_df.empty:
+        #         new_df = total_df
 
-        new_df = pd.concat(
-            [first_row_df, shared_segment_file.iloc[1:]], axis=0)
+        #     else:
+        #         new_df = pd.concat([new_df, total_df], axis=0)
 
-        new_df.to_csv(write_path)
+        # new_df = new_df.reset_index().drop(["index"], axis=1)
+
+        # # new_df.to_csv(input("Enter File name: "), na_rep="NA")
+
+        # shared_segment_file = shared_segment_file.T.reset_index()
+        # shared_segment_file = shared_segment_file.drop(["index"], axis=1)
+
+        # first_row = shared_segment_file.iloc[0].str.split(
+        #     "\t")
+
+        # first_row_df = pd.DataFrame(first_row[0])
+        # first_row_df = first_row_df.rename(columns={0: "Pairs"})
+
+        # shared_segment_file = shared_segment_file.rename(columns={
+        #     0: "Pairs"})
+
+        # new_df = pd.concat(
+        #     [first_row_df, shared_segment_file.iloc[1:]], axis=0)
