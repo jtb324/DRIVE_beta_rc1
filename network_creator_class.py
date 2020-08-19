@@ -18,9 +18,13 @@ class Network_Img_Maker(Check_File_Exist):
         self.variant_file_list = variant_file
         self.log_file = logger
         self.output_path = output_path
+        self.network_carriers = None
+        self.var_of_interest = None
 
     def isolate_variant_list(self, variant_of_interest: str):
         '''This function will create a list of IIDs who carry a specific variant.'''
+
+        self.var_of_interest = variant_of_interest
 
         # This uses the reformated variant file
         variant_df = pd.read_csv(self.variant_file_list, sep=",")
@@ -67,7 +71,7 @@ class Network_Img_Maker(Check_File_Exist):
         loaded_df = loaded_df[bool_array]
 
         ##########################################################
-
+        # This breaks up the pairs in the dataframe so that they are easily accessible to build networks.
         for index, row in loaded_df.iterrows():
 
             row['Pair_id1'] = row["Pair_id1"][1]
@@ -86,8 +90,6 @@ class Network_Img_Maker(Check_File_Exist):
         final_df = loaded_df[(loaded_df["Pair_id1"].isin(iid_list)) & (
             loaded_df["Pair_id2"].isin(iid_list))]
 
-        print(final_df)
-
         print(
             f"There were {len(final_df)} pairs found within the segment file at {self.file}")
         print("\n")
@@ -95,31 +97,50 @@ class Network_Img_Maker(Check_File_Exist):
         self.log_file.info(
             f"There where {final_df} pairs found within the segment file at {self.file}")
 
-        final_df.to_csv(self.output_path+"/pairs.csv")
+        final_df.to_csv(
+            "".join([self.output_path, "/", self.var_of_interest, ".pairs.csv"]))
 
         return final_df
     ################################################################
 
-    def carriers_in_network(self, iid_list, subset_df, ind_in_networks_df, var_of_interest):
+    def carriers_in_network(self, iid_list, subset_df, ind_in_networks_df):
         '''This function tells the percent of carriers who are in these networks'''
 
-        print(iid_list)
         id1_set = set(subset_df.Pair_id1.values.tolist())
 
         id2_set = set(subset_df.Pair_id2.values.tolist())
 
         total_carriers_set = id1_set | id2_set
 
-        print(total_carriers_set)
-
         carriers_in_network = sum(
             item in total_carriers_set for item in set(iid_list))
 
-        print(carriers_in_network)
-
         percent_in_networks = carriers_in_network/len(iid_list)*100
 
-        ind_in_networks_df[var_of_interest] = percent_in_networks
+        ind_in_networks_df[self.var_of_interest] = percent_in_networks
+
+        # Need to make it so that there is a dataframe with the IID and then a 1 or 0 if it is in a network or not
+        # figure out which carriers from the iid_list are in networks
+        carriers_in_network_dict = {
+            "IID": [],
+            "In Network": [],
+            "Network ID": []
+        }
+
+        # This for loop checks to see if the iid in the iid_list shares a segemnt. It it will then return a 1 if
+        # the iid is a carrier or a 0 if it is not avaliable
+        for iid in iid_list:
+
+            bool_int = int(iid in total_carriers_set)
+
+            carriers_in_network_dict["IID"].append(iid)
+            carriers_in_network_dict["In Network"].append(bool_int)
+            carriers_in_network_dict["Network ID"].append(NaN)
+
+        # convert dictionary to Dataframe
+
+        self.network_carriers = pd.DataFrame(
+            carriers_in_network_dict, columns=["IID", "In Network", "Network ID"])
 
         return ind_in_networks_df
 
@@ -140,7 +161,7 @@ class Network_Img_Maker(Check_File_Exist):
 
         nodes_visited = []
         edges_drawn = []
-
+        network_number = 1
         # Creating the nodes
         for id1 in id_list:
 
@@ -193,6 +214,20 @@ class Network_Img_Maker(Check_File_Exist):
 
                         edges_drawn.append((Pair_id2, Pair_id1))
 
+                    ###########################################################################
+                    # Next section is responsible for updating which IID is in which network
+                    # Updating the self.network_carriers dataframe so that the Network id gets set to a number
+
+                    idx = self.network_carriers.index[self.network_carriers["IID"] == Pair_id1]
+
+                    self.network_carriers.loc[idx, [
+                        "Network ID"]] = str(network_number)
+
+                    idx = self.network_carriers.index[self.network_carriers["IID"] == Pair_id2]
+
+                    self.network_carriers.loc[idx, [
+                        "Network ID"]] = str(network_number)
+
                 # Catching relationships between nodes that are second degree related to id1
 
                 segments_file_subset2 = reformated_df[
@@ -228,7 +263,13 @@ class Network_Img_Maker(Check_File_Exist):
                 related_graph.edge_attr.update(arrowhead="none")
 
                 # rendering the graphs
-                related_graph.render(img_directory+"/"+id1+'.gv')
+                related_graph.render("".join([
+                    img_directory, "/", self.var_of_interest, ".network", str(network_number), '.gv']))
 
                 # Clearing the graph for the next loop
                 related_graph.clear()
+
+                network_number += 1
+
+        self.network_carriers.to_csv(
+            "".join([self.output_path, "/carriers_in_network", ".", self.var_of_interest, ".csv"]))

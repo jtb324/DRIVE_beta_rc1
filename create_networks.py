@@ -29,7 +29,7 @@ def create_networks(segments_file, variant_file, ind_in_network_dict, variant_of
         loaded_segments_file, iid_list)
 
     carrier_in_network_dict = network_drawer.carriers_in_network(
-        iid_list, network_drawer_df, ind_in_network_dict, variant_of_interest)
+        iid_list, network_drawer_df, ind_in_network_dict)
 
     network_drawer.draw_networks(network_drawer_df)
 

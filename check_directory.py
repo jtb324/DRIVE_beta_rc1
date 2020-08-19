@@ -10,6 +10,6 @@ def check_dir(output_path, directory_name):
         print("Successfully created the {} directory".format(network_directory))
 
     except FileExistsError:
-        print("{} is already an existing directory".format(network_directory))
+        pass
 
     return network_directory

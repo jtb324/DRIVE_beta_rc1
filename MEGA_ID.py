@@ -107,7 +107,7 @@ def run(args):
 
             variant_file = args.var_file
 
-            output = "".join([args.output, var_of_interest])
+            output = "".join([args.output, "network_imgs"])
 
             if not path.exists(output):
                 os.mkdir(output)
