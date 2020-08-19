@@ -3,6 +3,7 @@ import logging
 import argparse
 import os.path
 from os import path
+import pandas as pd
 
 from identify_single_var_carrier import totalVariantID, singleVariantAnalysis
 from SearchPedigree import searchPedigree
@@ -86,15 +87,26 @@ def run(args):
 
         print("generating pdf files of networks of individuals who share segments...")
 
-        # being able to draw networks for numerous variants
+        # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
         carrier_in_network_dict = dict()
 
-        for info_tuple in zip(args.segments_file, args.var_file, args.var):
+        # being able to draw networks for numerous variants
+        variant_info_df = pd.read_csv(args.var[0], sep=" ", header=None, names=[
+            "output_file_name", "variant_bp", "variant_id"])
+
+        file_name_list = variant_info_df.output_file_name.values.tolist()
+
+        variant_id_list = variant_info_df.variant_id.values.tolist()
+
+        for info_tuple in zip(args.segments_file, file_name_list, variant_id_list):
 
             print(info_tuple)
             segment_file = info_tuple[0]
-            variant_file = info_tuple[1]
+            output_file_name = info_tuple[1]
             var_of_interest = info_tuple[2]
+
+            variant_file = args.var_file
+
             output = "".join([args.output, var_of_interest])
 
             if not path.exists(output):
@@ -150,7 +162,7 @@ def main():
                         dest="segments_file", type=str, nargs="+", default=False)
 
     parser.add_argument("--variant_file", help="This argument provides a path to a file that list all individuals that carry a specific variant",
-                        dest="var_file", nargs="+", type=str, default=False)
+                        dest="var_file", type=str, default=False)
 
     parser.add_argument("--var_of_interest", help="This argument passes a variant of interest that can filter down dataframes when trying to draw networks.",
                         dest="var", type=str, nargs="+", default=False)

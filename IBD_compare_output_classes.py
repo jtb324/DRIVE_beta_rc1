@@ -20,7 +20,7 @@ class Output_Comparer:
             sys.exit('this.py output format1:file1 format2:file2 ... ...')
 
     def create_file_dict(self, args_list, var_of_interest):
-        print(len(args_list))
+
         files = {}
         for f in range(0, len(args_list)):
             print(args_list[f])
@@ -247,13 +247,13 @@ class Output_Comparer:
         dataframe_to_write.to_csv(
             write_path, header=False, sep=" ", index=None, mode='a', na_rep='NA')
 
-        self.reformat_file(allpair_file_path, str(
+        self.reformat_file(write_path, str(
             bp_before_variant), str(bp_after_variant))
 
-    def reformat_file(self, file: str, bp_before_variant: str, bp_after_variant: str):
-
-        shared_segment_file = None
-
+    def reformat_file(self, allpairs_file_path, bp_before_variant: str, bp_after_variant: str):
+        '''This function reformats the file so that the first line of the file contains the chromosome id, the bp, and information
+        about the number of pairs. Every line after line 1 contains information about the pairs. This file is given the same name 
+        as the .allpair.txt file but the ending is changed to the .allpair.new.txt'''
         # Creating a write path for the new file that includes the bp before and after the variant and adds an ending
         # .allpair.new.txt
         write_path = "".join([self.output, ".", bp_before_variant,
@@ -262,75 +262,35 @@ class Output_Comparer:
         # This try and except statement first tries to read teh file in just using a regular delimiter
         # If that fails because of a FileNotFoundError then it says that the file at the provided
         # directory was not found. If it fails for any other reason than it tries a different tab delimiter instead.
-        try:
-            shared_segment_file = pd.read_csv(file, sep=" ", header=None)
 
-        except FileNotFoundError:
-            print("The file {} was not found.".format(file))
+        with open(allpairs_file_path, "r") as allpair_file:
+            # This section opens the .allpair.new.txt file and writes the reformated text to it.
+            for row in allpair_file:
 
-        except:
-            print("The file {} requires a different delimiter".format(file))
+                # print(row)
 
-            shared_segment_file = pd.read_csv(file, sep=" ", header=None, names=[
-                                              "chr", "pos", "count", "npairs", "pairs"])
+                row = row.split(" ")
 
-        # This line just insures that the shared segment file has no duplicate rows
-        shared_segment_file = shared_segment_file.dropna()
+                top_row = row[:4]
 
-        # this line creates a new dataframe that will contain the reformated pairs
-        new_df = pd.DataFrame()
+                pair_list = row[4:]
+                # print(pair_list)
 
-        # This line iterates through the shared segment file
+                with open(write_path, "w") as file:
 
-        pair_series = shared_segment_file.pairs
+                    for info in top_row:
 
-        print(pair_series)
+                        file.write("%s\t" % info)
 
-        with open(write_path, "w") as file:
+                    file.write("\n")
 
-            for pair in pair_series:
+                    for pair in pair_list:
 
-                file.write("%s\n" % pair)
+                        # Removes extra quotation marks
+                        pair = pair.replace('"', '')
 
-            file.close()
+                        print(pair)
 
-        # for i in range(0, len(shared_segment_file)):
+                        file.write("%s\n" % pair)
 
-        #     #It pulls out the row
-        #     row = shared_segment_file.iloc[i]
-
-        #     top_df = row[:4].to_frame().rename({i: "Pairs"}, axis=1)
-
-        #     if row[4] == NaN:
-        #         continue
-
-        #     row2 = row[4].split(" ")
-
-        #     bottom_df = pd.DataFrame(row2, columns=["Pairs"])
-
-        #     total_df = pd.concat([top_df, bottom_df], axis=0)
-
-        #     if new_df.empty:
-        #         new_df = total_df
-
-        #     else:
-        #         new_df = pd.concat([new_df, total_df], axis=0)
-
-        # new_df = new_df.reset_index().drop(["index"], axis=1)
-
-        # # new_df.to_csv(input("Enter File name: "), na_rep="NA")
-
-        # shared_segment_file = shared_segment_file.T.reset_index()
-        # shared_segment_file = shared_segment_file.drop(["index"], axis=1)
-
-        # first_row = shared_segment_file.iloc[0].str.split(
-        #     "\t")
-
-        # first_row_df = pd.DataFrame(first_row[0])
-        # first_row_df = first_row_df.rename(columns={0: "Pairs"})
-
-        # shared_segment_file = shared_segment_file.rename(columns={
-        #     0: "Pairs"})
-
-        # new_df = pd.concat(
-        #     [first_row_df, shared_segment_file.iloc[1:]], axis=0)
+                    file.close()

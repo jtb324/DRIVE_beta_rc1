@@ -12,12 +12,15 @@ def create_networks(segments_file, variant_file, ind_in_network_dict, variant_of
 
     iid_list = network_drawer.isolate_variant_list(variant_of_interest)
 
+    # this line loads the provided dataframe using a tab separator with no header value. it also skips the first row
+    # which only contains information about the chr, the number of pairs. The second row and onwards list all the pairs
     loaded_segments_file = network_drawer.check_file_exist(
-        separator=",", header_value=None, skip_rows=5)
+        separator="\t", header_value=None, skip_rows=1)
 
-    loaded_segments_file = loaded_segments_file.drop(
-        [0], axis=1).rename(columns={1: "Pairs"})
+    # This just renames the first row to Pairs which can be used to identify the column later
+    loaded_segments_file = loaded_segments_file.rename(columns={0: "Pairs"})
 
+    # This just drops any empty rows in the dataframe
     if loaded_segments_file["Pairs"].isnull().any():
         loaded_segments_file = network_drawer.drop_empty_rows(
             loaded_segments_file)

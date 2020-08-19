@@ -12,14 +12,14 @@ from file_exist_checker import Check_File_Exist
 
 class Network_Img_Maker(Check_File_Exist):
 
-    def __init__(self, segments_file, variant_file, output_path: str, logger):
+    def __init__(self, segments_file, variant_file: str, output_path: str, logger):
         self.file = segments_file
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file
         self.log_file = logger
         self.output_path = output_path
 
-    def isolate_variant_list(self, variant_of_interest):
+    def isolate_variant_list(self, variant_of_interest: str):
         '''This function will create a list of IIDs who carry a specific variant.'''
 
         # This uses the reformated variant file
@@ -42,7 +42,7 @@ class Network_Img_Maker(Check_File_Exist):
         nan_value = float("NaN")
         loaded_df.replace("", nan_value, inplace=True)
         loaded_df.dropna(subset=["Pairs"], inplace=True)
-
+        print(loaded_df)
         return loaded_df
 
     def isolate_ids(self, loaded_df, iid_list):
@@ -86,6 +86,8 @@ class Network_Img_Maker(Check_File_Exist):
         final_df = loaded_df[(loaded_df["Pair_id1"].isin(iid_list)) & (
             loaded_df["Pair_id2"].isin(iid_list))]
 
+        print(final_df)
+
         print(
             f"There were {len(final_df)} pairs found within the segment file at {self.file}")
         print("\n")
@@ -101,14 +103,19 @@ class Network_Img_Maker(Check_File_Exist):
     def carriers_in_network(self, iid_list, subset_df, ind_in_networks_df, var_of_interest):
         '''This function tells the percent of carriers who are in these networks'''
 
+        print(iid_list)
         id1_set = set(subset_df.Pair_id1.values.tolist())
 
         id2_set = set(subset_df.Pair_id2.values.tolist())
 
         total_carriers_set = id1_set | id2_set
 
+        print(total_carriers_set)
+
         carriers_in_network = sum(
             item in total_carriers_set for item in set(iid_list))
+
+        print(carriers_in_network)
 
         percent_in_networks = carriers_in_network/len(iid_list)*100
 
