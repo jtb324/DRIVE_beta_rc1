@@ -15,7 +15,7 @@ class Check_File_Exist:
         self.file = file_to_check
         self.log_file = logger
 
-    def check_file_exist(self, column_names=None, separator=" ", header_value='infer', skip_rows=0):
+    def check_file_exist(self, column_names=None, separator=" ", header_value='infer', skip_rows=0) -> pd.DataFrame:
         '''This function checks if the file exist and then will either return the loaded file if it does exist or it will return an error message saying the file was note found.'''
 
         try:
