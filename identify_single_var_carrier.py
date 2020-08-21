@@ -108,10 +108,6 @@ def singleVariantAnalysis(recodeFile, write_path, reformat, fileName, pop_info, 
 
     var_dict_reformat = dict()
 
-    iid_list_reformat = []
-
-    variant_list_reformat = []
-
     for column in column_list:
 
         iid_list = []
