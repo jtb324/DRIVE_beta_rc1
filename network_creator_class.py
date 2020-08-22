@@ -20,6 +20,8 @@ class Network_Img_Maker(Check_File_Exist):
         self.output_path = output_path
         self.network_carriers = None
         self.var_of_interest = None
+        # This is used in creating an id set for drawing the networks later
+        self.id_list = None
 
     def isolate_variant_list(self, variant_of_interest: str):
         '''This function will create a list of IIDs who carry a specific variant.'''
@@ -178,13 +180,31 @@ class Network_Img_Maker(Check_File_Exist):
                 segments_file_subset = reformated_df[(reformated_df['Pair_id1']
                                                       == id1) | (reformated_df['Pair_id2'] == id1)][["Pair_id1", "Pair_id2"]]
 
-                for row in segments_file_subset.itertuples():
+                ids1_set = set(segments_file_subset.Pair_id1.values.tolist())
 
+                ids2_set = set(segments_file_subset.Pair_id2.values.tolist())
+
+                ids_list = ids1_set | ids2_set
+
+                # insert recursive function here
+                self.generate_pair_list(
+                    ids_list, reformated_df, id1)
+
+                print(self.id_list)
+
+                # Subsetting the original dataframe for this full list
+                full_subset_df = reformated_df[(reformated_df.Pair_id1.isin(self.id_list)) | (
+                    reformated_df.Pair_id2.isin(self.id_list))][["Pair_id1", "Pair_id2"]]
+
+                # iterating through each row
+                for row in full_subset_df.itertuples():
+
+                    # breaking up the tuple into each pair
                     Pair_id1 = row[1]
                     Pair_id2 = row[2]
-                    print(Pair_id1, Pair_id2)
-                    # This if statement only creates the node if it has not been made yet
-                    if Pair_id1 not in nodes_visited_set:
+
+                    # This if statements only makes Pair_id1 a node if it is not already constructed
+                    if Pair_id1 not in nodes_constructed:
 
                         related_graph.node(Pair_id1, label=Pair_id1)
 
@@ -192,18 +212,17 @@ class Network_Img_Maker(Check_File_Exist):
                         nodes_visited_set.add(Pair_id1)
 
                         nodes_constructed.add(Pair_id1)
-                        print(Pair_id1)
+
                     # This if statement only makes the second node of Pair_id2 if it has not been made yet
                     if Pair_id2 not in nodes_visited_set:
 
                         related_graph.node(Pair_id2, label=Pair_id2)
 
+                        # Keeps track of what nodes have been made
                         nodes_visited_set.add(Pair_id2)
 
                         nodes_constructed.add(Pair_id2)
-                        print(Pair_id2)
 
-                    # This checks to see if an edge has been drawn between the two ids
                     if (Pair_id1, Pair_id2) not in edges_drawn:
 
                         related_graph.edge(Pair_id1, Pair_id2)
@@ -213,7 +232,7 @@ class Network_Img_Maker(Check_File_Exist):
 
                         edges_drawn.append((Pair_id2, Pair_id1))
 
-                    ###########################################################################
+                ###########################################################################
                     # Next section is responsible for updating which IID is in which network
                     # Updating the self.network_carriers dataframe so that the Network id gets set to a number
 
@@ -227,55 +246,7 @@ class Network_Img_Maker(Check_File_Exist):
                     self.network_carriers.loc[idx, [
                         "Network ID"]] = str(network_number)
 
-                    ###########################################################################
-
-                # Catching relationships between nodes that are second degree related to id1
-                # Need to filter data frame for all the nodes constructed where either Pair_id1 or Pair_id2
-                # is in the list but the original id1
-                segments_file_subset2 = reformated_df[
-                    (reformated_df['Pair_id1'].isin(list(nodes_constructed)) | reformated_df['Pair_id2'].isin(list(nodes_constructed)))]
-
-                segments_file_subset2 = segments_file_subset2[(
-                    segments_file_subset2['Pair_id1'] != id1)]
-
-                segments_file_subset2 = segments_file_subset2[(
-                    segments_file_subset2['Pair_id2'] != id1)][["Pair_id1", "Pair_id2"]]
-
-                for row in segments_file_subset2.itertuples():
-
-                    Pair_id1 = row[1]
-                    Pair_id2 = row[2]
-
-                    # Adding pair_id1 if it has not already been added to both the nodes_visited_set and
-                    # nodes_constructed set
-                    nodes_visited_set.add(Pair_id1)
-
-                    nodes_constructed.add(Pair_id1)
-
-                    # Then add Pair_id2 to the sets if it is not already in those sets
-                    nodes_visited_set.add(Pair_id2)
-
-                    nodes_constructed.add(Pair_id2)
-
-                    print("second ids")
-                    print(Pair_id1, Pair_id2)
-
-                    # Checking to see if these second degree edges have
-                    # already been drawn. If not the edge is drawn and
-                    # then the tuple is appended to the list of edges_drawn
-
-                    if (Pair_id1, Pair_id2) not in edges_drawn:
-
-                        related_graph.edge(Pair_id1, Pair_id2)
-
-                        edges_drawn.append((Pair_id1, Pair_id2))
-
-                        edges_drawn.append((Pair_id2, Pair_id1))
-
-                    # This sets the new_id value to be Pair_id1 if the node hasn't been visited yet
-                    if Pair_id1 not in nodes_constructed:
-
-                        new_id = Pair_id1
+                ###########################################################################
 
                 # This creates a directory for the network pdf files
                 img_directory = check_dir(self.output_path, "network_images")
@@ -290,63 +261,104 @@ class Network_Img_Maker(Check_File_Exist):
                 # Clearing the graph for the next loop
                 related_graph.clear()
 
+                # This updates which network is being created
                 network_number += 1
 
-                print(nodes_visited_set)
-
+        # This writes all the network_carriers df to a csv file
         self.network_carriers.to_csv(
             "".join([self.output_path, "/carriers_in_network", ".", self.var_of_interest, ".csv"]))
+        #         # Catching relationships between nodes that are second degree related to id1
+        #         # Need to filter data frame for all the nodes constructed where either Pair_id1 or Pair_id2
+        #         # is in the list but the original id1
+        #         segments_file_subset2 = reformated_df[
+        #             (reformated_df['Pair_id1'].isin(list(nodes_constructed)) | reformated_df['Pair_id2'].isin(list(nodes_constructed)))]
 
-    # NEED TO FINISH THIS SECTION
-    def new_id_addition(self, Pair_id: str, reformated_df: pd.DataFrame, nodes_constructed: set,
-                        nodes_visited_set: set, edges_drawn: list, related_graph):
+        #         segments_file_subset2 = segments_file_subset2[(
+        #             segments_file_subset2['Pair_id1'] != id1)]
 
-        # If there is a new id then the dataframe has to be subset for the new id
-        # Need to subset the dataframe and then get all the unique values
-        if Pair_id:
-            print("using new id")
-            # new df subset that contains all variants connected to the new id
-            new_id_segment_subset = reformated_df[
-                (reformated_df['Pair_id1'] == Pair_id) | (reformated_df["Pair_id2"] == Pair_id)]
+        #         segments_file_subset2 = segments_file_subset2[(
+        #             segments_file_subset2['Pair_id2'] != id1)][["Pair_id1", "Pair_id2"]]
 
-            # need to get a list of all unique ids in each column
-            uniq_pair_id1 = set(
-                new_id_segment_subset.Pair_id1.values.tolist())
+        #         for row in segments_file_subset2.itertuples():
 
-            uniq_pair_id2 = set(
-                new_id_segment_subset.Pair_id2.values.tolist())
+        #             Pair_id1 = row[1]
+        #             Pair_id2 = row[2]
 
-            uniq_pair_ids = uniq_pair_id1 | uniq_pair_id2
+        #             # Adding pair_id1 if it has not already been added to both the nodes_visited_set and
+        #             # nodes_constructed set
+        #             nodes_visited_set.add(Pair_id1)
 
-            uniq_id_subset = reformated_df[(reformated_df['Pair_id1'].isin([uniq_pair_ids]))
-                                           & (reformated_df["Pair_id2"].isin(uniq_pair_ids))]
+        #             nodes_constructed.add(Pair_id1)
 
-            print(uniq_id_subset)
+        #             # Then add Pair_id2 to the sets if it is not already in those sets
+        #             nodes_visited_set.add(Pair_id2)
 
-            for row in uniq_id_subset.itertuples():
+        #             nodes_constructed.add(Pair_id2)
 
-                new_id1 = row[1]
-                new_id2 = row[2]
+        #             print("second ids")
+        #             print(Pair_id1, Pair_id2)
 
-                # Adding pair_id1 if it has not already been added to both the nodes_visited_set and
-                # nodes_constructed set
-                nodes_visited_set.add(new_id1)
+        #             # Checking to see if these second degree edges have
+        #             # already been drawn. If not the edge is drawn and
+        #             # then the tuple is appended to the list of edges_drawn
 
-                nodes_constructed.add(new_id1)
+        #             if (Pair_id1, Pair_id2) not in edges_drawn:
 
-                # Then add Pair_id2 to the sets if it is not already in those sets
-                nodes_visited_set.add(new_id2)
+        #                 related_graph.edge(Pair_id1, Pair_id2)
 
-                nodes_constructed.add(new_id2)
+        #                 edges_drawn.append((Pair_id1, Pair_id2))
 
-                # Checking to see if these second degree edges have
-                # already been drawn. If not the edge is drawn and
-                # then the tuple is appended to the list of edges_drawn
+        #                 edges_drawn.append((Pair_id2, Pair_id1))
 
-                if (new_id1, new_id2) not in edges_drawn:
+        #             # This sets the new_id value to be Pair_id1 if the node hasn't been visited yet
+        #             if Pair_id1 not in nodes_constructed:
 
-                    related_graph.edge(new_id1, new_id2)
+        #                 # Need to add the new_id_addition function
+        #                 self.new_id_addition(Pair_id1, reformated_df, nodes_constructed,
+        #                                      nodes_visited_set, edges_drawn, related_graph)
 
-                    edges_drawn.append((new_id1, new_id2))
+        #         # This creates a directory for the network pdf files
+        #         img_directory = check_dir(self.output_path, "network_images")
 
-                    edges_drawn.append((new_id2, new_id1))
+        #         # making the graphs undirected
+        #         related_graph.edge_attr.update(arrowhead="none")
+
+        #         # rendering the graphs
+        #         related_graph.render("".join([
+        #             img_directory, "/", self.var_of_interest, ".network", str(network_number), '.gv']))
+
+        #         # Clearing the graph for the next loop
+        #         related_graph.clear()
+
+        #         network_number += 1
+
+        #         print(nodes_visited_set)
+
+    def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame, current_id1: str) -> set:
+        '''This function identifies all the potential pair ids for '''
+
+        # First subset the dataframe for all the current ids
+        new_df_subset = segment_df[(segment_df['Pair_id1'].isin(current_id_set)) | (
+            segment_df['Pair_id2'].isin(current_id_set))][["Pair_id1", "Pair_id2"]]
+        print("Current id set")
+        print(current_id_set)
+        # These next three lines use sets to avoid duplicate values
+        # This gets all ids from the pair one column
+        id1_set = set(new_df_subset.Pair_id1.values.tolist())
+        # This gets all ids from the Pair two column
+        id2_set = set(new_df_subset.Pair_id2.values.tolist())
+        # this line takes teh union of each set to get all unique values
+        total_id_set = id1_set | id2_set
+        print("total id set")
+        print(total_id_set)
+
+        # If the total_id_set equals the current_id_set then the function stops
+        if total_id_set == current_id_set:
+            print(f"found all ids connected to the probe {current_id1}")
+            # returns the set of ids
+            self.id_list = total_id_set
+            return
+        # If the two sets are not equal then it recursively calls the function again
+        else:
+
+            self.generate_pair_list(total_id_set, segment_df, current_id1)
