@@ -5,6 +5,8 @@
 from os import path
 import pandas as pd
 import logging
+import glob
+import os
 
 ###################################################################################
 # importing necessary functions from other files
@@ -21,46 +23,29 @@ from population_filter import Pop_Filter
 # THIS NEEDS TO BE REVAMPED TO WORK WITH DATAFRAME
 
 
-def totalVariantID(recodeFile, writeLocation, pop_info, pop_code):
+def totalVariantIDList(iid_list: set, writeLocation: str, chromo_name: str):
     '''this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row.'''
 
     logger = logging.getLogger(writeLocation+'/single_variant_analysis.log')
 
-    logger.info('Determining just a list of all individuals who have carriers')
-
-    logger.info('Using raw recode file found at {}'.format(recodeFile[0]))
-
-    # checking if the recoded file exist
-    file_exist_checker = Check_File_Exist(recodeFile[0], logger)
-
-    recode_file_df = file_exist_checker.check_file_exist()
-
-    # Check to subset the recodeFile
-    if pop_code:
-        dataset_filter = Pop_Filter(pop_info, recode_file_df)
-
-        pop_info_df, recode_df = dataset_filter.load_files()
-
-        pop_info_subset_df = dataset_filter.get_pop_info_subset(
-            pop_info_df, pop_code)
-
-        recode_file_df = dataset_filter.filter_recode_df(
-            pop_info_subset_df, recode_df)
-
-    variant_str = recode_file_df.columns.tolist()[6]
-
-    variant_df_subset = recode_file_df[recode_file_df[variant_str].isin([
-                                                                        1, 2])]
-
-    iid_list = variant_df_subset.IID.values.tolist()
-
+    print(iid_list)
     print("The total number of individual carrier of at least one desired variant is: {}".format(
         len(iid_list)))
 
     logger.info("The total number of individual carrier of at least one desired variant is: {}".format(
         len(iid_list)))
 
-    writeDirectory = writePath(writeLocation, "totalVariantIDList.txt")
+    if len(chromo_name) == 34:
+
+        file_name_head = chromo_name[21:30]
+
+    elif len(chromo_name) == 35:
+
+        file_name_head = chromo_name[21:31]
+
+    file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
+
+    writeDirectory = writePath(writeLocation, file_name)
 
     MyFile = open(
         writeDirectory, 'w')
@@ -70,98 +55,143 @@ def totalVariantID(recodeFile, writeLocation, pop_info, pop_code):
         MyFile.write('\n')
     MyFile.close()
 
+###########################################################################################
 
-############################################################################################
+
+def find_all_files(input_file_path: str):
+    '''This function will find a function of all files within a specified directory'''
+    cur_dir = os.getcwd()
+
+    os.chdir(input_file_path)
+
+    recode_file_list = []
+
+    for file in glob.glob("*.raw"):
+
+        full_file_path = "".join([input_file_path, file])
+
+        recode_file_list.append((full_file_path, file))
+
+    # print(f"{len(recode_file_list)} recoded raw file found with the {os.getcwd()}")
+
+    os.chdir(cur_dir)
+
+    return recode_file_list
+
+
+###########################################################################################
 # This function determines all the individuals who have a specific variant
 
 
-def singleVariantAnalysis(recodeFile, write_path, reformat, fileName, pop_info, pop_code):
+def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fileName: str, pop_info: str, pop_code: str):
     '''This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name'''
 
-    totalVariantID(recodeFile, write_path, pop_info, pop_code)
+    recode_file_list = find_all_files(recodeFile[0])
 
-    logger = logging.getLogger(write_path+'/single_variant_analysis.log')
+    for file_tuple in recode_file_list:
 
-    file_checker = Check_File_Exist(recodeFile[0], logger)
+        if len(file_tuple[1]) == 34:
 
-    raw_file = file_checker.check_file_exist(separator=" ")
+            file_prefix = file_tuple[1][21:30]
 
-    logger.info('Using raw recode file found at {}'.format(recodeFile))
+            output_fileName = "".join([file_prefix, ".", fileName])
+        elif len(file_tuple[1]) == 35:
 
-    # subsetting the raw_file for a specific population if the population code, pop_code, is provided
+            file_prefix = file_tuple[1][21:31]
 
-    if pop_code:
+            output_fileName = "".join([file_prefix, ".", fileName])
 
-        dataset_filter = Pop_Filter(pop_info, raw_file)
+        recodeFile = file_tuple[0]
 
-        pop_info_df, recode_df = dataset_filter.load_files()
+        logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 
-        pop_info_subset_df = dataset_filter.get_pop_info_subset(
-            pop_info_df, pop_code)
+        file_checker = Check_File_Exist(recodeFile, logger)
 
-        raw_file = dataset_filter.filter_recode_df(
-            pop_info_subset_df, recode_df)
+        raw_file = file_checker.check_file_exist(separator=" ")
 
-    column_list = list(raw_file.columns[6:].values)
+        logger.info('Using raw recode file found at {}'.format(recodeFile))
 
-    var_dict = dict()
+        # subsetting the raw_file for a specific population if the population code, pop_code, is provided
 
-    var_dict_reformat = dict()
+        if pop_code:
 
-    for column in column_list:
+            dataset_filter = Pop_Filter(pop_info, raw_file)
 
-        iid_list = []
+            pop_info_df, recode_df = dataset_filter.load_files()
 
-        index_list = raw_file.index[raw_file[column].isin([1, 2])].tolist()
+            pop_info_subset_df = dataset_filter.get_pop_info_subset(
+                pop_info_df, pop_code)
 
-        for i in index_list:
-            iid_list.append(raw_file.loc[i, "IID"])
+            raw_file = dataset_filter.filter_recode_df(
+                pop_info_subset_df, recode_df)
 
-        if column in var_dict:  # This checks to see if the indexTuple is already a key in the multiVarDict
+        column_list = list(raw_file.columns[6:].values)
 
-            # If true then it just appends the IID to the value of the multiVarDict
-            var_dict[column].append(iid_list)
+        var_dict = dict()
 
-        else:
+        var_dict_reformat = dict()
 
-            # If false then it creates a new multiVarDict input with that key and value
-            var_dict[column] = iid_list
+        total_id_set = set()
+        for column in column_list:
 
-        if reformat == True:
+            iid_list = []
+
+            index_list = raw_file.index[raw_file[column].isin([1, 2])].tolist()
 
             for i in index_list:
+                iid_list.append(raw_file.loc[i, "IID"])
+                total_id_set.add(raw_file.loc[i, "IID"])
 
-                if "IID" and "Variant ID" in var_dict_reformat:
+            if column in var_dict:  # This checks to see if the indexTuple is already a key in the multiVarDict
 
-                    var_dict_reformat["IID"].append(raw_file.loc[i, "IID"])
+                # If true then it just appends the IID to the value of the multiVarDict
+                var_dict[column].append(iid_list)
 
-                    var_dict_reformat["Variant ID"].append(column)
+            else:
 
-                else:
+                # If false then it creates a new multiVarDict input with that key and value
+                var_dict[column] = iid_list
 
-                    var_dict_reformat["IID"] = [raw_file.loc[i, "IID"]]
-                    var_dict_reformat["Variant ID"] = [column]
+            if reformat == True:
 
-    if var_dict_reformat:
+                for i in index_list:
 
-        var_reformat_df = pd.DataFrame(
-            var_dict_reformat, columns=["IID", "Variant ID"])
+                    if "IID" and "Variant ID" in var_dict_reformat:
 
-        reformat_directory = check_dir(write_path, "reformated")
+                        var_dict_reformat["IID"].append(raw_file.loc[i, "IID"])
 
-        var_reformat_df.to_csv(
-            writePath(reformat_directory, "single_var_list_reformat.csv"), index=False)
+                        var_dict_reformat["Variant ID"].append(column)
 
-        logger.info('The list of IIDs for each probe id were written to this filepath, {}'.format(
-            writePath(reformat_directory, "single_var_list_reformat.csv")
-        ))
+                    else:
 
-    elif reformat and not bool(var_dict_reformat):
+                        var_dict_reformat["IID"] = [raw_file.loc[i, "IID"]]
+                        var_dict_reformat["Variant ID"] = [column]
 
-        print("There were no individuals found so there dictionary was not written to a csv file.")
+        if var_dict_reformat:
 
-    csv_writer = Csv_Writer_Object(var_dict, write_path, fileName, logger)
+            var_reformat_df = pd.DataFrame(
+                var_dict_reformat, columns=["IID", "Variant ID"])
 
-    csv_writer.log_file_path()
+            reformat_directory = check_dir(write_path, "reformated")
 
-    csv_writer.write_to_csv()
+            var_reformat_df.to_csv("".join([
+                reformat_directory, "/", file_prefix, ".single_var_list_reformat.csv"]), index=False)
+
+            logger.info('The list of IIDs for each probe id were written to this filepath, {}'.format(
+                writePath(reformat_directory, "single_var_list_reformat.csv")
+            ))
+
+        elif reformat and not bool(var_dict_reformat):
+
+            print(
+                "There were no individuals found so there dictionary was not written to a csv file.")
+
+        totalVariantIDList(total_id_set, write_path,
+                           file_tuple[1])
+
+        csv_writer = Csv_Writer_Object(
+            var_dict, write_path, output_fileName, logger)
+
+        csv_writer.log_file_path()
+
+        csv_writer.write_to_csv()

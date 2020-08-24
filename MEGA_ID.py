@@ -46,6 +46,7 @@ def run(args):
 
         print("generating list of individuals at each probe id...")
 
+        # The args.input should be a directory indicating where the raw files are located
         singleVariantAnalysis(args.input, args.output, args.compatible_format,
                               'single_variant_list.csv', args.pop_info, args.pop_code)
 
