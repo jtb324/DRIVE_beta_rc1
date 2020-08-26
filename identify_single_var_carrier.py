@@ -28,7 +28,6 @@ def totalVariantIDList(iid_list: set, writeLocation: str, chromo_name: str):
 
     logger = logging.getLogger(writeLocation+'/single_variant_analysis.log')
 
-    print(iid_list)
     print("The total number of individual carrier of at least one desired variant is: {}".format(
         len(iid_list)))
 
