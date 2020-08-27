@@ -4,7 +4,6 @@ import gzip
 from numpy.core.numeric import NaN
 import pandas as pd
 import itertools
-import argparse
 
 
 class Output_Comparer:

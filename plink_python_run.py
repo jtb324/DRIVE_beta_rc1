@@ -30,6 +30,13 @@ class PLINK_Runner:
         file_list = []
 
         for file in glob.glob("*.txt"):
+
+            if len(file) == 0:
+                print(
+                    "There were no txt files found which contained a list of variant ids to be fed to PLINK")
+
+                sys.exit(1)
+
             full_file_path = "".join([self.var_list_dir, file])
 
             print(full_file_path)

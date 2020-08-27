@@ -30,17 +30,27 @@ def run(args):
 
     for chromo_file in chr_var_file_list:
         # determining what chromosome is being evaluated
-        print(chromo_file)
-        match = re.search(r'chr\d*', chromo_file)
 
-        print(match)
+        match = re.search(r'chr\d_', chromo_file)
 
-        chr_num = match.group(0)
+        if match:
+
+            chr_num = match.group(0)
+
+            # removing the _ in the file name
+            chr_num = chr_num[:len(chr_num)-1]
+
+            # adding a .
+            chr_num = "".join([chr_num, "."])
+
+        else:
+
+            match = re.search(r'chr\d\d', chromo_file)
+
+            chr_num = match.group(0)
 
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
         for segment_file in segment_file_list:
-
-            print(segment_file)
 
             # checking if the chr_num matches
             if chr_num in segment_file:
@@ -50,21 +60,25 @@ def run(args):
                     chromo_file, args.var_file)
 
                 iid_file_list = preformater.get_iid_files(variant_directory)
-        # reading the variant baseposition txt file into a dataframe
-                print(var_info_file_path)
-                variant_bp_df = pd.read_csv(var_info_file_path, header=None, names=[
-                    "output_file_name", "variant_bp", "variant_id"], sep="\t")
+
+                # reading the variant baseposition txt file into a dataframe
+                try:
+                    variant_bp_df = pd.read_csv(var_info_file_path, header=None, names=[
+                        "output_file_name", "variant_bp", "variant_id"], sep="\t")
+
+                except FileNotFoundError:
+                    print(
+                        f"There were no variants found for the {chromo_file}")
+                    continue
 
                 print(variant_bp_df)
 
                 variant_bp_list = variant_bp_df.variant_bp.values.tolist()
-                print(variant_bp_list)
 
                 variant_id_list = variant_bp_df.variant_id.values.tolist()
-                print(variant_id_list)
 
                 for var_info_tuple in zip(variant_bp_list, variant_id_list):
-                    print(var_info_tuple)
+
                     variant_position = int(var_info_tuple[0])
 
                     variant_id = str(var_info_tuple[1])
