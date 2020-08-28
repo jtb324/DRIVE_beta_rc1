@@ -278,7 +278,7 @@ class Shared_Segment_Convert(newPOS):
 
         return IBDdata, IBDindex
 
-    def IBDsumm(self, i: int, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict):
+    def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict):
         '''This function will be used in the parallelism function'''
 
         # undoing the parameter_dict
@@ -425,12 +425,11 @@ class Shared_Segment_Convert(newPOS):
 
     def run_parallel(self, IBDdata, IBDindex, parameter_dict, uniqID):
 
-        pool = mp.Pool(self.thread)
+        pool = mp.Pool(processes=self.thread)
 
         try:
-            for i in [22]:
-                pool.apply_async(self.IBDsumm, args=(
-                    i, IBDdata, IBDindex, parameter_dict, uniqID))
+            pool.apply_async(self.IBDsumm, args=(
+                IBDdata, IBDindex, parameter_dict, uniqID))
         except:
             print("Something went wrong")
             pool.close()
