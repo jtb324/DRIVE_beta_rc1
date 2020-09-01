@@ -32,7 +32,7 @@ class Gather_IBD_Output:
             ibd_file_list.append(full_file_path)
 
         os.chdir(self.cur_dir)
-        print(ibd_file_list)
+
         return ibd_file_list
 
     def build_file_dict(self, ibd_file_list: list) -> dict:
@@ -63,15 +63,17 @@ class Gather_IBD_Output:
             # Finding the variant id of the file. file names are built so that the variant id sits
             # between the first "_" and the first "."
             for ibd_program in self.programs:
+
                 if ibd_program in ibd_file:
+
                     underscore_indx = ibd_file.find(
                         "".join([ibd_program, "_"]))
+
                     ibd_program_indx = underscore_indx+len(ibd_program)+1
 
             dot_indx = ibd_file.find(".")
 
             variant_id = ibd_file[ibd_program_indx:dot_indx]
-            print(variant_id)
             # using list comprehension to get all the files that contain that variant and chromosome
             filter_ibd_file_list = [
                 file for file in ibd_file_list if variant_id in file and chr_num in file]
@@ -84,13 +86,16 @@ class Gather_IBD_Output:
 
                     # This checks to see if the variant id is in the dictionary and that the ibd program is in the file
                     if ibd_program in file and variant_id not in file_dict.keys():
+
                         # If it is not then the
-                        file_dict[variant_id] = [
-                            "".join([ibd_program, ":", file])]
+                        file_dict[variant_id] = set()
+
+                        file_dict[variant_id].add(
+                            "".join([ibd_program, ":", file]))
 
                     elif ibd_program in file and variant_id in file_dict.keys():
 
-                        file_dict[variant_id].append(
+                        file_dict[variant_id].add(
                             "".join([ibd_program, ":", file]))
 
         return file_dict
