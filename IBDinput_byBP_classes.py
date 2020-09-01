@@ -93,6 +93,9 @@ class Pre_Shared_Segment_Converter:
         # load in the csv file that list the IIDs of grids per variant on a specific chromosome
         carrier_df = pd.read_csv(chromo_var_file, sep=",", header=None)
 
+        # Need to determine the # of rows of the carrier_df
+        carrier_df_size = len(carrier_df)
+
         # bringing in the original variant excel file to get the variant site position
         # iterate through each row of the chromosome so that
         for row in carrier_df.itertuples():
@@ -103,6 +106,25 @@ class Pre_Shared_Segment_Converter:
             # getting the list of variants and writing to a single text file for each variant in the chromosome.
             iid_list = row[2].strip("[]").replace(
                 "\'", "").replace(" ", "").split(",")
+
+            if carrier_df_size == 1:
+
+                print(
+                    f"There was only {carrier_df_size} row found within the provided list of carriers per variant")
+
+                # If this single variant has no carriers than the function returns empty strings for the
+                #var_info_file_path, variant_directory
+                # If the iid_list has no carriers thant eh first element would just be a ""
+                if iid_list[0] == "":
+
+                    return "-1", ""
+            # If the carrier df has more than one carrier it will search through all rows and just skip any row
+            # that has now carriers
+            if iid_list[0] == "":
+
+                print(
+                    f"There were no carriers found for the variant {variant_id}")
+                continue
 
             # If there are no no carriers at all in the file
             if len(iid_list) == 0:
@@ -281,6 +303,8 @@ class Shared_Segment_Convert(newPOS):
     def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict):
         '''This function will be used in the parallelism function'''
 
+        print("entering in the IBDsumm function")
+
         # undoing the parameter_dict
         id1_indx = int(parameter_dict["id1_indx"])
         id2_indx = int(parameter_dict["id2_indx"])
@@ -297,85 +321,104 @@ class Shared_Segment_Convert(newPOS):
 
         # Figuring out if the IBD estimate files are gunzipped
 
-        if self.segment_file[-3:] == '.gz':
-            data = gzip.open(self.segment_file, 'rt')
+        # if self.segment_file[-3:] == '.gz':
+        #     data = gzip.open(self.segment_file, 'rt')
 
-        else:
-            # If it is not gunzipped then the file is just normally openned
-            data = open(self.segment_file, 'rt')
+        # else:
+        #     # If it is not gunzipped then the file is just normally openned
+        #     data = open(self.segment_file, 'rt')
 
-        for line in data:  # Read through line by line
-            line = line.strip()  # This strips all the space out
-            line = line.split()  # This then splits based on the whitespace
-            id1 = str(line[id1_indx])  # This index finds the first id
-            # Then the second id which is at position 3
-            id2 = str(line[id2_indx])
-            # Then find the chromomsome atq position 5
-            CHR = str(line[chr_indx])
-            # This just ensures that the smallest start point is giving
-            start = min(int(line[str_indx]), int(line[end_indx]))
-            # This ensures the maximum endpoint is found
-            end = max(int(line[str_indx]), int(line[end_indx]))
-            cM = str(line[cM_indx])  # This gives the identified cM length
+        for chunk in pd.read_csv(self.segment_file, sep="\s+", header=None, chunksize=500000):
 
-            if id1 not in uniqID and id2 not in uniqID:
-                continue  # ignores ids that are not in the uniqID
+            # Checking to see if the ids are not in the uniqID dictionary
+            chunk_not_in_uniqID = chunk[(chunk[id1_indx].isin(
+                uniqID)) | (chunk[id2_indx].isin(uniqID))]
 
-            elif float(cM) < self.min_cM or ('unit' in vars() and str(line[unit]) != 'cM'):
-                continue  # also ignores if the cM distance is less then the specified threshold or if the unit is not specified as cM
+            print(chunk_not_in_uniqID)
 
-            elif start < self.bp and end > self.bp:  # Checks to see if the segment starts before the variant position and then if it ends after the variant position
-                if id1 in uniqID and id2 in uniqID:  # Checks to see if the ids are in the uniqID list
+            # This is reducing the dataframe to only pairs greater than min_cM threshold
+            chunk_greater_than_3_cm = chunk_not_in_uniqID[(
+                chunk_not_in_uniqID[cM_indx] >= self.min_cM)]
 
-                    if uniqID[id1] < uniqID[id2]:
-                        # If both ids are in the list then it writes the pairs to a variable pair
+            # Need to check if the unit doesn't equal cM. This only applies in the case of germline
+            try:
+                chunk_greater_than_3_cm = chunk_greater_than_3_cm[chunk_greater_than_3_cm[unit] == "cM"]
+
+            except NameError:
+                print("There is no unit parameter")
+
+            print(type(chunk_greater_than_3_cm[str_indx]))
+            print(chunk_greater_than_3_cm[str_indx])
+
+            # get remaining rows if they begin before the bp and end after the bp
+            chunk = chunk_greater_than_3_cm[(chunk_greater_than_3_cm[str_indx] < self.bp) & (
+                chunk_greater_than_3_cm[end_indx] > self.bp)]
+
+            print(chunk)
+
+            # This will iterate through each row of the filtered chunk
+            if not chunk.empty:
+
+                for row in chunk.itertuples():
+                    print(row[5])
+                    id1 = str(row[id1_indx+1])
+                    id2 = str(row[id2_indx+1])
+                    cM = str(row[cM_indx+1])
+                    CHR = str(row[chr_indx+1])
+                    start = min(int(row[str_indx+1]), int(row[end_indx+1]))
+                    end = max(int(row[str_indx+1]), int(row[end_indx+1]))
+
+                    if id1 in uniqID and id2 in uniqID:  # Checks to see if the ids are in the uniqID list
+
+                        if uniqID[id1] < uniqID[id2]:
+                            # If both ids are in the list then it writes the pairs to a variable pair
+                            pair = '{0}:{1}-{2}'.format(cM, id1, id2)
+
+                        else:
+                            # this just puts the ids in order
+                            pair = '{0}:{1}-{2}'.format(cM, id2, id1)
+
+                    elif id1 in uniqID:  # If only one id is in the uniqID then it writes it this way with the matched id in
+
                         pair = '{0}:{1}-{2}'.format(cM, id1, id2)
 
                     else:
-                        # this just puts the ids in order
                         pair = '{0}:{1}-{2}'.format(cM, id2, id1)
 
-                elif id1 in uniqID:  # If only one id is in the uniqID then it writes it this way with the matched id in
+                # start and end not in identified breakpoints
+                    if int(start) not in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
 
-                    pair = '{0}:{1}-{2}'.format(cM, id1, id2)
+                        IBDdata[CHR][str(start)] = newPOS([pair], [])
+                        IBDdata[CHR][str(end)] = newPOS([], [pair])
+                        IBDindex[CHR]['allpos'].append(int(start))
+                        IBDindex[CHR]['allpos'].append(int(end))
 
-                else:
-                    pair = '{0}:{1}-{2}'.format(cM, id2, id1)
+                    # start is not in identified breakpoints but end is
+                    elif int(start) not in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
 
-            # start and end not in identified breakpoints
-                if int(start) not in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
+                        IBDdata[CHR][str(start)] = newPOS([pair], [])
+                        IBDdata[CHR][str(end)].rem.append(str(pair))
+                        IBDindex[CHR]['allpos'].append(int(start))
+                #
+                # start is in identified breakpoints but end not
+                    elif int(start) in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
 
-                    IBDdata[CHR][str(start)] = newPOS([pair], [])
-                    IBDdata[CHR][str(end)] = newPOS([], [pair])
-                    IBDindex[CHR]['allpos'].append(int(start))
-                    IBDindex[CHR]['allpos'].append(int(end))
+                        IBDdata[CHR][str(start)].add.append(str(pair))
+                        IBDdata[CHR][str(end)] = newPOS([], [pair])
+                        IBDindex[CHR]['allpos'].append(int(end))
             #
-            # start is not in identified breakpoints but end is
-                elif int(start) not in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
+            # both start and end in identified breakpoints
+                    elif int(start) in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
 
-                    IBDdata[CHR][str(start)] = newPOS([pair], [])
-                    IBDdata[CHR][str(end)].rem.append(str(pair))
-                    IBDindex[CHR]['allpos'].append(int(start))
-            #
-            # start is in identified breakpoints but end not
-                elif int(start) in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)].add.append(str(pair))
-                    IBDdata[CHR][str(end)] = newPOS([], [pair])
-                    IBDindex[CHR]['allpos'].append(int(end))
-        #
-        # both start and end in identified breakpoints
-                elif int(start) in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)].add.append(str(pair))
-                    IBDdata[CHR][str(end)].rem.append(str(pair))
-
-        data.close()
-
-        # writing output
+                        IBDdata[CHR][str(start)].add.append(str(pair))
+                        IBDdata[CHR][str(end)].rem.append(str(pair))
 
         print('identified ' +
               str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
+
+        print(IBDindex)
+
+        print(IBDdata)
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
@@ -425,7 +468,7 @@ class Shared_Segment_Convert(newPOS):
 
     def run_parallel(self, IBDdata, IBDindex, parameter_dict, uniqID):
 
-        pool = mp.Pool(processes=self.thread)
+        pool = mp.Pool(processes=1)
 
         try:
             pool.apply_async(self.IBDsumm, args=(

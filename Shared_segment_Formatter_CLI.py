@@ -7,14 +7,24 @@ import pandas as pd
 import sys
 import os
 import shutil
+import multiprocessing as mp
 
 from IBDinput_byBP_classes import Shared_Segment_Convert, Pre_Shared_Segment_Converter
 
 ####################################################################################################
+# Creating a class to pass the inner loop
+
+
+class ContinueI(Exception):
+    pass
+
 # Initializing the parser
 
 
 def run(args):
+    # Instantiating a class object to be raised to break the inner loop
+    continue_i = ContinueI()
+
     print("running")
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
@@ -29,7 +39,8 @@ def run(args):
     # Need to make sure that the proper segment file is passed with the proper chromosome file
 
     for chromo_file in chr_var_file_list:
-        # determining what chromosome is being evaluated
+
+        print("In outer loop")
 
         match = re.search(r'chr\d_', chromo_file)
 
@@ -50,56 +61,69 @@ def run(args):
             chr_num = match.group(0)
 
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
-        for segment_file in segment_file_list:
+        try:
+            for segment_file in segment_file_list:
 
-            # checking if the chr_num matches
-            if chr_num in segment_file:
-                print("match found")
+                # checking if the chr_num matches
+                if chr_num in segment_file:
+                    print("match found")
 
-                var_info_file_path, variant_directory = preformater.create_variant_lists(
-                    chromo_file, args.var_file)
+                    var_info_file_path, variant_directory = preformater.create_variant_lists(
+                        chromo_file, args.var_file)
 
-                iid_file_list = preformater.get_iid_files(variant_directory)
+                    # This checks if the var_info_file_path and the variant_directory are empty string because
+                    # this would mean that the the chromo_file only has one variant and it has no carriers
+                    if var_info_file_path == "-1":
+                        print(
+                            f"There were no carriers in the file {chromo_file}")
+                        break
 
-                # reading the variant baseposition txt file into a dataframe
-                try:
-                    variant_bp_df = pd.read_csv(var_info_file_path, header=None, names=[
-                        "output_file_name", "variant_bp", "variant_id"], sep="\t")
+                    iid_file_list = preformater.get_iid_files(
+                        variant_directory)
 
-                except FileNotFoundError:
-                    print(
-                        f"There were no variants found for the {chromo_file}")
-                    continue
+                    # reading the variant baseposition txt file into a dataframe
+                    try:
+                        variant_bp_df = pd.read_csv(var_info_file_path, header=None, names=[
+                            "output_file_name", "variant_bp", "variant_id"], sep="\t")
 
-                print(variant_bp_df)
+                    except FileNotFoundError:
+                        print(
+                            f"There were no variants found for the {chromo_file}")
+                        continue
 
-                variant_bp_list = variant_bp_df.variant_bp.values.tolist()
+                    print(variant_bp_df)
 
-                variant_id_list = variant_bp_df.variant_id.values.tolist()
+                    variant_bp_list = variant_bp_df.variant_bp.values.tolist()
 
-                for var_info_tuple in zip(variant_bp_list, variant_id_list):
+                    variant_id_list = variant_bp_df.variant_id.values.tolist()
 
-                    variant_position = int(var_info_tuple[0])
+                    for var_info_tuple in zip(variant_bp_list, variant_id_list):
 
-                    variant_id = str(var_info_tuple[1])
+                        variant_position = int(var_info_tuple[0])
 
-                    for iid_file in iid_file_list:
+                        variant_id = str(var_info_tuple[1])
 
-                        if variant_id in iid_file:
+                        for iid_file in iid_file_list:
 
-                            pheno_file = iid_file
+                            if variant_id in iid_file:
 
-                            ibd_file_converter = Shared_Segment_Convert(
-                                segment_file, pheno_file, args.output, args.format, args.min, args.thread, variant_position, variant_id)
+                                pheno_file = iid_file
 
-                            parameter_dict = ibd_file_converter.generate_parameters()
+                                ibd_file_converter = Shared_Segment_Convert(
+                                    segment_file, pheno_file, args.output, args.format, args.min, args.thread, variant_position, variant_id)
 
-                            uniqID, dupID = ibd_file_converter.build_id_pairs()
+                                parameter_dict = ibd_file_converter.generate_parameters()
 
-                            IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+                                uniqID, dupID = ibd_file_converter.build_id_pairs()
 
-                            ibd_file_converter.run_parallel(
-                                IBDdata, IBDindex, parameter_dict, uniqID)
+                                IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+
+                                ibd_file_converter.run_parallel(
+                                    IBDdata, IBDindex, parameter_dict, uniqID)
+
+        except ContinueI:
+
+            break
 
         # delete the variant_list directory for the next iteration
         # Also delete the variant_info.txt file because this is only good for the selected values

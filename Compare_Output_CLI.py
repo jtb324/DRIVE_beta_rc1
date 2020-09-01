@@ -1,42 +1,47 @@
 import argparse
 import pandas as pd
 
-from IBD_compare_output_classes import Output_Comparer
+from IBD_compare_output_classes import Output_Comparer, Gather_IBD_Output
 
 # run function
 
 
 def run(args):
     print("running")
+    # First step gets all the file paths
+    ibd_output_collector = Gather_IBD_Output(args.input_dir, args.ibd)
 
-    variant_info_df = pd.read_csv(args.var_info, sep=" ", header=None, names=[
-        "output_file_name", "variant_bp", "variant_id"])
+    ibd_files_dict = ibd_output_collector.return_dict()
 
-    output_file_name_list = variant_info_df.output_file_name.values.tolist()
+    print(ibd_files_dict)
+    # variant_info_df = pd.read_csv(args.var_info, sep=" ", header=None, names=[
+    #     "output_file_name", "variant_bp", "variant_id"])
 
-    variant_bp_list = variant_info_df.variant_bp.values.tolist()
+    # output_file_name_list = variant_info_df.output_file_name.values.tolist()
 
-    variant_id_list = variant_info_df.variant_id.values.tolist()
+    # variant_bp_list = variant_info_df.variant_bp.values.tolist()
 
-    for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
+    # variant_id_list = variant_info_df.variant_id.values.tolist()
 
-        output = "".join([args.output, variant_info_tuple[0]])
+    # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
-        var_pos = variant_info_tuple[1]
+    #     output = "".join([args.output, variant_info_tuple[0]])
 
-        var_of_interest = str(variant_info_tuple[2])
+    #     var_pos = variant_info_tuple[1]
 
-        x = Output_Comparer(output, var_pos, var_of_interest, args.input_dir)
+    #     var_of_interest = str(variant_info_tuple[2])
 
-        x.check_arguments(args.input)
+    #     x = Output_Comparer(output, var_pos, var_of_interest, args.input_dir)
 
-        file_dict = x.create_file_dict(args.input, var_of_interest)
+    #     x.check_arguments(args.input)
 
-        first_line_dict = x.read_first_line(file_dict)
+    #     file_dict = x.create_file_dict(args.input, var_of_interest)
 
-        allcomb, combtab = x.define_input_combinations(file_dict)
+    #     first_line_dict = x.read_first_line(file_dict)
 
-        x.write_to_file(allcomb, combtab, first_line_dict)
+    #     allcomb, combtab = x.define_input_combinations(file_dict)
+
+    #     x.write_to_file(allcomb, combtab, first_line_dict)
 
 
 def main():
@@ -51,6 +56,9 @@ def main():
 
     parser.add_argument("-i", '--input', help="This argument just list the different files as input",
                         dest="input", type=str, nargs="+", required=True)
+
+    parser.add_argument("-s", '--ibd', help="This argument just list the different programs used for the ibd program",
+                        dest="ibd", type=str, nargs="+", required=True)
 
     parser.add_argument("-v", "--var_info", help="This argument list the directory to a file that has three columns,'output_file_name', 'variant_bp', 'variant_id'. Respectively, these columns list the filenames for the output file for each variant, the location of the variant, and the variant id.",
                         dest="var_info", type=str, required=True)
