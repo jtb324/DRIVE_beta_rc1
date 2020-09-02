@@ -86,7 +86,9 @@ def run(args):
 
     print("running PLINK...")
 
-    plink_runner = PLINK_Runner(args.bfile, args.var_dir)
+    for recode_option in args.recode:
+        recode_flag = "".join(["--", recode_option])
+        plink_runner = PLINK_Runner(args.bfile, args.var_dir, recode_flag)
 
 
 def main():
@@ -104,6 +106,9 @@ def main():
 
     parser.add_argument("--var_list_dir", help="This argument provides the directory of all the files that lis the variants",
                         dest="var_dir", type=str, required=True)
+
+    parser.add_argument("--recode", help="This argument tells what kind of recode you want PLINK to run",
+                        dest="recode", type=str, nargs="+", required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
