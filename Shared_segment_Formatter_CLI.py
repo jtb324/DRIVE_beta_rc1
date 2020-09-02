@@ -37,7 +37,6 @@ def run(args):
     # also need to get all of the possible variant files per chromosome
     chr_var_file_list = preformater.gather_chromosome_files()
     # Need to make sure that the proper segment file is passed with the proper chromosome file
-
     for chromo_file in chr_var_file_list:
 
         print("In outer loop")
@@ -56,14 +55,20 @@ def run(args):
 
         else:
 
-            match = re.search(r'chr\d\d', chromo_file)
+            match = re.search(r'chr\d\d_', chromo_file)
 
             chr_num = match.group(0)
+
+            # removing the _ in the file name
+            chr_num = chr_num[:len(chr_num)-1]
+
+            # adding a .
+            chr_num = "".join([chr_num, "."])
 
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
         try:
             for segment_file in segment_file_list:
-
+                # print(segment_file)
                 # checking if the chr_num matches
                 if chr_num in segment_file:
                     print("match found")

@@ -86,7 +86,7 @@ class Gather_IBD_Output:
 
                     # This checks to see if the variant id is in the dictionary and that the ibd program is in the file
                     if ibd_program in file and variant_id not in file_dict.keys():
-
+                        print(file)
                         # If it is not then the
                         file_dict[variant_id] = set()
 
@@ -108,44 +108,70 @@ class Gather_IBD_Output:
 
         return ibd_file_dict
 
+    def get_variant_bp(self, variant_id: str, original_var_file: str) -> str:
+        '''This function will get the base position of the variant'''
+
+        # reading in the variant file
+        if original_var_file[-4:] == ".csv":
+
+            var_df = pd.read_csv(original_var_file, sep=",")
+
+        # check if it is an excel file
+        elif original_var_file[-5:] == ".xlsx":
+            # Load in file using pd.read_excel if it is an excel file
+            var_df = pd.read_excel(original_var_file)
+        print(variant_id)
+
+        var_bp_array = var_df[var_df.SNP ==
+                              variant_id[:(len(variant_id)-2)]].site.values
+
+        var_bp = var_bp_array[0]
+        print(type(var_bp))
+
+        return str(var_bp)
+
+
 ############################################################################
 # This is the class that combines the output from all three programs
 
 
 class Output_Comparer:
 
-    def __init__(self, output, variant_position, var_of_interest, input_dir):
+    def __init__(self, output: str, variant_position: int, var_of_interest: str, input_dir, ibd_file_list: list):
         self.output = output
         self.variant_pos = variant_position
         self.var_of_interest = var_of_interest
         self.input_dir = input_dir
+        self.ibd_file_list = ibd_file_list
 
     def check_arguments(self, args_list):
         '''This function checks how many arguments are passed'''
         if len(args_list) == 0:
-            sys.exit('this.py output format1:file1 format2:file2 ... ...')
+            sys.exit("there were ibd files found for the provided variants")
 
-    def create_file_dict(self, args_list, var_of_interest):
+    def create_file_dict(self, args_list: list, var_of_interest: str) -> dict:
 
         files = {}
         for f in range(0, len(args_list)):
             print(args_list[f])
             # making the files match the variant
-            underscore_pos = args_list[f].split(":")[1].find("_")
-            dot_pos = args_list[f].split(":")[1].find(".")
-            software_name = args_list[f].split(":")[1][:underscore_pos]
-            file_tag = args_list[f].split(":")[1][dot_pos:]
+            # underscore_pos = args_list[f].split(":")[1].find("_")
+            # dot_pos = args_list[f].split(":")[1].find(".")
+            # software_name = args_list[f].split(":")[1][:underscore_pos]
+            # file_tag = args_list[f].split(":")[1][dot_pos:]
 
-            filename = "".join([software_name, "_", var_of_interest, file_tag])
+            software_name = args_list[f].split(':', 1)[0]
 
-            full_filename = "".join([self.input_dir, "/", filename])
+            # full_filename = "".join([self.input_dir, "/", filename])
+
+            file_name = args_list[f].split(':', 1)[1]
 
             # writing the software name and file name to a dictionary
-            files[args_list[f].split(':')[0]] = full_filename
+            files[software_name] = file_name
 
         print('input {0} files: {1}'.format(
             len(files), ' '.join(files.keys())))
-
+        print(files)
         return files
 
     def read_first_line(self, files):

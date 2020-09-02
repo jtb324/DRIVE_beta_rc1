@@ -334,8 +334,6 @@ class Shared_Segment_Convert(newPOS):
             chunk_not_in_uniqID = chunk[(chunk[id1_indx].isin(
                 uniqID)) | (chunk[id2_indx].isin(uniqID))]
 
-            print(chunk_not_in_uniqID)
-
             # This is reducing the dataframe to only pairs greater than min_cM threshold
             chunk_greater_than_3_cm = chunk_not_in_uniqID[(
                 chunk_not_in_uniqID[cM_indx] >= self.min_cM)]
@@ -347,20 +345,15 @@ class Shared_Segment_Convert(newPOS):
             except NameError:
                 print("There is no unit parameter")
 
-            print(type(chunk_greater_than_3_cm[str_indx]))
-            print(chunk_greater_than_3_cm[str_indx])
-
             # get remaining rows if they begin before the bp and end after the bp
             chunk = chunk_greater_than_3_cm[(chunk_greater_than_3_cm[str_indx] < self.bp) & (
                 chunk_greater_than_3_cm[end_indx] > self.bp)]
-
-            print(chunk)
 
             # This will iterate through each row of the filtered chunk
             if not chunk.empty:
 
                 for row in chunk.itertuples():
-                    print(row[5])
+
                     id1 = str(row[id1_indx+1])
                     id2 = str(row[id2_indx+1])
                     cM = str(row[cM_indx+1])
@@ -415,10 +408,6 @@ class Shared_Segment_Convert(newPOS):
 
         print('identified ' +
               str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
-
-        print(IBDindex)
-
-        print(IBDdata)
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE

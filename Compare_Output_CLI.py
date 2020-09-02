@@ -14,34 +14,41 @@ def run(args):
     ibd_files_dict = ibd_output_collector.return_dict()
 
     print(ibd_files_dict)
-    # variant_info_df = pd.read_csv(args.var_info, sep=" ", header=None, names=[
-    #     "output_file_name", "variant_bp", "variant_id"])
 
-    # output_file_name_list = variant_info_df.output_file_name.values.tolist()
+    # Needs to be a function that can get the variant bp and make the output name
+    for variant in ibd_files_dict.keys():
 
-    # variant_bp_list = variant_info_df.variant_bp.values.tolist()
+        file_list = list(ibd_files_dict[variant])
 
-    # variant_id_list = variant_info_df.variant_id.values.tolist()
+        print(file_list)
+
+        variant_bp = ibd_output_collector.get_variant_bp(
+            variant, args.var_list)
+
+        output_file_name = "".join(["IBD_", variant])
 
     # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
-    #     output = "".join([args.output, variant_info_tuple[0]])
+        full_output_path = "".join([args.output, output_file_name])
 
-    #     var_pos = variant_info_tuple[1]
+        print(full_output_path)
 
-    #     var_of_interest = str(variant_info_tuple[2])
+        print(args.input_dir)
 
-    #     x = Output_Comparer(output, var_pos, var_of_interest, args.input_dir)
+        print(variant_bp)
 
-    #     x.check_arguments(args.input)
+        output_comparer = Output_Comparer(full_output_path, int(
+            variant_bp), variant, args.input_dir, file_list)
 
-    #     file_dict = x.create_file_dict(args.input, var_of_interest)
+        output_comparer.check_arguments(file_list)
 
-    #     first_line_dict = x.read_first_line(file_dict)
+        file_dict = output_comparer.create_file_dict(file_list, variant)
 
-    #     allcomb, combtab = x.define_input_combinations(file_dict)
+        first_line_dict = output_comparer.read_first_line(file_dict)
 
-    #     x.write_to_file(allcomb, combtab, first_line_dict)
+        allcomb, combtab = output_comparer.define_input_combinations(file_dict)
+
+        output_comparer.write_to_file(allcomb, combtab, first_line_dict)
 
 
 def main():
@@ -54,14 +61,11 @@ def main():
     parser.add_argument("-d", "--input_dir", help="This argument list the directory that the input files are found in.",
                         dest="input_dir", type=str, required=True)
 
-    parser.add_argument("-i", '--input', help="This argument just list the different files as input",
-                        dest="input", type=str, nargs="+", required=True)
+    parser.add_argument("-c", '--var_list', help="This argument just list the filepath to the original file containing the variants and information about each variant",
+                        dest="var_list", type=str, required=True)
 
     parser.add_argument("-s", '--ibd', help="This argument just list the different programs used for the ibd program",
                         dest="ibd", type=str, nargs="+", required=True)
-
-    parser.add_argument("-v", "--var_info", help="This argument list the directory to a file that has three columns,'output_file_name', 'variant_bp', 'variant_id'. Respectively, these columns list the filenames for the output file for each variant, the location of the variant, and the variant id.",
-                        dest="var_info", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
