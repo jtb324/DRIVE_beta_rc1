@@ -4,41 +4,204 @@ import gzip
 from numpy.core.numeric import NaN
 import pandas as pd
 import itertools
+import glob
+import os
+import re
+
+############################################################################
+# Need a prior class that can gather the correct variant .small.txt.gz files per chromosome
+
+
+class Gather_IBD_Output:
+
+    def __init__(self, shared_segment_directory: str, ibd_programs_used: list, map_file_dir: str) -> dict:
+        self.segment_directory = shared_segment_directory
+        self.cur_dir = os.getcwd()
+        self.programs = ibd_programs_used
+        self.map_file_dir = map_file_dir
+
+    def gather_ibd_files(self) -> list:
+        '''This function will get all of the files for a specific chromosome'''
+        os.chdir(self.segment_directory)
+
+        ibd_file_list = []
+
+        for file in glob.glob("*.small.txt.gz"):
+
+            full_file_path = "".join([self.segment_directory, file])
+
+            ibd_file_list.append(full_file_path)
+
+        os.chdir(self.cur_dir)
+
+        return ibd_file_list
+
+    def get_map_files(self) -> list:
+        '''This function returns a list of all the map files'''
+        os.chdir(self.map_file_dir)
+
+        map_file_list = []
+
+        for file in glob.glob("*.map"):
+
+            full_file_path = "".join([self.map_file_dir, file])
+
+            map_file_list.append(full_file_path)
+
+        os.chdir(self.cur_dir)
+
+        return map_file_list
+
+    def build_file_dict(self, ibd_file_list: list) -> dict:
+
+        file_dict = dict()
+        # iterate through the files to build the dictionary
+        for ibd_file in ibd_file_list:
+
+            match = re.search(r'.chr\d\.', ibd_file)
+
+            # find chromosome number
+            if match:
+
+                chr_num = match.group(0)
+
+            else:
+
+                match = re.search(r'.chr\d\d\.', ibd_file)
+
+                chr_num = match.group(0)
+
+            # Finding the variant id of the file. file names are built so that the variant id sits
+            # between the first "_" and the first "."
+            for ibd_program in self.programs:
+
+                if ibd_program in ibd_file:
+
+                    underscore_indx = ibd_file.find(
+                        "".join([ibd_program, "_"]))
+
+                    ibd_program_indx = underscore_indx+len(ibd_program)+1
+
+            dot_indx = ibd_file.find(".")
+
+            variant_id = ibd_file[ibd_program_indx:dot_indx]
+
+            # There are a few variants that have a dot in the middle and therefore the above code would split it.
+            # Therefore if there is no number in the string than it enters this if statement and then finds the next dot.
+            if not any(map(str.isdigit, variant_id)):
+                # This finds the second dot in the string
+                dot_indx = ibd_file.find(".", dot_indx+1)
+
+                # This finds the full variant id
+                variant_id = ibd_file[ibd_program_indx:dot_indx]
+
+            # using list comprehension to get all the files that contain that variant and chromosome
+            filter_ibd_file_list = [
+                file for file in ibd_file_list if variant_id in file and chr_num in file]
+
+            # match up the variants with the IBD program
+            for ibd_program in self.programs:
+
+                # This goes through the three files in the filter_ibd_file_list
+                for file in filter_ibd_file_list:
+
+                    # This checks to see if the variant id is in the dictionary and that the ibd program is in the file
+                    if ibd_program in file and (chr_num, variant_id) not in file_dict.keys():
+
+                        # If it is not then the
+                        file_dict[(chr_num, variant_id)] = set()
+
+                        file_dict[(chr_num, variant_id)].add(
+                            "".join([ibd_program, ":", file]))
+
+                    elif ibd_program in file and variant_id in file_dict.keys():
+
+                        file_dict[(chr_num, variant_id)].add(
+                            "".join([ibd_program, ":", file]))
+
+        return file_dict
+
+    def return_dict(self) -> dict:
+
+        ibd_file_list = self.gather_ibd_files()
+
+        ibd_file_dict = self.build_file_dict(ibd_file_list)
+
+        return ibd_file_dict
+
+    def get_variant_bp(self, variant_id: str, original_var_file: str, map_file_path: str) -> str:
+        '''This function will get the base position of the variant'''
+
+        # reading in the variant file
+        if original_var_file[-4:] == ".csv":
+
+            var_df = pd.read_csv(original_var_file, sep=",")
+
+        # check if it is an excel file
+        elif original_var_file[-5:] == ".xlsx":
+            # Load in file using pd.read_excel if it is an excel file
+            var_df = pd.read_excel(original_var_file)
+
+        # opening the map file
+        map_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
+            "chr", "variant id", "cM", "site"])
+
+        # Need to change this to use a map file
+        var_bp_array = map_df[map_df["variant id"] ==
+                              variant_id[:(len(variant_id)-2)]].site.values
+        try:
+            var_bp = var_bp_array[0]
+
+        except IndexError:
+            print(
+                f"There was no base position found for the variant {variant_id} within the map file {map_file_path}")
+            # var_bp will be minus one if it fails to find the a base position
+            var_bp = -1
+
+        return var_bp
+
+
+############################################################################
+# This is the class that combines the output from all three programs
 
 
 class Output_Comparer:
 
-    def __init__(self, output, variant_position, var_of_interest, input_dir):
+    def __init__(self, output: str, variant_position: int, var_of_interest: str, input_dir, ibd_file_list: list):
         self.output = output
         self.variant_pos = variant_position
         self.var_of_interest = var_of_interest
         self.input_dir = input_dir
+        self.ibd_file_list = ibd_file_list
 
     def check_arguments(self, args_list):
+        '''This function checks how many arguments are passed'''
         if len(args_list) == 0:
-            sys.exit('this.py output format1:file1 format2:file2 ... ...')
+            sys.exit("there were ibd files found for the provided variants")
 
-    def create_file_dict(self, args_list, var_of_interest):
+    def create_file_dict(self, args_list: list, var_of_interest: str) -> dict:
 
         files = {}
         for f in range(0, len(args_list)):
             print(args_list[f])
             # making the files match the variant
-            underscore_pos = args_list[f].split(":")[1].find("_")
-            dot_pos = args_list[f].split(":")[1].find(".")
-            software_name = args_list[f].split(":")[1][:underscore_pos]
-            file_tag = args_list[f].split(":")[1][dot_pos:]
+            # underscore_pos = args_list[f].split(":")[1].find("_")
+            # dot_pos = args_list[f].split(":")[1].find(".")
+            # software_name = args_list[f].split(":")[1][:underscore_pos]
+            # file_tag = args_list[f].split(":")[1][dot_pos:]
 
-            filename = "".join([software_name, "_", var_of_interest, file_tag])
+            software_name = args_list[f].split(':', 1)[0]
 
-            full_filename = "".join([self.input_dir, "/", filename])
+            # full_filename = "".join([self.input_dir, "/", filename])
+
+            file_name = args_list[f].split(':', 1)[1]
 
             # writing the software name and file name to a dictionary
-            files[args_list[f].split(':')[0]] = full_filename
+            files[software_name] = file_name
 
         print('input {0} files: {1}'.format(
             len(files), ' '.join(files.keys())))
-
+        print(files)
         return files
 
     def read_first_line(self, files):
@@ -287,8 +450,6 @@ class Output_Comparer:
 
                         # Removes extra quotation marks
                         pair = pair.replace('"', '')
-
-                        print(pair)
 
                         file.write("%s\n" % pair)
 

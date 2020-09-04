@@ -1,42 +1,65 @@
 import argparse
 import pandas as pd
 
-from IBD_compare_output_classes import Output_Comparer
+from IBD_compare_output_classes import Output_Comparer, Gather_IBD_Output
 
 # run function
 
 
 def run(args):
     print("running")
+    # First step gets all the file paths
+    ibd_output_collector = Gather_IBD_Output(
+        args.input_dir, args.ibd, args.map_file)
 
-    variant_info_df = pd.read_csv(args.var_info, sep=" ", header=None, names=[
-        "output_file_name", "variant_bp", "variant_id"])
+    map_file_list = ibd_output_collector.get_map_files()
 
-    output_file_name_list = variant_info_df.output_file_name.values.tolist()
+    ibd_files_dict = ibd_output_collector.return_dict()
 
-    variant_bp_list = variant_info_df.variant_bp.values.tolist()
+    # Needs to be a function that can get the variant bp and make the output name
+    for chr_variant_tuple in ibd_files_dict.keys():
 
-    variant_id_list = variant_info_df.variant_id.values.tolist()
+        file_list = list(ibd_files_dict[chr_variant_tuple])
 
-    for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
+        chr_num = chr_variant_tuple[0]
+        # Removing the ".""
+        chr_num = chr_num[:len(chr_num)-1]
 
-        output = "".join([args.output, variant_info_tuple[0]])
+        # adding a "_"
+        chr_num = "".join([chr_num[1:], "_"])
 
-        var_pos = variant_info_tuple[1]
+        variant = chr_variant_tuple[1]
 
-        var_of_interest = str(variant_info_tuple[2])
+        map_file = [
+            map_file for map_file in map_file_list if chr_num in map_file][0]
 
-        x = Output_Comparer(output, var_pos, var_of_interest, args.input_dir)
+        print(map_file)
+        print(chr_num)
+        variant_bp = ibd_output_collector.get_variant_bp(
+            variant, args.var_list, map_file)
 
-        x.check_arguments(args.input)
+        if variant_bp == -1:
+            print("There was no base position found for the variant")
+            continue
 
-        file_dict = x.create_file_dict(args.input, var_of_interest)
+        output_file_name = "".join(["IBD_", variant, "_", chr_num])
 
-        first_line_dict = x.read_first_line(file_dict)
+    # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
-        allcomb, combtab = x.define_input_combinations(file_dict)
+        full_output_path = "".join([args.output, output_file_name])
 
-        x.write_to_file(allcomb, combtab, first_line_dict)
+        output_comparer = Output_Comparer(full_output_path, int(
+            variant_bp), variant, args.input_dir, file_list)
+
+        output_comparer.check_arguments(file_list)
+
+        file_dict = output_comparer.create_file_dict(file_list, variant)
+
+        first_line_dict = output_comparer.read_first_line(file_dict)
+
+        allcomb, combtab = output_comparer.define_input_combinations(file_dict)
+
+        output_comparer.write_to_file(allcomb, combtab, first_line_dict)
 
 
 def main():
@@ -49,11 +72,14 @@ def main():
     parser.add_argument("-d", "--input_dir", help="This argument list the directory that the input files are found in.",
                         dest="input_dir", type=str, required=True)
 
-    parser.add_argument("-i", '--input', help="This argument just list the different files as input",
-                        dest="input", type=str, nargs="+", required=True)
+    parser.add_argument("-c", '--var_list', help="This argument just list the filepath to the original file containing the variants and information about each variant",
+                        dest="var_list", type=str, required=True)
 
-    parser.add_argument("-v", "--var_info", help="This argument list the directory to a file that has three columns,'output_file_name', 'variant_bp', 'variant_id'. Respectively, these columns list the filenames for the output file for each variant, the location of the variant, and the variant id.",
-                        dest="var_info", type=str, required=True)
+    parser.add_argument("-s", '--ibd', help="This argument just list the different programs used for the ibd program",
+                        dest="ibd", type=str, nargs="+", required=True)
+
+    parser.add_argument("-m", '--map_file', help="This argument just passes the directory to the map files",
+                        dest="map_file", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
