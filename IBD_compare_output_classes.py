@@ -14,10 +14,11 @@ import re
 
 class Gather_IBD_Output:
 
-    def __init__(self, shared_segment_directory: str, ibd_programs_used: list) -> dict:
+    def __init__(self, shared_segment_directory: str, ibd_programs_used: list, map_file_dir: str) -> dict:
         self.segment_directory = shared_segment_directory
         self.cur_dir = os.getcwd()
         self.programs = ibd_programs_used
+        self.map_file_dir = map_file_dir
 
     def gather_ibd_files(self) -> list:
         '''This function will get all of the files for a specific chromosome'''
@@ -35,30 +36,44 @@ class Gather_IBD_Output:
 
         return ibd_file_list
 
+    def get_map_files(self) -> list:
+        '''This function returns a list of all the map files'''
+        os.chdir(self.map_file_dir)
+
+        map_file_list = []
+
+        for file in glob.glob("*.map"):
+
+            full_file_path = "".join([self.map_file_dir, file])
+
+            map_file_list.append(full_file_path)
+
+        os.chdir(self.cur_dir)
+
+        return map_file_list
+
     def build_file_dict(self, ibd_file_list: list) -> dict:
 
         file_dict = dict()
         # iterate through the files to build the dictionary
         for ibd_file in ibd_file_list:
-
-            match = re.search(r'chr\d.', ibd_file)
+            print(ibd_file)
+            match = re.search(r'.chr\d\.', ibd_file)
 
             # find chromosome number
             if match:
 
                 chr_num = match.group(0)
 
-                # removing the _ in the file name
-                chr_num = chr_num[:len(chr_num)-1]
-
-                # adding a .
-                chr_num = "".join([chr_num, "."])
+                print(chr_num)
 
             else:
 
-                match = re.search(r'chr\d\d', ibd_file)
+                match = re.search(r'.chr\d\d\.', ibd_file)
 
                 chr_num = match.group(0)
+
+                print(chr_num)
 
             # Finding the variant id of the file. file names are built so that the variant id sits
             # between the first "_" and the first "."
@@ -74,6 +89,16 @@ class Gather_IBD_Output:
             dot_indx = ibd_file.find(".")
 
             variant_id = ibd_file[ibd_program_indx:dot_indx]
+
+            # There are a few variants that have a dot in the middle and therefore the above code would split it.
+            # Therefore if there is no number in the string than it enters this if statement and then finds the next dot.
+            if not any(map(str.isdigit, variant_id)):
+                # This finds the second dot in the string
+                dot_indx = ibd_file.find(".", dot_indx+1)
+
+                # This finds the full variant id
+                variant_id = ibd_file[ibd_program_indx:dot_indx]
+
             # using list comprehension to get all the files that contain that variant and chromosome
             filter_ibd_file_list = [
                 file for file in ibd_file_list if variant_id in file and chr_num in file]
@@ -85,17 +110,17 @@ class Gather_IBD_Output:
                 for file in filter_ibd_file_list:
 
                     # This checks to see if the variant id is in the dictionary and that the ibd program is in the file
-                    if ibd_program in file and variant_id not in file_dict.keys():
+                    if ibd_program in file and (chr_num, variant_id) not in file_dict.keys():
                         print(file)
                         # If it is not then the
-                        file_dict[variant_id] = set()
+                        file_dict[(chr_num, variant_id)] = set()
 
-                        file_dict[variant_id].add(
+                        file_dict[(chr_num, variant_id)].add(
                             "".join([ibd_program, ":", file]))
 
                     elif ibd_program in file and variant_id in file_dict.keys():
 
-                        file_dict[variant_id].add(
+                        file_dict[(chr_num, variant_id)].add(
                             "".join([ibd_program, ":", file]))
 
         return file_dict
@@ -108,7 +133,7 @@ class Gather_IBD_Output:
 
         return ibd_file_dict
 
-    def get_variant_bp(self, variant_id: str, original_var_file: str) -> str:
+    def get_variant_bp(self, variant_id: str, original_var_file: str, map_file_path: str) -> str:
         '''This function will get the base position of the variant'''
 
         # reading in the variant file
@@ -122,13 +147,25 @@ class Gather_IBD_Output:
             var_df = pd.read_excel(original_var_file)
         print(variant_id)
 
-        var_bp_array = var_df[var_df.SNP ==
-                              variant_id[:(len(variant_id)-2)]].site.values
+        # opening the map file
+        map_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
+            "chr", "variant id", "cM", "site"])
 
-        var_bp = var_bp_array[0]
+        # Need to change this to use a map file
+        print(map_df)
+        var_bp_array = map_df[map_df["variant id"] ==
+                              variant_id[:(len(variant_id)-2)]].site.values
+        try:
+            var_bp = var_bp_array[0]
+
+        except IndexError:
+            print(
+                f"There was no base position found for the variant {variant_id} within the map file {map_file_path}")
+            # var_bp will be minus one if it fails to find the a base position
+            var_bp = -1
         print(type(var_bp))
 
-        return str(var_bp)
+        return var_bp
 
 
 ############################################################################
@@ -420,8 +457,6 @@ class Output_Comparer:
 
                         # Removes extra quotation marks
                         pair = pair.replace('"', '')
-
-                        print(pair)
 
                         file.write("%s\n" % pair)
 

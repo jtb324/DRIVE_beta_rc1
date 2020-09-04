@@ -9,23 +9,45 @@ from IBD_compare_output_classes import Output_Comparer, Gather_IBD_Output
 def run(args):
     print("running")
     # First step gets all the file paths
-    ibd_output_collector = Gather_IBD_Output(args.input_dir, args.ibd)
+    ibd_output_collector = Gather_IBD_Output(
+        args.input_dir, args.ibd, args.map_file)
 
+    map_file_list = ibd_output_collector.get_map_files()
+    print(map_file_list)
     ibd_files_dict = ibd_output_collector.return_dict()
 
     print(ibd_files_dict)
 
     # Needs to be a function that can get the variant bp and make the output name
-    for variant in ibd_files_dict.keys():
+    for chr_variant_tuple in ibd_files_dict.keys():
 
-        file_list = list(ibd_files_dict[variant])
+        file_list = list(ibd_files_dict[chr_variant_tuple])
 
         print(file_list)
 
-        variant_bp = ibd_output_collector.get_variant_bp(
-            variant, args.var_list)
+        chr_num = chr_variant_tuple[0]
+        # Removing the ".""
+        chr_num = chr_num[:len(chr_num)-1]
 
-        output_file_name = "".join(["IBD_", variant])
+        # adding a "_"
+        chr_num = "".join([chr_num[1:], "_"])
+
+        variant = chr_variant_tuple[1]
+        print(variant)
+
+        map_file = [
+            map_file for map_file in map_file_list if chr_num in map_file][0]
+
+        print(map_file)
+        print(chr_num)
+        variant_bp = ibd_output_collector.get_variant_bp(
+            variant, args.var_list, map_file)
+
+        if variant_bp == -1:
+            print("There was no base position found for the variant")
+            continue
+
+        output_file_name = "".join(["IBD_", variant, "_", chr_num])
 
     # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
@@ -66,6 +88,9 @@ def main():
 
     parser.add_argument("-s", '--ibd', help="This argument just list the different programs used for the ibd program",
                         dest="ibd", type=str, nargs="+", required=True)
+
+    parser.add_argument("-m", '--map_file', help="This argument just passes the directory to the map files",
+                        dest="map_file", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
