@@ -13,17 +13,13 @@ def run(args):
         args.input_dir, args.ibd, args.map_file)
 
     map_file_list = ibd_output_collector.get_map_files()
-    print(map_file_list)
-    ibd_files_dict = ibd_output_collector.return_dict()
 
-    print(ibd_files_dict)
+    ibd_files_dict = ibd_output_collector.return_dict()
 
     # Needs to be a function that can get the variant bp and make the output name
     for chr_variant_tuple in ibd_files_dict.keys():
 
         file_list = list(ibd_files_dict[chr_variant_tuple])
-
-        print(file_list)
 
         chr_num = chr_variant_tuple[0]
         # Removing the ".""
@@ -33,7 +29,6 @@ def run(args):
         chr_num = "".join([chr_num[1:], "_"])
 
         variant = chr_variant_tuple[1]
-        print(variant)
 
         map_file = [
             map_file for map_file in map_file_list if chr_num in map_file][0]
@@ -52,12 +47,6 @@ def run(args):
     # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
         full_output_path = "".join([args.output, output_file_name])
-
-        print(full_output_path)
-
-        print(args.input_dir)
-
-        print(variant_bp)
 
         output_comparer = Output_Comparer(full_output_path, int(
             variant_bp), variant, args.input_dir, file_list)

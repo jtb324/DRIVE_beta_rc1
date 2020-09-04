@@ -129,6 +129,9 @@ class Pre_Shared_Segment_Converter:
             iid_list = row[2].strip("[]").replace(
                 "\'", "").replace(" ", "").split(",")
 
+            chr_num = map_file_df[map_file_df["variant id"] ==
+                                  variant_id[:(len(variant_id)-2)]].chr.values[0]
+
             if carrier_df_size == 1:
 
                 print(
@@ -142,7 +145,7 @@ class Pre_Shared_Segment_Converter:
                         "".join([self.output, "no_carriers_in_file.txt"]), "a+")
                     no_carriers_file.write(variant_id)
                     no_carriers_file.write("\t")
-                    no_carriers_file.write(chromo_var_file)
+                    no_carriers_file.write(chr_num)
                     no_carriers_file.write("\n")
                     no_carriers_file.close()
                     return None, ""
@@ -154,7 +157,7 @@ class Pre_Shared_Segment_Converter:
                     "".join([self.output, "no_carriers_in_file.txt"]), "a+")
                 no_carriers_file.write(variant_id)
                 no_carriers_file.write("\t")
-                no_carriers_file.write(chromo_var_file)
+                no_carriers_file.write(chr_num)
                 no_carriers_file.write("\n")
                 no_carriers_file.close()
                 print(

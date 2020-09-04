@@ -57,7 +57,7 @@ class Gather_IBD_Output:
         file_dict = dict()
         # iterate through the files to build the dictionary
         for ibd_file in ibd_file_list:
-            print(ibd_file)
+
             match = re.search(r'.chr\d\.', ibd_file)
 
             # find chromosome number
@@ -65,15 +65,11 @@ class Gather_IBD_Output:
 
                 chr_num = match.group(0)
 
-                print(chr_num)
-
             else:
 
                 match = re.search(r'.chr\d\d\.', ibd_file)
 
                 chr_num = match.group(0)
-
-                print(chr_num)
 
             # Finding the variant id of the file. file names are built so that the variant id sits
             # between the first "_" and the first "."
@@ -111,7 +107,7 @@ class Gather_IBD_Output:
 
                     # This checks to see if the variant id is in the dictionary and that the ibd program is in the file
                     if ibd_program in file and (chr_num, variant_id) not in file_dict.keys():
-                        print(file)
+
                         # If it is not then the
                         file_dict[(chr_num, variant_id)] = set()
 
@@ -145,14 +141,12 @@ class Gather_IBD_Output:
         elif original_var_file[-5:] == ".xlsx":
             # Load in file using pd.read_excel if it is an excel file
             var_df = pd.read_excel(original_var_file)
-        print(variant_id)
 
         # opening the map file
         map_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
             "chr", "variant id", "cM", "site"])
 
         # Need to change this to use a map file
-        print(map_df)
         var_bp_array = map_df[map_df["variant id"] ==
                               variant_id[:(len(variant_id)-2)]].site.values
         try:
@@ -163,7 +157,6 @@ class Gather_IBD_Output:
                 f"There was no base position found for the variant {variant_id} within the map file {map_file_path}")
             # var_bp will be minus one if it fails to find the a base position
             var_bp = -1
-        print(type(var_bp))
 
         return var_bp
 
