@@ -70,7 +70,7 @@ def run(args):
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
         segment_map_tuple = [(segment_file, map_file)
                              for segment_file in segment_file_list for map_file in map_file_list if chr_num in segment_file and match.group(0) in map_file]
-        print(segment_map_tuple)
+
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
 
         # This checks to see if the tuple is empty or not
@@ -93,7 +93,6 @@ def run(args):
                     f"There were no carriers in the file {chromo_file}")
                 continue
 
-            print(var_info_df)
             iid_file_list = preformater.get_iid_files(
                 variant_directory)
 
@@ -102,7 +101,7 @@ def run(args):
             variant_id_list = var_info_df.variant_id.values.tolist()
 
             for var_info_tuple in zip(variant_bp_list, variant_id_list):
-                print(var_info_tuple)
+
                 variant_position = int(var_info_tuple[0])
 
                 variant_id = str(var_info_tuple[1])

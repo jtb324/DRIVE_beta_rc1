@@ -145,7 +145,7 @@ class Pre_Shared_Segment_Converter:
                         "".join([self.output, "no_carriers_in_file.txt"]), "a+")
                     no_carriers_file.write(variant_id)
                     no_carriers_file.write("\t")
-                    no_carriers_file.write(chr_num)
+                    no_carriers_file.write(str(chr_num))
                     no_carriers_file.write("\n")
                     no_carriers_file.close()
                     return None, ""
@@ -157,7 +157,7 @@ class Pre_Shared_Segment_Converter:
                     "".join([self.output, "no_carriers_in_file.txt"]), "a+")
                 no_carriers_file.write(variant_id)
                 no_carriers_file.write("\t")
-                no_carriers_file.write(chr_num)
+                no_carriers_file.write(str(chr_num))
                 no_carriers_file.write("\n")
                 no_carriers_file.close()
                 print(
@@ -180,18 +180,12 @@ class Pre_Shared_Segment_Converter:
             # append the variant_id
             variant_id_list.append(variant_id)
 
-            print(variant_id)
-
             # getting the base post
             base_pos = map_file_df[map_file_df["variant id"] ==
                                    variant_id[:(len(variant_id)-2)]].site.values[0]
-            print(base_pos)
+
             # appending the base position to the list
             base_pos_list.append(base_pos)
-
-            file_title = "".join(["IBD_", variant_id])
-
-            print(base_pos_list)
 
         variant_info_dict = {
             "variant_id": variant_id_list, "site": base_pos_list}
@@ -356,7 +350,6 @@ class Shared_Segment_Convert(newPOS):
         # Reading through chunks of pandas files
 
         for chunk in pd.read_csv(self.segment_file, sep="\s+", header=None, chunksize=500000):
-            print(self.bp)
             # Checking to see if the ids are not in the uniqID dictionary
             chunk_not_in_uniqID = chunk[(chunk[id1_indx].isin(
                 uniqID)) | (chunk[id2_indx].isin(uniqID))]
@@ -375,7 +368,6 @@ class Shared_Segment_Convert(newPOS):
                 chunk_greater_than_3_cm[end_indx] > self.bp)]
             # This will iterate through each row of the filtered chunk
             if not chunk.empty:
-                print(chunk)
                 for row in chunk.itertuples():
                     # TODO For some reason none of the chucks are actually working
                     id1 = str(row[id1_indx+1])
@@ -384,14 +376,7 @@ class Shared_Segment_Convert(newPOS):
                     CHR = str(row[chr_indx+1])
                     start = min(int(row[str_indx+1]), int(row[end_indx+1]))
                     end = max(int(row[str_indx+1]), int(row[end_indx+1]))
-                    print(type(id1))
-                    print(type(id2))
-                    print(start)
-                    print(end)
-                    print(type(self.bp))
-                    print(self.bp)
 
-                    print("entering first if statement")
                     if id1 in uniqID and id2 in uniqID:  # Checks to see if the ids are in the uniqID list
 
                         if uniqID[id1] < uniqID[id2]:
@@ -437,8 +422,7 @@ class Shared_Segment_Convert(newPOS):
 
                         IBDdata[CHR][str(start)].add.append(str(pair))
                         IBDdata[CHR][str(end)].rem.append(str(pair))
-        print(IBDdata)
-        print(IBDindex)
+
         print('identified ' +
               str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
 
