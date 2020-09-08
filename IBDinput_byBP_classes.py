@@ -428,8 +428,14 @@ class Shared_Segment_Convert(newPOS):
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
+        # adding a zero the the chr # if it is only one digit
+        if len(str(CHR)) == 1:
+            chr_num = str(CHR).zfill(2)
+        else:
+            chr_num = str(CHR)
+
         write_path = "".join([self.output, '_', self.variant_name,
-                              '.chr', str(CHR), '.small.txt.gz'])
+                              '.chr', chr_num, '.small.txt.gz'])
         print(write_path)
         out = gzip.open(write_path, 'wt')
 

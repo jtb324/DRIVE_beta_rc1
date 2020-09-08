@@ -55,10 +55,17 @@ class Input_Chr_Splitter(Check_File_Exist):
 
             variant_df_subset = variant_df_subset.reset_index(drop=True)
 
+            # Making sure that if the chromosome # is a single digit that a leading
+            # zero gets added to it
+            if len(str(chromo)) == 1:
+                chromo = str(chromo).zfill(2)
+            else:
+                chromo = str(chromo)
+
             # writing this  subset to csv file
 
             variant_df_subset.to_csv(
-                "".join([self.output_path, "variants_of_interest", ".chr", str(chromo), "_list", ".csv"]))
+                "".join([self.output_path, "variants_of_interest", ".chr", chromo, "_list", ".csv"]))
 
             self.write_variants_to_file(variant_df_subset, str(chromo))
 
