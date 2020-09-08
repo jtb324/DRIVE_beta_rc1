@@ -95,9 +95,10 @@ def run(args):
         variant_info_df = pd.read_csv(args.var[0], sep=" ", header=None, names=[
             "output_file_name", "variant_bp", "variant_id"])
 
-        file_name_list = variant_info_df.output_file_name.values.tolist()
+    # TODO: get rid of this loop that gathers everything. This will instead be done in the actually create_networks function
+    # no longer need to get the different value for a txt file. can extract the variant_ids from teh allpair.new.txt files
 
-        variant_id_list = variant_info_df.variant_id.values.tolist()
+    # can still pass hte output. But the function will generate the variant name
 
         for info_tuple in zip(args.segments_file, file_name_list, variant_id_list):
 

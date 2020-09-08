@@ -4,8 +4,9 @@ import pandas as pd
 import re
 import os.path
 from os import path
-
 from graphviz import Digraph
+import glob
+
 from check_directory import check_dir
 from file_exist_checker import Check_File_Exist
 
@@ -13,6 +14,7 @@ from file_exist_checker import Check_File_Exist
 class Network_Img_Maker(Check_File_Exist):
 
     def __init__(self, segments_file, variant_file: str, output_path: str, logger):
+        # This will be the directory to where all the allpair.new.txt files are
         self.file = segments_file
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file
@@ -22,6 +24,25 @@ class Network_Img_Maker(Check_File_Exist):
         self.var_of_interest = None
         # This is used in creating an id set for drawing the networks later
         self.id_list = None
+        self.curr_dir = os.getcwd()
+
+    def gather_allpair_files(self, file_directory: str, file_tag: str):
+        '''This function will gather all of the allpair.new.txt files which contain information about pairs. It will also be used to get the 'chr#_list.single_variant.csv' files.'''
+        os.chdir(file_directory)
+
+        file_list = []
+
+        for file in glob.glob(file_tag):
+
+            full_file_path = "".join([file_directory, file])
+
+            print(full_file_path)
+
+            file_list.append(full_file_path)
+
+        os.chdir(self.curr_dir)
+
+        return file_list
 
     def isolate_variant_list(self, variant_of_interest: str):
         '''This function will create a list of IIDs who carry a specific variant.'''
