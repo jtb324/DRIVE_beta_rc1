@@ -114,7 +114,7 @@ class Gather_IBD_Output:
                         file_dict[(chr_num, variant_id)].add(
                             "".join([ibd_program, ":", file]))
 
-                    elif ibd_program in file and variant_id in file_dict.keys():
+                    elif ibd_program in file and (chr_num, variant_id) in file_dict.keys():
 
                         file_dict[(chr_num, variant_id)].add(
                             "".join([ibd_program, ":", file]))

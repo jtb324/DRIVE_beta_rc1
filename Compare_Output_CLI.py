@@ -42,7 +42,7 @@ def run(args):
             print("There was no base position found for the variant")
             continue
 
-        output_file_name = "".join(["IBD_", variant, "_", chr_num])
+        output_file_name = "".join(["IBD_", variant, "_", chr_num[:-1]])
 
     # for variant_info_tuple in zip(output_file_name_list, variant_bp_list, variant_id_list):
 
