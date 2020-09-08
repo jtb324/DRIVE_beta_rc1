@@ -38,6 +38,10 @@ def create_networks(segments_file: str, variant_file: str, ind_in_network_dict: 
     carrier_list = network_drawer.gather_allpair_files(
         variant_file, "*.single_variant_list.csv")
 
+    if not allpair_var_dict:
+        print("There was an error that occurred when trying to gather all the different variants on all of the chromosomes")
+        return None
+
     # looping through all the variants in the dictionary
     for item in allpair_var_dict.items():
 
@@ -47,29 +51,32 @@ def create_networks(segments_file: str, variant_file: str, ind_in_network_dict: 
 
         segment_file = item[1]
 
+        print(segment_file)
+
         iid_list = network_drawer.isolate_variant_list(variant)
 
     # Need to adjust the rest of the file so that it can run for all the variants.
 
     # this line loads the provided dataframe using a tab separator with no header value. it also skips the first row
     # which only contains information about the chr, the number of pairs. The second row and onwards list all the pairs
-    loaded_segments_file = network_drawer.check_file_exist(
-        separator="\t", header_value=None, skip_rows=1)
+        loaded_segments_file = network_drawer.check_file_exist(
+            separator="\t", header_value=None, skip_rows=1)
 
-    # This just renames the first row to Pairs which can be used to identify the column later
-    loaded_segments_file = loaded_segments_file.rename(columns={0: "Pairs"})
+        # This just renames the first row to Pairs which can be used to identify the column later
+        loaded_segments_file = loaded_segments_file.rename(columns={
+                                                           0: "Pairs"})
 
-    # This just drops any empty rows in the dataframe
-    if loaded_segments_file["Pairs"].isnull().any():
-        loaded_segments_file = network_drawer.drop_empty_rows(
-            loaded_segments_file)
+        # This just drops any empty rows in the dataframe
+        if loaded_segments_file["Pairs"].isnull().any():
+            loaded_segments_file = network_drawer.drop_empty_rows(
+                loaded_segments_file)
 
-    network_drawer_df = network_drawer.isolate_ids(
-        loaded_segments_file, iid_list)
+        network_drawer_df = network_drawer.isolate_ids(
+            loaded_segments_file, iid_list)
 
-    carrier_in_network_dict = network_drawer.carriers_in_network(
-        iid_list, network_drawer_df, ind_in_network_dict)
+        carrier_in_network_dict = network_drawer.carriers_in_network(
+            iid_list, network_drawer_df, ind_in_network_dict)
 
-    network_drawer.draw_networks(network_drawer_df)
+        network_drawer.draw_networks(network_drawer_df)
 
     return carrier_in_network_dict
