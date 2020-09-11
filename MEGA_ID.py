@@ -91,39 +91,29 @@ def run(args):
         # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
         carrier_in_network_dict = dict()
 
-        # being able to draw networks for numerous variants
-        variant_info_df = pd.read_csv(args.var[0], sep=" ", header=None, names=[
-            "output_file_name", "variant_bp", "variant_id"])
+    # TODO: get rid of this loop that gathers everything. This will instead be done in the actually create_networks function
+    # no longer need to get the different value for a txt file. can extract the variant_ids from teh allpair.new.txt files
 
-        file_name_list = variant_info_df.output_file_name.values.tolist()
+    # can still pass hte output. But the function will generate the variant name
 
-        variant_id_list = variant_info_df.variant_id.values.tolist()
+        variant_file = args.var_file
 
-        for info_tuple in zip(args.segments_file, file_name_list, variant_id_list):
+        output = "".join([args.output, "network_imgs"])
 
-            print(info_tuple)
-            segment_file = info_tuple[0]
-            output_file_name = info_tuple[1]
-            var_of_interest = info_tuple[2]
+        if not path.exists(output):
+            os.mkdir(output)
 
-            variant_file = args.var_file
+        log_format = '%(asctime)s - %(levelname)s : %(message)s'
 
-            output = "".join([args.output, "network_imgs"])
+        logging.basicConfig(filename="".join([output,
+                                              '/drawing_networks.log']), level=logging.INFO,
+                            format=log_format)
 
-            if not path.exists(output):
-                os.mkdir(output)
+        logging.info(
+            "Drawing networks for all individuals identified as shared segments...")
 
-            log_format = '%(asctime)s - %(levelname)s : %(message)s'
-
-            logging.basicConfig(filename="".join([output,
-                                                  '/drawing_networks.log']), level=logging.INFO,
-                                format=log_format)
-
-            logging.info(
-                "Drawing networks for all individuals identified as shared segments...")
-
-            carrier_in_network_dict = create_networks(segment_file, variant_file, carrier_in_network_dict,
-                                                      var_of_interest, output)
+        carrier_in_network_dict = create_networks(args.segments_file, args.var_file, carrier_in_network_dict,
+                                                  output)
 
         logger = logging.getLogger(args.output+'/carriers_in_network.log')
 
@@ -160,7 +150,7 @@ def main():
                         dest="fam_file", type=str, default=False)
 
     parser.add_argument("--shared_segments_file", help="This argument provides a path to the list of shared segments that can be used to form networks",
-                        dest="segments_file", type=str, nargs="+", default=False)
+                        dest="segments_file", type=str, default=False)
 
     parser.add_argument("--variant_file", help="This argument provides a path to a file that list all individuals that carry a specific variant",
                         dest="var_file", type=str, default=False)

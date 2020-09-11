@@ -30,7 +30,7 @@ class Pop_Filter:
         '''This function subset the pop_info_df into a dataframe containing only specific population information'''
 
         try:
-            pop_info_subset_df = pop_info_df[pop_info_df.Pop.isin(pop_code)]
+            pop_info_subset_df = pop_info_df[pop_info_df.Pop.isin([pop_code])]
 
         except KeyError:
             print("Make sure the the pop_info_file has a column named 'Pop'.")
