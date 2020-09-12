@@ -12,11 +12,6 @@ import multiprocessing as mp
 from IBDinput_byBP_classes import Shared_Segment_Convert, Pre_Shared_Segment_Converter
 
 ####################################################################################################
-# Creating a class to pass the inner loop
-
-
-class ContinueI(Exception):
-    pass
 
 # Initializing the parser
 
@@ -67,9 +62,19 @@ def run(args):
             # adding a .
             chr_num = "".join([chr_num, "."])
 
+        # dropping the 0 to try and match the naming in the segment files
+        segment_chr_pattern = "".join(chr_num.split("0"))
+
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
+
         segment_map_tuple = [(segment_file, map_file)
                              for segment_file in segment_file_list for map_file in map_file_list if chr_num in segment_file and match.group(0) in map_file]
+
+        # If the shared segment file chr is not "chr0#" it will try the format "chr#"
+        if not segment_map_tuple:
+
+            segment_map_tuple = [(segment_file, map_file)
+                                 for segment_file in segment_file_list for map_file in map_file_list if segment_chr_pattern in segment_file and match.group(0) in map_file]
 
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
 

@@ -43,6 +43,15 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
 
             chr_num = match.group(0)
 
+        else:
+            match = re.search(r'.chr\d_', ibd_file)
+
+            if not match:
+                match = re.search(r'.chr\d\.', ibd_file)
+
+            chr_num = match.group(0)
+
+        print(chr_num)
         # Finding the variant id of the file. file names are built so that the variant id sits
         # between the first "_" and the first "."
         for ibd_program in program_list:
@@ -186,7 +195,7 @@ def reformat(single_allpair_file: str, write_path: str):
 
         with open("".join([write_path, ".allpair.new.txt"]), "w") as allpair_new_file:
             header_string = "\t".join(header)
-            allpair_new_file.write(header_string)
+            allpair_new_file.write(f"{header_string}\n")
 
             for pair in pair_list:
                 allpair_new_file.write(f"{pair}\n")
