@@ -5,7 +5,7 @@ import re
 import argparse
 import pandas as pd
 import sys
-import os
+import os.path
 import shutil
 import multiprocessing as mp
 
@@ -22,6 +22,10 @@ def run(args):
     print("running")
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
+
+    if os.path.exists("".join([args.output, "no_carriers_in_file.txt"])):
+        print("removing the no_carriers_in_network.txt file...")
+        os.remove("".join([args.output, "no_carriers_in_file.txt"]))
 
     preformater = Pre_Shared_Segment_Converter(
         args.input, args.pheno, args.format, args.output, args.map_file)
