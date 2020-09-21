@@ -193,12 +193,22 @@ def reformat(single_allpair_file: str, write_path: str):
             pair_list = pair_str.split(" ")
             header = row.split("\t")[0:4]
 
-        with open("".join([write_path, ".allpair.new.txt"]), "w") as allpair_new_file:
-            header_string = "\t".join(header)
-            allpair_new_file.write(f"{header_string}\n")
+            with open("".join([write_path, ".allpair.new.txt"]), "w") as allpair_new_file:
 
-            for pair in pair_list:
-                allpair_new_file.write(f"{pair}\n")
+                allpair_new_file.write("IBD_programs\tpair_1\tpair_2\n")
+
+                for pair in pair_list:
+                    # getting the IBD programs that found the output
+                    programs = pair.split(":")[0]
+
+                    # getting pair 1
+                    pair1 = pair.split(":")[1].split("-")[0]
+
+                    # getting pair 2
+                    pair2 = pair.split(":")[1].split("-")[1]
+
+                    # writing the pairs to different columns
+                    allpair_new_file.write(f"{programs}\t{pair1}\t{pair2}\n")
 
 
 def run(args):
