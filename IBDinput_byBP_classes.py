@@ -389,12 +389,12 @@ class Shared_Segment_Convert(newPOS):
                             # this just puts the ids in order
                             pair = '{0}:{1}-{2}'.format(cM, id2, id1)
 
-                    # elif id1 in uniqID:  # If only one id is in the uniqID then it writes it this way with the matched id in
+                    elif id1 in uniqID:  # If only one id is in the uniqID then it writes it this way with the matched id in
 
-                    #     pair = '{0}:{1}-{2}'.format(cM, id1, id2)
+                        pair = '{0}:{1}-{2}'.format(cM, id1, id2)
 
-                    # else:
-                    #     pair = '{0}:{1}-{2}'.format(cM, id2, id1)
+                    elif id2 in uniqID:
+                        pair = '{0}:{1}-{2}'.format(cM, id2, id1)
 
                 # start and end not in identified breakpoints
                     if int(start) not in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:

@@ -143,7 +143,7 @@ def all_agree_pair(pair_list: dict) -> list:
     return unionpair
 
 
-def get_max_pairs(allpair_file_path: str, output_path: str):
+def get_max_pairs(allpair_file_path: str, output_path: str, variant_id: str, carrier_file_dir: str, chr_num: str):
     '''This function will find the highest number of pairs and writes it to a file called .allpair.txt'''
     # Opening the allpair file
     print(allpair_file_path)
@@ -181,11 +181,61 @@ def get_max_pairs(allpair_file_path: str, output_path: str):
 
         single_allpair_file.close()
     allpair_file.close()
-    reformat("".join([write_path, ".allpair.txt"]), write_path)
+    reformat("".join([write_path, ".allpair.txt"]),
+             write_path, variant_id, carrier_file_dir, chr_num)
     # Need to make the reformat function that takes that and then writes out line by line
 
 
-def reformat(single_allpair_file: str, write_path: str):
+def get_carrier_file_list(carrier_files_dir: str) -> list:
+    '''This function will return a list of files that describe the carriers for each variant. It will use the reformated files'''
+    cur_dir = os.getcwd()
+    os.chdir(carrier_files_dir)
+
+    carrier_file_list = []
+
+    for file in glob.glob("*.csv"):
+
+        full_file_path = "".join([carrier_files_dir, file])
+
+        carrier_file_list.append(full_file_path)
+
+    os.chdir(cur_dir)
+
+    return carrier_file_list
+
+
+def get_carrier_list(file: str, variant_id: str) -> list:
+    '''Getting the list of characters'''
+    carrier_df = pd.read_csv(file, sep=",")
+
+    # filter dataframe for those individuals carrying the variant
+    carrier_list = carrier_df[carrier_df["Variant ID"]
+                              == variant_id]["IID"].values.tolist()
+
+    print(carrier_list)
+
+    return carrier_list
+
+
+def reformat(single_allpair_file: str, write_path: str, variant_id: str, carrier_file_dir: str, chr_num: str):
+    '''this function takes the original allpair.txt file and reformats it to four columns.
+    The first columnn is the ibd program that identified the pairs, the second column is the 
+    first pair, the third column is the second pair, and then the fourth column tells if the 
+    second pair is a carrier'''
+
+    carrier_list = get_carrier_file_list(carrier_file_dir)
+
+    # use list comprehension to find the file with that chr_num
+
+    print(carrier_list)
+    carrier_file = [
+        file for file in carrier_list if chr_num.strip(".") in file][0]
+
+    # getting the list of carriers' iids for the specific variant
+    print(variant_id)
+
+    carrier_iid_list = get_carrier_list(carrier_file, variant_id)
+
     with open(single_allpair_file, "r") as allpair_file:
         next(allpair_file)
         for row in allpair_file:
@@ -195,7 +245,8 @@ def reformat(single_allpair_file: str, write_path: str):
 
             with open("".join([write_path, ".allpair.new.txt"]), "w") as allpair_new_file:
 
-                allpair_new_file.write("IBD_programs\tpair_1\tpair_2\n")
+                allpair_new_file.write(
+                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\n")
 
                 for pair in pair_list:
                     # getting the IBD programs that found the output
@@ -207,8 +258,18 @@ def reformat(single_allpair_file: str, write_path: str):
                     # getting pair 2
                     pair2 = pair.split(":")[1].split("-")[1]
 
+                    # determining carrier status of second iid pair
+                    if pair2 in carrier_iid_list:
+                        # the carrier status is a one if the second iid pair is in the list of carriers
+                        car_status = 1
+
+                    else:
+                        # If the second iid pair is not in the list of carriers then the status is a 0
+                        car_status = 0
+
                     # writing the pairs to different columns
-                    allpair_new_file.write(f"{programs}\t{pair1}\t{pair2}\n")
+                    allpair_new_file.write(
+                        f"{programs}\t{pair1}\t{pair2}\t{car_status}\n")
 
 
 def run(args):
@@ -344,7 +405,7 @@ def run(args):
         # uniqtab.close()
         allagree.close()
 
-        get_max_pairs(allagree_path, out)
+        get_max_pairs(allagree_path, out, variant_id, args.car_file, chr_num)
 
 
 def main():
@@ -359,6 +420,9 @@ def main():
 
     parser.add_argument("-o", help="This argument list the output directory",
                         dest="output", type=str, required=True)
+
+    parser.add_argument("-c", help="This argument list the pathway to the reformated carrier files",
+                        dest="car_file", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
