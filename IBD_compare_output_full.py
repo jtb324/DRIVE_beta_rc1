@@ -271,14 +271,14 @@ def run(args):
             combtab.loc[item, allcomb[item]] = len(allcomb[item])
         print("printing output path...")
         print(out)
-        sumtab = open(out+'.sum.txt', 'w')
-        uniqtab = open(out+'.uniquq.txt', 'w')
+        # sumtab = open(out+'.sum.txt', 'w')
+        # uniqtab = open(out+'.uniquq.txt', 'w')
         allagree_path = "".join([out, ".allpair.txt"])
         allagree = open(out+'.allpair.txt', 'w')
-        sumtab.write('chr\tpos\tsource\t{}\n'.format(
-            '\t'.join(allcomb.keys())))
-        uniqtab.write('chr\tpos\tsource\t{}\n'.format(
-            '\t'.join(allcomb.keys())))
+        # sumtab.write('chr\tpos\tsource\t{}\n'.format(
+        #     '\t'.join(allcomb.keys())))
+        # uniqtab.write('chr\tpos\tsource\t{}\n'.format(
+        #     '\t'.join(allcomb.keys())))
         allagree.write('chr\tpos\tsegments\tnpair\tpair.list\n')
 
         oldallpair = set([])
@@ -329,18 +329,19 @@ def run(args):
 
             if len(outpair) == 0:
                 outpair = ['NA']
-            allagree.write('{0}\t{1}\tNA\t{2}\t{3}\n'.format(
-                str(CHR), str(pos), len(newallpair), ' '.join(outpair)))
+
+            allagree.write(
+                f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n")
 
             oldallpair = set(newallpair)
 
-            sumtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
-                pos), ",".join(nowf), '\t'.join(map(str, sumrow))))
-            uniqtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
-                pos), ",".join(nowf), '\t'.join(map(str, uniqrow))))
+            # sumtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
+            #     pos), ",".join(nowf), '\t'.join(map(str, sumrow))))
+            # uniqtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
+            #     pos), ",".join(nowf), '\t'.join(map(str, uniqrow))))
 
-        sumtab.close()
-        uniqtab.close()
+        # sumtab.close()
+        # uniqtab.close()
         allagree.close()
 
         get_max_pairs(allagree_path, out)
