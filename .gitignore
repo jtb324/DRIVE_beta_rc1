@@ -1,7 +1,9 @@
 __pycache__
+*.log
 *.txt
 *.docx
 *.pyc
+*.xlsx
 *.csv
 .DS_Store
 network_images/
