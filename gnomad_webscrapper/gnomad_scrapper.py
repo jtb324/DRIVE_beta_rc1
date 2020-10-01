@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from webdriver import determine_webdriver
+from selenium.webdriver.firefox.options import Options
 import sys
 import re
 
@@ -67,10 +68,15 @@ class soup_parser():
     def get_freq(self) -> dict:
         '''This function gets the minor allele frequencies for variants of interest'''
 
+        # creating a headless mode
+        options = Options()
+
+        options.headless = True
         # Creating a dictionary to act as a handler based on what browser is used
+
         browser_handling_dict: dict = {
-            "firefox": determine_webdriver(self.browser),
-            "chrome": determine_webdriver(self.browser)
+            "firefox": determine_webdriver(self.browser, options),
+            "chrome": determine_webdriver(self.browser, options),
         }
 
         # creating the driver object
