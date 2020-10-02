@@ -3,6 +3,7 @@ import pandas as pd
 import glob
 import os
 import re
+import argparse
 
 # need to get list of carriers
 # First function will be designed to get a glob of files
@@ -114,6 +115,30 @@ def get_chr_num(file: str, pattern: str, alt_pattern: str) -> str:
     return chr_num
 
 
+def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
+    '''This function will return a list of carriers that also share segments'''
+
+    # loading only the columns that contain pairs from the allpair file
+    allpair_df: pd.DataFrame = pd.read_csv(
+        allpair_file, sep="\t", usecols=["pair_1", "pair_2"])
+
+    # getting all the grids for pair one
+    pair_1_list: list = allpair_df.pair_1.values.tolist()
+
+    # getting all the grids for pair two into a list
+    pair_2_list: list = allpair_df.pair_2.values.tolist()
+
+    # combining the two pair list into a set so that repeating values get dropped
+    pair_iid_set: set = set(pair_1_list + pair_2_list)
+
+    # getting a list of all the carriers from carrier_list that are also in the set
+    sharing_carrier_list: list = [
+        grid for grid in carrier_list if grid in list(pair_iid_set)]
+
+    # returning the list of individuals that are carriers for this variant and also share segments
+    return sharing_carrier_list
+
+
 def run(args):
     "function to run"
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
@@ -136,7 +161,39 @@ def run(args):
 
         print(map_file)
 
-        genotype_dict = form_genotype_df(map_file, file)
+        genotype_df: pd.DataFrame = form_genotype_df(map_file, file)
+
+        # getting the correct carrier file based off of the chromosome
+        car_file: str = [carrier_file for carrier_file in carrier_files if "".join(
+            [chr_num, "_"]) in carrier_file][0]
+
+        print(car_file)
+
+        # load the car_file into a dataframe
+        with open(car_file, "r") as carrier_file:
+
+            for row in carrier_file:
+
+                # getting the variant id
+                variant: str = row.split(" ")[0]
+
+                # getting the list of carriers
+                carrier_str = row.split(" ")[1]
+
+                # stripping characters away to get a list of grids that carry the variant
+                carrier_list: list = carrier_str.strip("[]").replace(
+                    "'", "").replace(",", "").split(" ")
+
+                # using list comprehension to get the allpair file for a specific chromosome and variant
+                allpair_file: str = [file for file in allpair_files if "".join(
+                    [chr_num, "."]) in file and variant in file][0]
+
+                # getting a list of carriers that share segments and therefore are "confirmed"
+                confirmed_carrier_list: list = search_allpair_file(
+                    allpair_file, carrier_list)
+
+                # TODO:Need to create a function that will subset genotype_df for the whole list of carriers and then it will add a 1 to
+                # the iids that share a segment and a 0 to those that don't. Then need to combine this dataframe with others iteratively
 
 
 def main():
