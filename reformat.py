@@ -4,6 +4,7 @@ import glob
 import os
 import re
 import argparse
+import numpy as np
 
 # need to get list of carriers
 # First function will be designed to get a glob of files
@@ -139,6 +140,40 @@ def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
     return sharing_carrier_list
 
 
+def subset_genotype(geno_df: pd.DataFrame, carrier_list: list) -> pd.DataFrame:
+    '''This function will suvbset the genotype df for only those who are carriers.
+    This does not necessarily include only those who are confirmed carriers'''
+
+    print(len(geno_df))
+    # subsetting the dataframe to only the list of identified carriers
+    geno_df_subset: pd.DataFrame = geno_df[geno_df["IID"].isin(carrier_list)]
+
+    print(len(geno_df_subset))
+
+    return geno_df_subset
+
+
+def add_column(df_subset: pd.DataFrame, confirmed_carrier_list: list) -> pd.DataFrame:
+    '''This function will add a column to the df_subset that contains either a one 
+    to indicate that the grid is a carrier confirmed by shared segment or a 0 if they are not'''
+
+    # This line just adds a column that indicates the cconfirmed status
+    df_subset["confirmed_status"] = np.where(
+        df_subset["IID"].isin(confirmed_carrier_list), 1, 0)
+
+    print(df_subset)
+    return df_subset
+
+
+def merge_df(ideal_df: pd.DataFrame, modified_df: pd.DataFrame) -> pd.DataFrame:
+    '''This function will return merge two dataframes and will return the merged dataframe'''
+
+    # Combining the two dataframes into one without droping any rows
+    final_df: pd.DataFrame = pd.concat([ideal_df, modified_df])
+
+    return final_df
+
+
 def run(args):
     "function to run"
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
@@ -149,6 +184,9 @@ def run(args):
     ped_files: list = get_files(args.plink_dir, "*.ped")
 
     allpair_files: list = get_files(args.directory, "*allpair.new.txt")
+
+    # Also need to create an empty df to be merged with others later to later
+    ideal_format_df: pd.DataFrame = pd.DataFrame()
 
     # Iterating through the ped files
     for file in ped_files:
@@ -194,6 +232,26 @@ def run(args):
 
                 # TODO:Need to create a function that will subset genotype_df for the whole list of carriers and then it will add a 1 to
                 # the iids that share a segment and a 0 to those that don't. Then need to combine this dataframe with others iteratively
+
+                # This will subset the dataframe for the carriers
+                subset_df: pd.DataFrame = subset_genotype(
+                    genotype_df, carrier_list)
+
+                # Adding a column for the carrier status to the file
+                modified_geno_df: pd.DataFrame = add_column(
+                    subset_df, confirmed_carrier_list)
+                print("this is the modified df")
+
+                print(modified_geno_df)
+
+                # Combining the dataframes
+                ideal_format_df = merge_df(ideal_format_df, modified_geno_df)
+
+                print(ideal_format_df)
+
+    # writing the ideal_format_df to a csv file
+    output_path = "".join([args.output, "confirmed_carriers.txt"])
+    ideal_format_df.to_csv(output_path, sep="\t")
 
 
 def main():
