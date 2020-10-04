@@ -29,7 +29,7 @@ def get_files(directory: str, file_id: str) -> list:
 
 
 def form_genotype_df(map_file_path: str, ped_file_path: str) -> pd.DataFrame:
-    '''This function will form a dictionary of dictionaries where the outer key is the iid, 
+    '''This function will form a dictionary of dictionaries where the outer key is the iid,
     the inner key is the variant and the inner value is the genotype string'''
 
     # form three list for the iid, the variant, and the genotype string
@@ -140,42 +140,85 @@ def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
     return sharing_carrier_list
 
 
-def subset_genotype(geno_df: pd.DataFrame, carrier_list: list) -> pd.DataFrame:
+def subset_genotype(geno_df: pd.DataFrame, carrier_list: list, variant_id: str) -> pd.DataFrame:
     '''This function will suvbset the genotype df for only those who are carriers.
     This does not necessarily include only those who are confirmed carriers'''
 
-    print(len(geno_df))
     # subsetting the dataframe to only the list of identified carriers
-    geno_df_subset: pd.DataFrame = geno_df[geno_df["IID"].isin(carrier_list)]
+    geno_df_subset: pd.DataFrame = geno_df[geno_df["IID"].isin(
+        carrier_list)]
 
-    print(len(geno_df_subset))
+    geno_df_subset = geno_df_subset[geno_df_subset.Variant == variant_id]
 
     return geno_df_subset
 
 
 def add_column(df_subset: pd.DataFrame, confirmed_carrier_list: list) -> pd.DataFrame:
-    '''This function will add a column to the df_subset that contains either a one 
+    '''This function will add a column to the df_subset that contains either a one
     to indicate that the grid is a carrier confirmed by shared segment or a 0 if they are not'''
 
     # This line just adds a column that indicates the cconfirmed status
     df_subset["confirmed_status"] = np.where(
         df_subset["IID"].isin(confirmed_carrier_list), 1, 0)
 
-    print(df_subset)
     return df_subset
 
 
-def merge_df(ideal_df: pd.DataFrame, modified_df: pd.DataFrame) -> pd.DataFrame:
-    '''This function will return merge two dataframes and will return the merged dataframe'''
+def write_to_file(df: pd.DataFrame, output_path):
+    '''This function will write each row of the df to a txt file. This has to be done to avoid memory issues'''
 
-    # Combining the two dataframes into one without droping any rows
-    final_df: pd.DataFrame = pd.concat([ideal_df, modified_df])
+    # writing the dataframe to a file
+    df.to_csv(output_path, header=None, sep="\t", index=None, mode="a")
 
-    return final_df
+
+def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
+    '''This function will check if the variant is in a file called no_carriers_in_file.txt'''
+
+    # if this file is not present than the function needs to return 0
+    if os.path.isfile(no_carrier_file):
+
+        return 0
+
+    else:
+        # loading the file into a dataframe
+        no_carrier_df: pd.DataFrame = pd.read_csv(
+            no_carrier_file, sep="\t", names=["variant", "chr"])
+
+        # getting a list of all variants that had no carriers
+        variant_list: list = no_carrier_df.variant.values.tolist()
+
+        # figuring out if the current id is not in the no_carrier list
+        if variant_id in variant_list:
+
+            # returns 1 if it is
+            return 1
+
+        else:
+
+            print(f"The variant {variant_id} is not a valid variants")
+
+            # returns 0 if the variant is not found
+            return 0
 
 
 def run(args):
     "function to run"
+
+    # defining an output path and file name for the output file
+    output_path: str = "".join([args.output, "confirmed_carriers.txt"])
+
+    # checking if the file exist
+    if os.path.isfile(output_path):
+
+        # removing the file if it exist
+        os.remove(output_path)
+
+    # writing the header line to the output text file
+    with open(output_path, "w") as output_file:
+
+        output_file.write(
+            f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\n")
+
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
     carrier_files: list = get_files(args.directory, "*single_variant_list.csv")
 
@@ -183,10 +226,7 @@ def run(args):
 
     ped_files: list = get_files(args.plink_dir, "*.ped")
 
-    allpair_files: list = get_files(args.directory, "*allpair.new.txt")
-
-    # Also need to create an empty df to be merged with others later to later
-    ideal_format_df: pd.DataFrame = pd.DataFrame()
+    allpair_files: list = get_files(args.allpair_dir, "*allpair.txt")
 
     # Iterating through the ped files
     for file in ped_files:
@@ -213,53 +253,105 @@ def run(args):
             for row in carrier_file:
 
                 # getting the variant id
-                variant: str = row.split(" ")[0]
+                variant: str = row.split(",", maxsplit=1)[0]
 
                 # getting the list of carriers
-                carrier_str = row.split(" ")[1]
+                carrier_str: str = row.split(",", maxsplit=1)[1]
 
                 # stripping characters away to get a list of grids that carry the variant
-                carrier_list: list = carrier_str.strip("[]").replace(
-                    "'", "").replace(",", "").split(" ")
+                carrier_str = carrier_str.replace('"', '')
+                carrier_str = carrier_str.strip("[]")
+
+                carrier_str = carrier_str.replace(
+                    "'", "")
+                carrier_str = carrier_str.replace(']', '')
+                # carrier_str = carrier_str.strip("")
+
+                carrier_str = carrier_str.replace(
+                    ",", "")
+
+                carrier_str = carrier_str.replace(
+                    "\n", "")
+
+                carrier_list: list = carrier_str.split(" ")
 
                 # using list comprehension to get the allpair file for a specific chromosome and variant
-                allpair_file: str = [file for file in allpair_files if "".join(
-                    [chr_num, "."]) in file and variant in file][0]
+                print(f"{chr_num},{variant}")
 
+                # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
+                try:
+                    allpair_file: str = [file for file in allpair_files if "".join(
+                        [chr_num, "."]) in file and variant in file][0]
+
+                except IndexError:
+
+                    # returns either a 1 or 0 if the variant is in the no_carrier_file.txt list
+                    carrier_int: int = check_no_carrier(
+                        args.no_carrier_file, variant)
+
+                    if carrier_int == 1:
+
+                        # print statement that explains that ther is no variant
+                        print(f"The variant, {variant}, has no carriers")
+                        # skips to the next iteration of the for loop
+                        continue
+
+                    elif carrier_int == 0:
+
+                        print(f"The variant, {variant}, failed")
+
+                        # checking if the file exist
+                        if os.path.isfile("".join([args.output, "failed_variants.txt"])):
+
+                            # removing the file if it exist
+                            os.remove(
+                                "".join([args.output, "failed_variants.txt"]))
+
+                        # writing the variant that failed to a file
+                        with open("".join([args.output, "failed_variants.txt"]), "a+") as file:
+
+                            file.write(f"{variant}\n")
+
+                        continue
+
+                print(allpair_file)
                 # getting a list of carriers that share segments and therefore are "confirmed"
+
                 confirmed_carrier_list: list = search_allpair_file(
                     allpair_file, carrier_list)
 
-                # TODO:Need to create a function that will subset genotype_df for the whole list of carriers and then it will add a 1 to
-                # the iids that share a segment and a 0 to those that don't. Then need to combine this dataframe with others iteratively
-
                 # This will subset the dataframe for the carriers
                 subset_df: pd.DataFrame = subset_genotype(
-                    genotype_df, carrier_list)
+                    genotype_df, carrier_list, variant[:-2])
 
                 # Adding a column for the carrier status to the file
                 modified_geno_df: pd.DataFrame = add_column(
                     subset_df, confirmed_carrier_list)
-                print("this is the modified df")
 
                 print(modified_geno_df)
 
                 # Combining the dataframes
-                ideal_format_df = merge_df(ideal_format_df, modified_geno_df)
-
-                print(ideal_format_df)
-
-    # writing the ideal_format_df to a csv file
-    output_path = "".join([args.output, "confirmed_carriers.txt"])
-    ideal_format_df.to_csv(output_path, sep="\t")
+                write_to_file(modified_geno_df, output_path)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="")
 
-    parser.add_argument("--input", help="This argument takes the initial input file which contains variants for multiple chromosomes and splits it into multiple files, one for each chromosome",
-                        dest="", type="", nargs="", required="Bool")
+    parser.add_argument("-d", help="This argument list the path for the carrier csv files. These files should end with single_variant_list.csv",
+                        dest="directory", type=str, required=True)
+
+    parser.add_argument("-p", help="This argument list the path for the directory containing the PLINK output files. These files will be the map and ped files",
+                        dest="plink_dir", type=str, required=True)
+
+    parser.add_argument("-a", help="This argument list the path for the allpair.txt files.",
+                        dest="allpair_dir", type=str, required=True)
+
+    parser.add_argument("-o", help="This argument list the path for the output file",
+                        dest="output", type=str, required=True)
+
+    parser.add_argument("-n", help="This argument list the path for the no_carrier_in_file.txt",
+                        dest="no_carrier_file", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
