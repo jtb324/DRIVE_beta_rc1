@@ -34,8 +34,6 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
     # iterate through the files to build the dictionary
     for ibd_file in ibd_file_list:
 
-        print(ibd_file)
-
         match = re.search(r'.chr\d\d\.', ibd_file)
 
         # find chromosome number
@@ -51,7 +49,6 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
 
             chr_num = match.group(0)
 
-        print(chr_num)
         # Finding the variant id of the file. file names are built so that the
         # variant id sits between the first "_" and the first "."
         for ibd_program in program_list:
@@ -89,7 +86,7 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
             # This goes through the three files in the filter_ibd_file_list
             for file in filter_ibd_file_list:
 
-                # This checks to see if the variant id is in the dictionary 
+                # This checks to see if the variant id is in the dictionary
                 # and that the ibd program is in the file
                 if ibd_program in file and (chr_num, variant_id) not in file_dict.keys():
 
@@ -153,9 +150,9 @@ def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str, carri
     # spliting the pair row
     # {str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}
 
-    pair_str:str = pairs_row.split("\t")[4]
+    pair_str: str = pairs_row.split("\t")[4]
 
-    pair_list:list = pair_str.split(" ")
+    pair_list: list = pair_str.split(" ")
 
     reformat(allpair_file_name,
              pair_list, variant_id, carrier_file_dir, chr_num)
@@ -195,13 +192,13 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     The first columnn is the ibd program that identified the pairs, the second column is the 
     first pair, the third column is the second pair, and then the fourth column tells if the 
     second pair is a carrier'''
-    
-    #Removing the allpair.txt file if it already exists from a previous run
+
+    # Removing the allpair.txt file if it already exists from a previous run
     if os.path.isfile('filename.txt'):
-    
-        #removing the file
+
+        # removing the file
         os.remove(write_path)
-    
+
     carrier_list = get_carrier_file_list(carrier_file_dir)
 
     # use list comprehension to find the file with that chr_num
@@ -216,7 +213,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     for pair in pair_list:
 
         with open(write_path, "a+") as allpair_new_file:
-            #Checks to see if the file is empty. If it is empty then it write the header
+            # Checks to see if the file is empty. If it is empty then it write the header
             if os.path.getsize(write_path) == 0:
 
                 allpair_new_file.write(
@@ -227,14 +224,14 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
 
             # getting pair 1
             pair1 = pair.split(":")[1].split("-")[0]
-            print(pair1) 
-            #Removing the extra newline off of the final pair
+
+            # Removing the extra newline off of the final pair
             pair1 = pair1.strip("\n")
 
             # getting pair 2
             pair2 = pair.split(":")[1].split("-")[1]
-            
-            #stripping the extra newline off of the final pair
+
+            # stripping the extra newline off of the final pair
             pair2 = pair2.strip("\n")
 
             # determining carrier status of second iid pair
@@ -270,6 +267,7 @@ def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
         return 1
     elif curr_max_pair == new_max_pair:  # If the the above is not true than it returns a 0
         return 0
+
 
 def run(args):
     ibd_file_list: list = gather_ibd_files(args.segment_dir)
@@ -347,16 +345,15 @@ def run(args):
 
         oldallpair = set([])
 
-
-        #this sets a counter to determine how many times the max_pair_int branch is entered
-        count:int = 0
+        # this sets a counter to determine how many times the max_pair_int branch is entered
+        count: int = 0
 
         while sum(list(map(lambda f: endtest[f], endtest.keys()))) < len(endtest):
             pos = min(newpos.values())
             nowf = findkey(pos, newpos)
         #    print('{0} from {1}'.format(str(pos), ' '.join(nowf)))
             for f in nowf:
-                
+
                 CHR = str(newline[f].split('\t')[0])
                 if newline[f].split('\t')[4] != 'NA':
                     addibd = set(newline[f].split('\t')[4].split(' '))
@@ -382,16 +379,15 @@ def run(args):
                     newpos[f] = int(nextline.split('\t')[1])
                     newline[f] = nextline
 
-            print('chr{0}:{1} from {2}'.format(CHR, str(pos), ' '.join(nowf)))
+            # print('chr{0}:{1} from {2}'.format(CHR, str(pos), ' '.join(nowf)))
 
             sumrow = list(map(lambda comb: len(
                 allinter(comb, curr_pair)), allcomb.values()))
             uniqrow = get_uniqrow(1, allcomb, curr_pair, combtab)
             newallpair: list = all_agree_pair(curr_pair)
-            print(len(newallpair))
+
             max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
-            print(max_pairs_int)
-            
+
             outpair: list = []
 
             for pp in newallpair:
@@ -405,40 +401,39 @@ def run(args):
                 outpair = ['NA']
 
             if max_pairs_int == 1:
-                print(f"The count is {count}")
-                #update the counter
+
+                # update the counter
                 count += 1
 
+                # This will return a 0 if the max pairs == the len(newallpair) and a one if max_pairs is greater
+                after_max_pair: int = after_max_pair_found(
+                    max_pairs, len(newallpair))
 
-                #This will return a 0 if the max pairs == the len(newallpair) and a one if max_pairs is greater 
-                after_max_pair: int = after_max_pair_found( 
-                    max_pairs, len(newallpair)) 
-                    
                 if after_max_pair == 0 and count == 1:
 
                     max_pairs_str: str = previous_row_str
 
-                    #get the start base position which will be used later in the allpair path
+                    # get the start base position which will be used later in the allpair path
                     start_bp: str = previous_row_bp
-                    print(start_bp)
+
                 end_bp: str = str(pos)
 
                 if after_max_pair == 1:
                     # creating an output path that just has the allpair.txt files and
                     allagree_path = "".join(
                         [out, ".", start_bp, "-", end_bp, ".allpair.txt"])
-                    print(max_pairs_str)
-                    #Entering into the get_max_pairs function
+
+                    # Entering into the get_max_pairs function
                     get_max_pairs(allagree_path, max_pairs_str, variant_id,
                                   args.car_file, chr_num)
 
                     break
-            
+
             if max_pairs_int == 0:
-                #This if statement is made to reset the counter if the max_pair integer goes from being 1 back to 0
-                
-                #Reseting the counter
-                count = 0 
+                # This if statement is made to reset the counter if the max_pair integer goes from being 1 back to 0
+
+                # Reseting the counter
+                count = 0
 
             # sumtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
             #     pos), ",".join(nowf), '\t'.join(map(str, sumrow))))
@@ -446,13 +441,16 @@ def run(args):
             #     pos), ",".join(nowf), '\t'.join(map(str, uniqrow))))
             max_pairs = len(newallpair)
 
-            #keeping track of the previous row so that it can be used if necessary
-            previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
-            
-            #Also keeping track of the base position
-            previous_row_bp:str = str(pos)
+            print(len(newallpair))
 
-            print(previous_row_bp)
+            print(outpair)
+
+            # keeping track of the previous row so that it can be used if necessary
+            previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
+
+            # Also keeping track of the base position
+            previous_row_bp: str = str(pos)
+
         # sumtab.close()
         # uniqtab.close()
         # allagree.close()
