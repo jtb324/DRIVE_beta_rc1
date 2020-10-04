@@ -200,6 +200,24 @@ def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
             # returns 0 if the variant is not found
             return 0
 
+def add_chr_column(df:pd.DataFrame, chr_num:str) -> pd.DataFrame:
+    '''This function will add a column for the chromosome number to
+    the dataframe and then return the dataframe'''
+    # getting the  chromosome number
+    chr_num_handler:dict = {
+             4: re.search(r"\d", chr_num),
+             5: re.search(r"\d\d", chr_num)
+    }
+
+    chr_match = chr_num_handler[len(chr_num)]
+    
+    #getting the digit from the chr_num
+    chr_digit:str = chr_match.group(0)
+
+    df["chr"] = chr_digit
+
+    return df
+
 
 def run(args):
     "function to run"
@@ -217,7 +235,7 @@ def run(args):
     with open(output_path, "w") as output_file:
 
         output_file.write(
-            f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\n")
+            f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\t{'chr'}\n")
 
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
     carrier_files: list = get_files(args.directory, "*single_variant_list.csv")
@@ -328,6 +346,8 @@ def run(args):
                 modified_geno_df: pd.DataFrame = add_column(
                     subset_df, confirmed_carrier_list)
 
+                #adding a column for the chromosome number to be able to differentiate the variants
+                modified_geno_df = add_chr_column(modified_geno_df, chr_num)
                 print(modified_geno_df)
 
                 # Combining the dataframes
