@@ -68,6 +68,12 @@ class soup_parser():
     def get_freq(self) -> dict:
         '''This function gets the minor allele frequencies for variants of interest'''
 
+        # Creating four list that will work be used to keep track of the variants and the
+        variant_list: list = []
+        allele_freq_list: list = []
+        exome_filter_list: list = []
+        genome_filter_list: list = []
+
         # creating a headless mode
         options = Options()
 
@@ -81,9 +87,6 @@ class soup_parser():
 
         # creating the driver object
         browser = browser_handling_dict[self.browser]
-
-        # creating a dictionary to keep track of the allele frequencies
-        gnomad_freq_dict: dict = dict()
 
         # iterating through each variant
         for variant in self.var_list:
@@ -127,9 +130,23 @@ class soup_parser():
             print(
                 f"This is the allele frequencies for the variant {variant} is {allele_freq}")
 
+            # also have to get the filter status
+            filter_tuple: tuple = self.get_filter_status(browser)
+
             # adding the variant and the allele frequencies to a dictionary
 
-            gnomad_freq_dict[variant] = allele_freq
+            variant_list.append(variant)
+            allele_freq_list.append(allele_freq)
+            exome_filter_list.append(filter_tuple[0])
+            genome_filter_list.append(filter_tuple[1])
+
+        # creating a dictionary to keep track of the allele frequencies
+        gnomad_freq_dict: dict = {
+            "RS Name": variant_list,
+            "MAF": allele_freq_list,
+            "exome_filter_status": exome_filter_list,
+            "genome_filter_status": genome_filter_list
+        }
 
         # closign the webdriver
         browser.close()
@@ -140,10 +157,24 @@ class soup_parser():
     def dict_to_csv(self, dict: dict):
 
         # convert dictionary to dataframe
-        gnomad_df = pd.DataFrame(dict.items(), columns=["RS Name", "MAF"])
+        gnomad_df = pd.DataFrame.from_dict(dict)
 
         # writing the dataframe to a file
         gnomad_df.to_csv(self.output_file_name, index=False, sep="\t")
+
+    def get_filter_status(self, browser) -> tuple:
+        '''This function will get the exome and genome filter status and return a tuple with
+        both statuses'''
+
+        # finding the two filter statuses by class name. They seem to have the same class name
+        filter_status: list = browser.find_elements_by_class_name(
+            "Badge__BadgeWrapper-j4izdp-1.bhuqae")
+
+        # Converting the above objects into a tuple of strings
+        filter_status_tuple: tuple = tuple(
+            [filter_status[0].text, filter_status[1].text])
+
+        return filter_status_tuple
 
 
 def run(args):

@@ -5,8 +5,6 @@ import sys
 
 def determine_webdriver(browser: str, options):
 
-    print(browser)
-
     if browser == "firefox":
 
         driver = webdriver.Firefox(options=options)
