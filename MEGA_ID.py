@@ -91,13 +91,6 @@ def run(args):
         # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
         carrier_in_network_dict = dict()
 
-    # TODO: get rid of this loop that gathers everything. This will instead be done in the actually create_networks function
-    # no longer need to get the different value for a txt file. can extract the variant_ids from teh allpair.new.txt files
-
-    # can still pass hte output. But the function will generate the variant name
-
-        variant_file = args.var_file
-
         output = "".join([args.output, "network_imgs"])
 
         if not path.exists(output):
@@ -112,14 +105,14 @@ def run(args):
         logging.info(
             "Drawing networks for all individuals identified as shared segments...")
 
-        carrier_in_network_dict = create_networks(args.segments_file, args.var_file, carrier_in_network_dict,
+        carrier_in_network_dict = create_networks(args.allpair_file, args.var_file, carrier_in_network_dict,
                                                   output)
 
         logger = logging.getLogger(args.output+'/carriers_in_network.log')
 
         # Writing the dictionary to a csv file
         csv_writer = Csv_Writer_Object(
-            carrier_in_network_dict, args.output, "carriers_in_networks.csv", logger)
+            carrier_in_network_dict, output, "carriers_in_networks.csv", logger)
 
         csv_writer.log_file_path()
 
@@ -149,8 +142,8 @@ def main():
     parser.add_argument("--fam_file", help="This provides a path to the desired .fam of networks. This argument is used in the allele_count script",
                         dest="fam_file", type=str, default=False)
 
-    parser.add_argument("--shared_segments_file", help="This argument provides a path to the list of shared segments that can be used to form networks",
-                        dest="segments_file", type=str, default=False)
+    parser.add_argument("--allpair_files", help="This argument provides a path to the list of shared segments that can be used to form networks",
+                        dest="allpair_file", type=str, default=False)
 
     parser.add_argument("--variant_file", help="This argument provides a path to a file that list all individuals that carry a specific variant",
                         dest="var_file", type=str, default=False)

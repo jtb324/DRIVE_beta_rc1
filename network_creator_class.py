@@ -13,11 +13,11 @@ from file_exist_checker import Check_File_Exist
 
 class Network_Img_Maker(Check_File_Exist):
 
-    def __init__(self, segments_file, variant_file: str, output_path: str, logger):
+    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger):
         # This will be the directory to where all the allpair.new.txt files are
-        self.file = segments_file
+        self.file = segments_file_dir
         # This comes from previous singleVariantAnalysis so the file will exist
-        self.variant_file_list = variant_file
+        self.variant_file_list = variant_file_dir
         self.log_file = logger
         self.output_path = output_path
         self.network_carriers = None
@@ -26,7 +26,7 @@ class Network_Img_Maker(Check_File_Exist):
         self.id_list = None
         self.curr_dir = os.getcwd()
 
-    def gather_allpair_files(self, file_directory: str, file_tag: str):
+    def gather_files(self, file_directory: str, file_tag: str) -> list:
         '''This function will gather all of the allpair.new.txt files which contain information about pairs. It will also be used to get the 'chr#_list.single_variant.csv' files.'''
         os.chdir(file_directory)
 
@@ -44,103 +44,75 @@ class Network_Img_Maker(Check_File_Exist):
 
         return file_list
 
-    def isolate_variant_list(self, variant_of_interest: str):
-        '''This function will create a list of IIDs who carry a specific variant.'''
+    # def isolate_variant_list(self, variant_of_interest: str):
+    #     '''This function will create a list of IIDs who carry a specific variant.'''
 
-        self.var_of_interest = variant_of_interest
+    #     self.var_of_interest = variant_of_interest
 
-        # This uses the reformated variant file
-        variant_df = pd.read_csv(self.variant_file_list, sep=",")
+    #     # This uses the reformated variant file
+    #     variant_df = pd.read_csv(self.variant_file_list, sep=",")
 
-        # Isolating the variant_df for the variant of interest
-        variant_df_subset = variant_df[variant_df["Variant ID"]
-                                       == variant_of_interest]
+    #     # Isolating the variant_df for the variant of interest
+    #     variant_df_subset = variant_df[variant_df["Variant ID"]
+    #                                    == variant_of_interest]
 
-        iid_list = variant_df_subset["IID"].values.tolist()
+    #     iid_list = variant_df_subset["IID"].values.tolist()
 
-        print(f"The number of carriers identified are {len(iid_list)}")
+    #     print(f"The number of carriers identified are {len(iid_list)}")
 
-        return iid_list
+    #     return iid_list
 
     def drop_empty_rows(self, loaded_df):
         '''This function just drops empty rows in the dataframe'''
         print(f"dropping empty rows in file {self.file}...")
-
         nan_value = float("NaN")
         loaded_df.replace("", nan_value, inplace=True)
         loaded_df.dropna(subset=["Pairs"], inplace=True)
         print(loaded_df)
         return loaded_df
 
-    def isolate_ids(self, loaded_df, iid_list):
-        '''This function removes the IBD software identifier (The GERMLINE, iLASH, or HapIBD) creates two new rows in the provided dataframe for each set of ids. The function takes the loaded df of individuals as an input'''
-        ########################################################
-        # Removing the "GERMLINE", "iLASH", and "hapibd" from the Pairs value and then splitting the list:
+    @staticmethod
+    def load_allpair_file(allpair_file_path: str) -> pd.DataFrame:
+        '''This function will load the allpair files into a dataframe'''
 
-        self.log_file.info(
-            "Creating two new columns in the provide segment file for the two id pairs.")
+        # Reading the file into a pandas dataframe
+        allpair_df: pd.DataFrame = pd.read_csv(allpair_file_path, sep="\t", usecols=[
+                                               "pair_1", "pair_2", "carrier_status"])
 
-        loaded_df["Pair_id1"] = loaded_df["Pairs"].str.split(":")
+        return allpair_df
 
-        # Regular expression used to drop GERMLINEq:
+    @staticmethod
+    def filter_for_carriers(allpair_df: pd.DataFrame, carrier_list: list) -> pd.DataFrame:
+        '''This function will filter out the rows in the allpair dataframe where the 
+         pairs are not both carriers'''
 
-        reg_expression = re.compile(
-            r'(?=.*GERMLINE)(?=.*iLASH)|(?=.*hapibd)|(?=.*iLASH).*')
+        # making sure that second pair of grids are in the carrier list
+        filtered_df: pd.DataFrame = allpair_df[allpair_df.carrier_status == "1"]
 
-        regmatch = np.vectorize(lambda x: bool(reg_expression.match(x)))
-
-        bool_array = regmatch(loaded_df["Pairs"].values)
-
-        loaded_df = loaded_df[bool_array]
-
-        ##########################################################
-        # This breaks up the pairs in the dataframe so that they are easily accessible to build networks.
-        for index, row in loaded_df.iterrows():
-
-            row['Pair_id1'] = row["Pair_id1"][1]
-
-        loaded_df["Pair_id2"] = loaded_df["Pair_id1"].str.split("-")
-
-        for index, row in loaded_df.iterrows():
-
-            row['Pair_id1'] = row['Pair_id2'][0]
-            row['Pair_id2'] = row['Pair_id2'][1]
-
-        # Now have to filter down the file so that all the rows are
-        # individuals who are found in the iid_list. Should return a
-        # file where Pair_id1 and Pair_id2 are both carriers
-
-        final_df = loaded_df[(loaded_df["Pair_id1"].isin(iid_list)) & (
-            loaded_df["Pair_id2"].isin(iid_list))]
-
-        print(
-            f"There were {len(final_df)} pairs found within the segment file at {self.file}")
-        print("\n")
-
-        self.log_file.info(
-            f"There where {final_df} pairs found within the segment file at {self.file}")
-
-        final_df.to_csv(
-            "".join([self.output_path, "/", self.var_of_interest, ".pairs.csv"]))
-
-        return final_df
+        # making sure the first pair is in the carrier list
+        filtered_df = filtered_df[filtered_df.pair_1.isin(carrier_list)]
+        print(filtered_df)
+        return filtered_df
     ################################################################
 
-    def carriers_in_network(self, iid_list, subset_df, ind_in_networks_df):
+    def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame, ind_in_networks_dict: dict, variant: str) -> dict:
         '''This function tells the percent of carriers who are in these networks'''
 
-        id1_set = set(subset_df.Pair_id1.values.tolist())
+        id1_set: set = set(subset_df.pair_1.values.tolist())
 
-        id2_set = set(subset_df.Pair_id2.values.tolist())
+        id2_set: set = set(subset_df.pair_2.values.tolist())
 
-        total_carriers_set = id1_set | id2_set
+        total_carriers_set: set = id1_set | id2_set
+        print(id1_set)
 
-        carriers_in_network = sum(
+        print(id2_set)
+        carriers_in_network: int = sum(
             item in total_carriers_set for item in set(iid_list))
 
-        percent_in_networks = carriers_in_network/len(iid_list)*100
+        print(f"This is the carriers_in_network, {carriers_in_network}")
+        percent_in_networks: float = carriers_in_network/len(iid_list)*100
 
-        ind_in_networks_df[self.var_of_interest] = percent_in_networks
+        ind_in_networks_dict[variant] = percent_in_networks
 
         # Need to make it so that there is a dataframe with the IID and then a 1 or 0 if it is in a network or not
         # figure out which carriers from the iid_list are in networks
@@ -165,22 +137,20 @@ class Network_Img_Maker(Check_File_Exist):
         self.network_carriers = pd.DataFrame(
             carriers_in_network_dict, columns=["IID", "In Network", "Network ID"])
 
-        return ind_in_networks_df
+        print(self.network_carriers)
+
+        return ind_in_networks_dict
 
     ################################################################
 
-    def draw_networks(self, reformated_df):
+    def draw_networks(self, reformated_df: pd.DataFrame, variant: str):
         '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions'''
 
-        ##########################################################
-        # Logging message
-        self.log_file.info(
-            "Creating the pdfs of network images and writing them to a directory called network_images")
         ##########################################################
         # Drawing the graph
 
         # getting a list of all unique IDs in the Pair_id1 column to iterate through
-        id_list = reformated_df['Pair_id1'].unique().tolist()
+        id_list = reformated_df['pair_1'].unique().tolist()
 
         nodes_visited_set = set()
         edges_drawn = []
@@ -272,12 +242,14 @@ class Network_Img_Maker(Check_File_Exist):
                 # This creates a directory for the network pdf files
                 img_directory = check_dir(self.output_path, "network_images")
 
+                print(f"This is the img directory, {img_directory}")
+
                 # making the graphs undirected
                 related_graph.edge_attr.update(arrowhead="none")
 
                 # rendering the graphs
                 related_graph.render("".join([
-                    img_directory, "/", self.var_of_interest, ".network", str(network_number), '.gv']))
+                    img_directory, "/", variant, ".network", str(network_number), '.gv']))
 
                 # Clearing the graph for the next loop
                 related_graph.clear()
@@ -287,7 +259,7 @@ class Network_Img_Maker(Check_File_Exist):
 
         # This writes all the network_carriers df to a csv file
         self.network_carriers.to_csv(
-            "".join([self.output_path, "/carriers_in_network", ".", self.var_of_interest, ".csv"]))
+            "".join([self.output_path, "/carriers_in_network", ".", variant, ".csv"]))
 
     def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame, current_id1: str) -> set:
         '''This function identifies all the potential pair ids for '''
