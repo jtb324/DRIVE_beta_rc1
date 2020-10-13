@@ -5,7 +5,7 @@ import os.path
 from os import path
 import pandas as pd
 
-from identify_single_var_carrier import singleVariantAnalysis
+from analysis_scripts.identify_single_var_carrier import singleVariantAnalysis
 from SearchPedigree import searchPedigree
 from allele_count import allele_counts
 from identify_multi_var_carriers import multiVariantAnalysis

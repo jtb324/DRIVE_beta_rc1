@@ -44,24 +44,6 @@ class Network_Img_Maker(Check_File_Exist):
 
         return file_list
 
-    # def isolate_variant_list(self, variant_of_interest: str):
-    #     '''This function will create a list of IIDs who carry a specific variant.'''
-
-    #     self.var_of_interest = variant_of_interest
-
-    #     # This uses the reformated variant file
-    #     variant_df = pd.read_csv(self.variant_file_list, sep=",")
-
-    #     # Isolating the variant_df for the variant of interest
-    #     variant_df_subset = variant_df[variant_df["Variant ID"]
-    #                                    == variant_of_interest]
-
-    #     iid_list = variant_df_subset["IID"].values.tolist()
-
-    #     print(f"The number of carriers identified are {len(iid_list)}")
-
-    #     return iid_list
-
     def drop_empty_rows(self, loaded_df):
         '''This function just drops empty rows in the dataframe'''
         print(f"dropping empty rows in file {self.file}...")
