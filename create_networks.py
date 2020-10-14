@@ -24,8 +24,6 @@ def get_chr_num(file: str) -> str:
 
     chr_num = chr_num.strip(".").strip("_")
 
-    print(chr_num)
-
     return chr_num
 
 
@@ -41,9 +39,6 @@ def create_carrier_dict(file) -> dict:
 
     # getting a unique list of variants
     variant_list: set = set(carrier_df["Variant ID"].tolist())
-
-    print(variant_list)
-    print(len(variant_list))
 
     # iterating through each variant in the list
     for variant in variant_list:
@@ -61,7 +56,49 @@ def create_carrier_dict(file) -> dict:
     return carrier_dict
 
 
+def check_file_exist(file_path: str):
+    '''This function will check if the provided file exist and then 
+    delete it if it does'''
+
+    # checking if the file exist
+    if os.path.isfile(file_path):
+
+        # removing the file if it exist
+        os.remove(file_path)
+
+
+def add_header_row(output_path: str):
+    '''This function takes the output file path and then adds a header row to it'''
+
+    # Loading the data into a dataframe
+    output_df: pd.DataFrame = pd.read_csv(output_path, header=None)
+
+    # writing the file to the same csv with a new header
+    output_df.to_csv(output_path, header=[
+                     "grid", "in_network_status", "network_id", " variant_id", "chr_num"])
+
+
+def get_size(network_groups_file: str):
+    '''This function will group the provided file so that size of each network per variant
+    can be determined'''
+
+    # Load the file into a dataframe
+    network_groups_df: pd.DataFrame = pd.read_csv(network_groups_file)
+
+    # group the dataframe by two columns and then count the values in the group
+    grouped_df: pd.DataFrame = network_groups_df.groupby(
+        ["network_id", "variant_id"]).sum()
+
+    # dropping the chromosome column because it is unnecessary
+    final_df: pd.DataFrame = grouped_df.drop("chr", 1)
+
+    final_df.to_csv("network_groups_summary.csv", index=None)
+
+
 def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_network_dict: dict, output_path: str) -> dict:
+
+    check_file_exist(
+        "".join([output_path, "/network_groups", ".csv"]))
 
     logger = logging.getLogger(output_path+'/drawing_networks.log')
 
@@ -76,11 +113,9 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
     carrier_file_list: list = network_drawer.gather_files(
         variant_file_dir, "*.single_var_list_reformat.csv")
 
-    print(allpair_file_list)
-    print(carrier_file_list)
-
     # iterating through the carrier_file list for each file
     for file in carrier_file_list:
+        print(file)
 
         # This function will get the chromosome number of the file
         chr_num: str = get_chr_num(file)
@@ -95,8 +130,6 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
 
             carrier_list: list = items[1]
 
-            print(chr_num)
-
             try:
 
                 allpair_file_path: str = [
@@ -110,7 +143,7 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
                 # TODO: add a function to write these variants to a file so that you can identify them
 
                 continue
-
+            print(allpair_file_path)
             # Loading the dataframe
             allpair_df: pd.DataFrame = network_drawer.load_allpair_file(
                 allpair_file_path)
@@ -118,6 +151,14 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
             # filtering the allpair_df for only rows were both individuals are carriers
             filtered_allpair_df: pd.DataFrame = network_drawer.filter_for_carriers(
                 allpair_df, carrier_list)
+
+            # if the dataframe is empty then the loop needs to skip that variant
+            if filtered_allpair_df.empty:
+                print(
+                    f"There were no pairs found where both individuals were carriers for the variant {variant_id}")
+
+                # prints the message and then moves onto the next iteration
+                continue
 
             # This just drops any empty rows in the dataframe
             if filtered_allpair_df["pair_1"].isnull().any() or filtered_allpair_df["pair_2"].isnull().any():
@@ -128,6 +169,11 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
             carrier_in_network_dict = network_drawer.carriers_in_network(
                 carrier_list, filtered_allpair_df, ind_in_network_dict, variant_id)
 
-            network_drawer.draw_networks(filtered_allpair_df, variant_id)
+            output_path = network_drawer.draw_networks(
+                filtered_allpair_df, variant_id, chr_num)
+
+            add_header_row(output_path)
+
+            get_size(output_path)
 
     return carrier_in_network_dict
