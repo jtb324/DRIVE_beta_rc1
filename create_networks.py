@@ -71,7 +71,8 @@ def add_header_row(output_path: str):
     '''This function takes the output file path and then adds a header row to it'''
 
     # Loading the data into a dataframe
-    output_df: pd.DataFrame = pd.read_csv(output_path, header=None)
+    output_df: pd.DataFrame = pd.read_csv(output_path)
+    print(output_df)
 
     # writing the file to the same csv with a new header
     output_df.to_csv(output_path, header=[
@@ -84,15 +85,43 @@ def get_size(network_groups_file: str):
 
     # Load the file into a dataframe
     network_groups_df: pd.DataFrame = pd.read_csv(network_groups_file)
-
+    print(network_groups_df)
+    print(network_groups_df.columns)
     # group the dataframe by two columns and then count the values in the group
-    grouped_df: pd.DataFrame = network_groups_df.groupby(
-        ["network_id", "variant_id"]).sum()
+    # this block catches an error where for some reason there is a space in teh variant id column name
+    try:
+        grouped_df: pd.DataFrame = network_groups_df.groupby(
+            ["Network ID", "variant_id"]).sum()
 
+    except KeyError:
+        # This removes the space and then tries to group it again
+        network_groups_df = network_groups_df.rename(
+            columns={" variant_id": "variant_id"})
+
+        grouped_df: pd.DataFrame = network_groups_df.groupby(
+            ["Network ID", "variant_id"]).sum()
     # dropping the chromosome column because it is unnecessary
-    final_df: pd.DataFrame = grouped_df.drop("chr", 1)
+    final_df: pd.DataFrame = grouped_df.drop("chr_num", 1)
 
     final_df.to_csv("network_groups_summary.csv", index=None)
+
+
+def write_missing_variants(variant: str, output_path: str):
+    '''This function will create an output file that documents which variants there was no allpair.txt file for'''
+
+    output_file_path: str = "".join([output_path, "missing_allpairs.txt"])
+
+    # opening the output_file
+    with open(output_file_path, "a+") as missing_files:
+
+        # checking to see if the files are empty
+        if os.path.getsize(missing_files) == 0:
+
+            missing_files.write(
+                "Showing a list of variants for which an allpairs.txt file was not found")
+        else:
+            missing_files.write(variant)
+            missing_files.write("\n")
 
 
 def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_network_dict: dict, output_path: str) -> dict:
@@ -100,7 +129,16 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
     check_file_exist(
         "".join([output_path, "/network_groups", ".csv"]))
 
+    check_file_exist("".join([output_path, "/pairs_in_networks", ".csv"]))
+
+    # checking if the file that documnets whether or not there is an allpair file exist
+    check_file_exist("".join([output_path, "missing_allpairs.txt"]))
+
     logger = logging.getLogger(output_path+'/drawing_networks.log')
+
+    # Creating an empty dataframe that the pairs will be written to at the end in the
+    # draw networks function
+    allpairs_df: pd.DataFrame = pd.DataFrame()
 
     network_drawer: object = Network_Img_Maker(
         segments_file_dir, variant_file_dir, output_path, logger)
@@ -169,10 +207,11 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
             carrier_in_network_dict = network_drawer.carriers_in_network(
                 carrier_list, filtered_allpair_df, ind_in_network_dict, variant_id)
 
-            output_path = network_drawer.draw_networks(
-                filtered_allpair_df, variant_id, chr_num)
+            output_path, allpairs_df = network_drawer.draw_networks(
+                filtered_allpair_df, variant_id, chr_num, allpairs_df)
 
-            add_header_row(output_path)
+            print(output_path)
+            # add_header_row(output_path)
 
             get_size(output_path)
 

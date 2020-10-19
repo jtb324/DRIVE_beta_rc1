@@ -6,6 +6,7 @@ import os.path
 from os import path
 from graphviz import Digraph
 import glob
+import gzip
 
 from check_directory import check_dir
 from file_exist_checker import Check_File_Exist
@@ -25,6 +26,10 @@ class Network_Img_Maker(Check_File_Exist):
         # This is used in creating an id set for drawing the networks later
         self.id_list = None
         self.curr_dir = os.getcwd()
+        # self.files: dict = {
+        #     "hapibd": self.gather_files(hapibd_dir, ".ibd.gz"),
+        #     "ilash": self.gather_files(ilash_dir, ".match.gz")
+        # }
 
     def gather_files(self, file_directory: str, file_tag: str) -> list:
         '''This function will gather all of the allpair.new.txt files which contain information about pairs. It will also be used to get the 'chr#_list.single_variant.csv' files.'''
@@ -66,7 +71,7 @@ class Network_Img_Maker(Check_File_Exist):
         nan_value = float("NaN")
         loaded_df.replace("", nan_value, inplace=True)
         loaded_df.dropna(subset=["Pairs"], inplace=True)
-        print(loaded_df)
+
         return loaded_df
 
     @staticmethod
@@ -83,15 +88,15 @@ class Network_Img_Maker(Check_File_Exist):
     def filter_for_carriers(allpair_df: pd.DataFrame, carrier_list: list) -> pd.DataFrame:
         '''This function will filter out the rows in the allpair dataframe where the 
          pairs are not both carriers'''
-        print("This is the prefiltered dataframe")
-        print(allpair_df)
+
         # making sure that second pair of grids are in the carrier list
         filtered_df: pd.DataFrame = allpair_df[allpair_df.carrier_status == 1]
 
         # making sure the first pair is in the carrier list
         filtered_df = filtered_df[filtered_df.pair_1.isin(carrier_list)]
-        print(filtered_df)
+
         return filtered_df
+
     ################################################################
 
     def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame, ind_in_networks_dict: dict, variant: str) -> dict:
@@ -135,8 +140,6 @@ class Network_Img_Maker(Check_File_Exist):
         self.network_carriers = pd.DataFrame(
             carriers_in_network_dict, columns=["IID", "In Network", "Network ID"])
 
-        print(self.network_carriers)
-
         return ind_in_networks_dict
 
     ################################################################
@@ -174,11 +177,10 @@ class Network_Img_Maker(Check_File_Exist):
 
         return dataframe
 
-    def draw_networks(self, reformated_df: pd.DataFrame, variant: str, chr_num: str) -> str:
+    def draw_networks(self, reformated_df: pd.DataFrame, variant: str, chr_num: str, allpairs_df: pd.DataFrame) -> tuple:
         '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions. It will return the path to the output file'''
 
         ##########################################################
-        # Drawing the graph
 
         # getting a list of all unique IDs in the Pair_id1 column to iterate through
         id_list = reformated_df['pair_1'].unique().tolist()
@@ -188,10 +190,6 @@ class Network_Img_Maker(Check_File_Exist):
         network_number = 1
         # Creating the nodes
         for id1 in id_list:
-            print("This is id1")
-            print(id1)
-            # related_graph = Digraph(
-            #     comment="Shared Segment Network", strict=True)
 
             # Limit the passed dataframe to only those that have a relationship with id1. Only need to Pair_id1 and
             # Pair_id2 columns to make nodes
@@ -216,13 +214,19 @@ class Network_Img_Maker(Check_File_Exist):
                 full_subset_df = reformated_df[(reformated_df.pair_1.isin(self.id_list)) | (
                     reformated_df.pair_2.isin(self.id_list))][["pair_1", "pair_2"]]
 
+                # Creating another copy of the above dataframe
+                pairs_df: pd.DataFrame = full_subset_df
+
+                # adding a column of Nan to pairs df to create a column for the network id
+                pairs_df["Network ID"] = np.nan
                 # iterating through each row
                 for row in full_subset_df.itertuples():
 
                     # breaking up the tuple into each pair
                     Pair_id1 = row[1]
                     Pair_id2 = row[2]
-
+                    print(f"Pair_id1: {Pair_id1}")
+                    print(f"Pair_id2: {Pair_id2}")
                     # This if statements only makes Pair_id1 a node if it is not already constructed
                     if Pair_id1 not in nodes_constructed:
 
@@ -267,38 +271,41 @@ class Network_Img_Maker(Check_File_Exist):
                         "Network ID"]] = str(network_number)
 
                 ###########################################################################
+                    # adding the network id to he above dataframe
+                    pair_idx1 = pairs_df.index[pairs_df["pair_1"] == Pair_id1]
 
-                # # This creates a directory for the network pdf files
-                # img_directory = check_dir(self.output_path, "network_images")
+                    pairs_df.loc[pair_idx1, [
+                        "Network ID"]] = str(network_number)
 
-                # print(f"This is the img directory, {img_directory}")
+                    pair_idx2 = pairs_df.index[pairs_df["pair_2"] == Pair_id2]
 
-                # # making the graphs undirected
-                # related_graph.edge_attr.update(arrowhead="none")
-
-                # # rendering the graphs
-                # related_graph.render("".join([
-                #     img_directory, "/", variant, ".network", str(network_number), '.gv']))
-
-                # # Clearing the graph for the next loop
-                # related_graph.clear()
+                    pairs_df.loc[pair_idx2, [
+                        "Network ID"]] = str(network_number)
 
                 # This updates which network is being created
                 network_number += 1
+                # Adding values to the pair dictionary
+
+                # Merging all the two pairs dataframe
+                allpairs_df = pd.concat([allpairs_df, pairs_df])
 
         # Adding a column for the variant number and the chr number so that we can output just one file
         self.network_carriers = self.add_columns(
             self.network_carriers, variant, chr_num)
 
-        # This writes all the network_carriers df to a csv file
-        print("This is the network carriers dataframe")
-        print(self.network_carriers)
+        allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
         self.network_carriers.to_csv(
-            "".join([self.output_path, "/network_groups", ".csv"]), index=None, header=None, mode="a")
+            "".join([self.output_path, "/network_groups", ".csv"]), index=False, mode="a")
+        print("This is the network carriers")
+        print(self.network_carriers)
 
-        return "".join([self.output_path, "/network_groups", ".csv"])
+        allpairs_df.to_csv(
+            "".join([self.output_path, "/pairs_in_networks", ".csv"]), index=False, mode="a")
+
+        # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
+        return "".join([self.output_path, "/network_groups", ".csv"]), allpairs_df
 
     def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame, current_id1: str) -> set:
         '''This function identifies all the potential pair ids for '''
