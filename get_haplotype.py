@@ -25,25 +25,6 @@ def get_files(file_dir: str, file_extension) -> list:
     return file_list
 
 
-# def get_unique_variants(pairs_df: pd.DataFrame) -> list:
-#     '''This function will return a list of all the unique variants'''
-
-#     # the following line gets a list of all the unique variants within the dataframe
-#     variant_list: list = pairs_df.variant_id.values.unique().tolist()
-
-#     return variant_list
-
-# def get_unique_network_ids(carriers_df_subset: pd.DataFrame) -> list:
-#     '''This function will take a subset of the carriers_df only for a specific variant and
-#     return a list of all the unique network ids'''
-
-#     # the following line gets a list of all the unique variants within the dataframe
-#     id_list: list = carriers_df_subset["Network ID"].values.unique(
-#     ).tolist()
-
-#     return id_list
-
-
 def get_index_positions(file_path: str) -> list:
 
     # This dictionary contains the index of values such as IID1, IID2, Start point
@@ -58,33 +39,6 @@ def get_index_positions(file_path: str) -> list:
     indx_list: list = indx_dict["match" in file_path]
 
     return indx_list
-
-
-# def get_pair_list(df_subset: pd.DataFrame, col_num: int) -> list:
-#     '''This function will take the df subset and and specific column such as 1 or 2 and return
-#     a list of all the pairs for that column'''
-
-#     col_handler: dict = {
-#         1: "pair_1",
-#         2: "pair_2"
-#     }
-
-#     # This next line gets the name of the column
-#     col_name: str = col_handler[col_num]
-
-#     # This next line gets a list of either all the pair 1 or pair 2 values
-#     pair_list: list = df_subset[col_name].values.tolist()
-
-#     return pair_list
-
-
-# def get_chr_num(dataframe: pd.DataFrame) -> str:
-#     '''This function gets the chromosome number for the specific variant and network id'''
-
-#     # This gets the unique values of the chromosome numbers
-#     chr_num: str = str(dataframe.chr_num.values.unique().tolist())
-
-#     return chr_num
 
 
 def get_ibd_file(file_list: list, chr_str: str) -> str:
@@ -133,26 +87,18 @@ def get_haplotype_info(ibd_file: str, pair_1: str, pair_2: str) -> dict:
     return info_dict
 
 
-# def add_values_to_dict(pairs_df: pd.DataFrame, pair_1: str, pair_2: str, hapibd_dict: dict, ilash_dict: dict) -> dict:
-#     '''This function will add the values of interest to the correct row in the dataframe'''
+def check_file_size(file_path: str, header: str):
+    '''This function will check if the size of the file is zero and if it is then it will write the header to the file'''
 
-#     # Getting the values of interest from each dictionary
-#     hapibd_values_list: list = hapibd_dict[(pair_1, pair_2)]
+    with open(file_path, "w") as output_file:
 
-#     # getting the values out of the list
-#     hapibd_start: int = hapibd_values_list[0]
-#     hapibd_end: int = hapibd_values_list[1]
-#     hapibd_length: int = hapibd_values_list[2]
+        # Checks if there is anything previously written to the file
+        if os.path.getsize(file_path) == 0:
 
-#     # Getting the values of interest from each dictionary
-#     ilash_values_list: list = ilash_dict[(pair_1, pair_2)]
+            # If the file is empty then it writes in the header
+            output_file.write(header)
 
-#     # getting the values out of the list
-#     ilash_start: int = ilash_values_list[0]
-#     ilash_end: int = ilash_values_list[1]
-#     ilash_length: int = ilash_values_list[2]
 
-#     return pairs_dict
 def write_to_file(pairs_dict: dict, hapibd_dict: dict, ilash_dict: dict, output: str):
 
     # This creates the full output path by combining the provided output argument with the name of the file
@@ -160,20 +106,28 @@ def write_to_file(pairs_dict: dict, hapibd_dict: dict, ilash_dict: dict, output:
 
     file_header = "pair_1\tpair_2\tnetwork_id\tvariant_id\tchr_num\thapibd_start\thapibd_end\thapibd_length\tilash_start\tilash_end\tilash_length\n"
 
+    check_file_size(full_output_path, file_header)
+
     with open(full_output_path, "a+") as output_file:
-
-        if os.path.getsize(full_output_path) == 0:
-
-            output_file.write(file_header)
 
         # check if the hapibd dictionary is empty
         if hapibd_dict["start"].size == 0 and ilash_dict["start"].size > 0:
-            output_file.write(
-                f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{'Nan'}\t{'Nan'}\t{'Nan'}\t{ilash_dict['start'][0]}\t{ilash_dict['end'][0]}\t{ilash_dict['length'][0]}\n")
+            if ilash_dict["start"].size > 1:
+                for i in range(0, ilash_dict["start"].size):
+                    output_file.write(
+                        f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{'Nan'}\t{'Nan'}\t{'Nan'}\t{ilash_dict['start'][i]}\t{ilash_dict['end'][i]}\t{ilash_dict['length'][i]}\n")
+            else:
+                output_file.write(
+                    f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{'Nan'}\t{'Nan'}\t{'Nan'}\t{ilash_dict['start'][0]}\t{ilash_dict['end'][0]}\t{ilash_dict['length'][0]}\n")
 
         elif hapibd_dict["start"].size > 0 and ilash_dict["start"].size == 0:
-            output_file.write(
-                f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{hapibd_dict['start'][0]}\t{hapibd_dict['end'][0]}\t{hapibd_dict['length'][0]}\t{'Nan'}\t{'Nan'}\t{'Nan'}\n")
+            if hapibd_dict["start"].size > 1:
+                for i in range(0, hapibd_dict["start"].size):
+                    output_file.write(
+                        f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{hapibd_dict['start'][i]}\t{hapibd_dict['end'][i]}\t{hapibd_dict['length'][i]}\t{'Nan'}\t{'Nan'}\t{'Nan'}\n")
+            else:
+                output_file.write(
+                    f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{hapibd_dict['start'][0]}\t{hapibd_dict['end'][0]}\t{hapibd_dict['length'][0]}\t{'Nan'}\t{'Nan'}\t{'Nan'}\n")
         else:
             output_file.write(f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{hapibd_dict['start'][0]}\t{hapibd_dict['end'][0]}\t{hapibd_dict['length'][0]}\t{ilash_dict['start'][0]}\t{ilash_dict['end'][0]}\t{ilash_dict['length'][0]}\n")
 
@@ -211,30 +165,6 @@ def run(args):
 
             network_id: str = row_list[2]
             variant_id: str = row_list[3]
-            # # Getting a list of all the unique variants
-            # unique_var_list: list = get_unique_variants(
-            #     carrier_chunk)
-
-            # # iterating through each variant
-            # for variant in unique_var_list:
-
-            #     # Restricting the carrier dataframe to only those variants
-            #     carrier_df_subset: pd.DataFrame = carrier_chunk[carrier_chunk.variant_id == variant]
-
-            #     # Getting a list of all the network ids
-            #     unique_network_ids: list = get_unique_network_ids(
-            #         carrier_df_subset)
-
-            # for network_id in unique_network_ids:
-
-            #     # subsetting the dataframe further just for individuals with a certain network id
-            #     in_network_df: pd.DataFrame = carrier_df_subset[carrier_df_subset["Network ID"] == network_id]
-
-            # getting all of the first pairs in a list
-            # pair_1_list: list = get_pair_list(in_network_df, 1)
-
-            # # getting all of the second pairs in a list
-            # pair_2_list: list = get_pair_list(in_network_df, 2)
 
             # getting the chromosome number
             chr_num: str = row_list[4].strip("\n")
@@ -248,8 +178,6 @@ def run(args):
             # getting the specific hapibd file for that chromosome
             hapibd_ibd_file: str = get_ibd_file(hapibd_file_list, chr_str)
             print(hapibd_ibd_file)
-            # # iterating through the pairs list
-            # for pair_1, pair_2 in zip(pair_1_list, pair_2_list):
 
             # getting values of interest from the hapibd file for the row
             hapibd_values_dict: dict = get_haplotype_info(
