@@ -2,30 +2,24 @@
 import pandas as pd
 import argparse
 import os
+from os import path
 import glob
 import re
 import sys
 import gzip
 
-# # creating a class for the for the binary trees to keep the first filtered rows
-# class Node:
-#     '''This class will help to create the binary tree that contains the filtered file strings'''
 
-#     def __init__(self, data:str):
-#         self.left = None
-#         self.right = None
-#         self.data = data
-#         self.left_visited = False
-#         self.right_visited = False
+def identify_unique_variants(confirmed_carrier_file: str) -> list:
+    '''This function will get all the unique variants that we have a confirmed carrier for'''
 
-#     def insert(self, data):
-#         if self.data:
-#             if self.left == None:
-#                 self.left = Node(data)
-#                 self.left_visited = True
-#             else:
-#                 self.left.insert(data)
-#             if self.right == None and self.left_visited == False
+    # loads the variant_id column from the file into dataframe
+    confirmed_carrier_df: pd.DataFrame = pd.read_csv(
+        confirmed_carrier_file, sep="\t", usecols=["variant_id"])
+
+    # gets a list of all the unique variants in the file
+    unique_var_list: list = confirmed_carrier_df.variant_id.unique().tolist()
+    print(len(unique_var_list))
+    return unique_var_list
 
 
 def get_file_list(file_dir: str, file_tag: str) -> list:
@@ -73,8 +67,6 @@ def get_chr_id(allpair_file: str) -> str:
 def get_file(file_list: list, identifier: str) -> str:
     '''This function gets the file that matches a condition from a list of files'''
 
-    print(file_list)
-    print(identifier)
     file_str: str = [file for file in file_list if identifier in file][0]
 
     return file_str
@@ -148,8 +140,7 @@ def filter_file(file: str, variant_pos: str) -> list:
         for row in ibd_file:
 
             split_row: list = row.split()
-            print(split_row)
-            print(int(split_row[start_indx]))
+
             # This line checks to see if the variant position falls inbetween the start and end position of the row
             if int(split_row[start_indx]) <= int(variant_pos) and int(split_row[end_indx]) >= int(variant_pos):
                 # if it matches then it will append that value to the pair_list
@@ -161,11 +152,110 @@ def filter_file(file: str, variant_pos: str) -> list:
 
     return pair_list
 
-# TODO: Need to create another function that can further filter the list so that it contains only pairs were both grids are carriers
+
+def get_carriers(carrier_file: str, variant_id: str) -> list:
+    '''This function will get a list of the carriers identified for a specific variant'''
+    # REading the carrier file into a dataframe
+    carrier_df: pd.DataFrame = pd.read_csv(carrier_file)
+
+    # subsetting to get only the variant of interest carriers
+    carrier_list: list = carrier_df[carrier_df["Variant ID"]
+                                    == variant_id]["IID"].values.tolist()
+
+    return carrier_list
+
+
+def filter_for_carriers(ibd_pair_list: list, carrier_list: list) -> list:
+    '''This function will filter the pair list for only pairs where both individual are carriers'''
+    print(carrier_list)
+
+    filtered_list: list = []
+    # iterating through each pair string in the pair_list
+    for pair_str in ibd_pair_list:
+
+        # removing the newline
+        pair_str = pair_str.strip("\n")
+
+        # splitting the row by tab
+        pair_list: list = pair_str.split("\t")
+
+        # These next two lines get te iid1 and iid2
+        iid1: str = pair_list[0]
+
+        iid2: str = pair_list[2]
+
+        if iid1 in carrier_list and iid2 in carrier_list:
+
+            filtered_list.append(pair_str)
+
+    return filtered_list
+
+
+def write_to_file(hapibd_filtered_list: str, ilash_filtered_list: str, output_dir: str, chr_num: str, variant_id: str):
+    '''This function will write the pairs and the segment length and the segment start and end to a file'''
+
+    # get the chromosome number digit to be used later
+    chr_digit: str = re.findall(r'[0-9]+', chr_num)[0]
+
+    output: str = "".join([output_dir, "haplotype_info.txt"])
+    # Opening the file
+    with open(output, "a+") as output_file:
+
+        # This will check if the file has any data written in it
+        if os.path.getsize(output) == 0:
+
+            output_file.write(
+                f"pair_1\tpair_2\tchr\tvariant_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n")
+
+        # iterating through each string in the filtered list and then matching that with the other filtered list
+        for pair_string in hapibd_filtered_list:
+
+            # splitting the row to get values of interest
+            split_hapibd_list: list = pair_string.split("\t")
+            # getting the pairs from the split hapibd_string
+            pair_1: str = split_hapibd_list[0]
+            pair_2: str = split_hapibd_list[2]
+            print(pair_1, pair_2)
+            # using list comprehension to get the string from the ilash_filtered_list that includes the same rows
+            try:
+                ilash_string: str = list(filter(lambda string: (pair_1
+                                                                in string and pair_2 in string), ilash_filtered_list))[0]
+            except IndexError:
+                continue
+
+            split_ilash_list: list = ilash_string.split("\t")
+
+            output_file.write(
+                f"{split_hapibd_list[0]}\t{split_hapibd_list[2]}\t{chr_digit}\t{variant_id}\t{split_hapibd_list[5]}\t{split_hapibd_list[6]}\t{split_hapibd_list[7]}\t{split_ilash_list[5]}\t{split_ilash_list[6]}\t{split_ilash_list[9]}\n")
+
+
+def get_full_var_name(allpair_file: str, variant_id: str) -> str:
+    '''This function will get the full variant name out of the allpair file name'''
+
+    variant_indx: int = allpair_file.index(variant_id)
+
+    # This is the ending index of the slice
+    second_indx: int = variant_indx+len(variant_id)+2
+
+    full_variant_id: str = allpair_file[variant_indx:second_indx]
+
+    print(full_variant_id)
+
+    return full_variant_id
 
 
 def run(args):
     "function to run"
+    # This section will check if the output file exist from a previous run and if it does then it will delete it
+    if path.exists("".join([args.output, "haplotype_info.txt"])):
+
+        os.remove("".join([args.output, "haplotype_info.txt"]))
+
+    # getting a list of all the variants that have a confirmed carrier
+    variant_list: list = identify_unique_variants(args.variant_file)
+
+    # Getting all the carrier files
+    carrier_file_list: list = get_file_list(args.carrier, "*.csv")
 
     # getting the map_files
     map_file_list: list = get_file_list(args.map_dir, "*.map")
@@ -173,48 +263,60 @@ def run(args):
     # getting the list of allpair files
     allpair_file_list: list = get_file_list(args.allpair_dir, "*.allpair.txt")
 
-    # getting the correct allpair file
-    allpair_file: str = get_file(allpair_file_list, args.variant)
+    for variant in variant_list:
+        # getting the correct allpair file
+        allpair_file: str = get_file(allpair_file_list, variant)
 
-    print(allpair_file)
+        print(allpair_file)
 
-    chr_num: str = get_chr_id(allpair_file)
+        chr_num: str = get_chr_id(allpair_file)
 
-    map_file: str = get_file(map_file_list, "".join([".", chr_num, "_"]))
+        full_variant_id: str = get_full_var_name(allpair_file, variant)
 
-    print(f"The map file is {map_file}")
+        map_file: str = get_file(map_file_list, "".join([".", chr_num, "_"]))
+        print(map_file)
+        # getting the specific carrier file for the chromosome
+        carrier_file: str = get_file(
+            carrier_file_list, "".join([chr_num, "_"]))
 
-    var_pos: str = get_var_pos(map_file, args.variant)
+        carriers_list: list = get_carriers(carrier_file, full_variant_id)
 
-    # The next four lines get the hapibd file and the ilash file for the specific chromosome
-    ilash_file_list: list = get_file_list(args.ilash_dir, "*.match.gz")
+        print(f"The map file is {map_file}")
 
-    hapibd_file_list: list = get_file_list(args.hapibd_dir, "*.ibd.gz")
+        var_pos: str = get_var_pos(map_file, variant)
 
-    ilash_file: str = get_file(ilash_file_list, "".join(["_", chr_num, "."]))
+        # The next four lines get the hapibd file and the ilash file for the specific chromosome
+        ilash_file_list: list = get_file_list(args.ilash_dir, "*.match.gz")
 
-    hapibd_file: str = get_file(hapibd_file_list, "".join(["_", chr_num, "."]))
+        hapibd_file_list: list = get_file_list(args.hapibd_dir, "*.ibd.gz")
 
-    # getting a list of each pair
-    ilash_list: list = filter_file(ilash_file, var_pos)
+        ilash_file: str = get_file(
+            ilash_file_list, "".join(["_", chr_num, "."]))
 
-    print(ilash_list)
-    print(len(ilash_list))
-    print(sys.getsizeof(ilash_list))
+        hapibd_file: str = get_file(
+            hapibd_file_list, "".join(["_", chr_num, "."]))
 
-    hapibd_list: list = filter_file(hapibd_file, var_pos)
+        # getting a list of each pair
+        ilash_list: list = filter_file(ilash_file, var_pos)
 
-    print(hapibd_list)
-    print(len(hapibd_list))
-    print(sys.getsizeof(hapibd_list))
+        ilash_carriers_list: list = filter_for_carriers(
+            ilash_list, carriers_list)
+
+        hapibd_list: list = filter_file(hapibd_file, var_pos)
+
+        hapibd_carriers_list: list = filter_for_carriers(
+            hapibd_list, carriers_list)
+
+        write_to_file(hapibd_carriers_list, ilash_carriers_list,
+                      args.output, chr_num, full_variant_id)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="")
 
-    parser.add_argument("-v", help="This argument takes the id of the variant of interest",
-                        dest="variant", type=str, required=True)
+    parser.add_argument("-v", help="This argument takes the directory of the file that list all the confirmed carriers",
+                        dest="variant_file", type=str, required=True)
 
     parser.add_argument("-m", help="This argument list the directory for the map files",
                         dest="map_dir", type=str, required=True)
@@ -227,6 +329,12 @@ def main():
 
     parser.add_argument("-ilash", help="This argument list the directory for all of the ilash files",
                         dest="ilash_dir", type=str, required=True)
+
+    parser.add_argument("-c", help="This argument list the directory for the reformated carrier files",
+                        dest="carrier", type=str, required=True)
+
+    parser.add_argument("-o", help="This argument list the output file path for the final file",
+                        dest="output", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
