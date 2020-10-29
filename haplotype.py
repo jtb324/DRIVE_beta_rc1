@@ -7,6 +7,8 @@ import glob
 import re
 import sys
 import gzip
+from functools import partial
+import multiprocessing as mp
 
 
 def identify_unique_variants(confirmed_carrier_file: str) -> list:
@@ -191,6 +193,27 @@ def filter_for_carriers(ibd_pair_list: list, carrier_list: list) -> list:
     return filtered_list
 
 
+def iterate_through_pairs(file_object, chr_digit: str, variant_id: str, ilash_filtered_list: list, hapibd_filter_str: str):
+    # splitting the row to get values of interest
+    split_hapibd_list: list = hapibd_filter_str.split("\t")
+    # getting the pairs from the split hapibd_string
+    pair_1: str = split_hapibd_list[0]
+    pair_2: str = split_hapibd_list[2]
+    print(pair_1, pair_2)
+    # using list comprehension to get the string from the ilash_filtered_list that includes the same rows
+    try:
+        ilash_string: str = list(filter(lambda string: (pair_1
+                                                        in string and pair_2 in string), ilash_filtered_list))[0]
+
+        split_ilash_list: list = ilash_string.split("\t")
+
+        file_object.write(
+            f"{split_hapibd_list[0]}\t{split_hapibd_list[2]}\t{chr_digit}\t{variant_id}\t{split_hapibd_list[5]}\t{split_hapibd_list[6]}\t{split_hapibd_list[7]}\t{split_ilash_list[5]}\t{split_ilash_list[6]}\t{split_ilash_list[9]}\n")
+
+    except IndexError:
+        pass
+
+
 def write_to_file(hapibd_filtered_list: str, ilash_filtered_list: str, output_dir: str, chr_num: str, variant_id: str):
     '''This function will write the pairs and the segment length and the segment start and end to a file'''
 
@@ -199,6 +222,10 @@ def write_to_file(hapibd_filtered_list: str, ilash_filtered_list: str, output_di
 
     output: str = "".join([output_dir, "haplotype_info.txt"])
     # Opening the file
+    # creating a pool object
+    pool = mp.Pool(10)
+
+    # opening the output file to write to
     with open(output, "a+") as output_file:
 
         # This will check if the file has any data written in it
@@ -207,26 +234,35 @@ def write_to_file(hapibd_filtered_list: str, ilash_filtered_list: str, output_di
             output_file.write(
                 f"pair_1\tpair_2\tchr\tvariant_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n")
 
-        # iterating through each string in the filtered list and then matching that with the other filtered list
-        for pair_string in hapibd_filtered_list:
+        func = partial(iterate_through_pairs, chr_digit,
+                       variant_id, ilash_filtered_list)
 
-            # splitting the row to get values of interest
-            split_hapibd_list: list = pair_string.split("\t")
-            # getting the pairs from the split hapibd_string
-            pair_1: str = split_hapibd_list[0]
-            pair_2: str = split_hapibd_list[2]
-            print(pair_1, pair_2)
-            # using list comprehension to get the string from the ilash_filtered_list that includes the same rows
-            try:
-                ilash_string: str = list(filter(lambda string: (pair_1
-                                                                in string and pair_2 in string), ilash_filtered_list))[0]
-            except IndexError:
-                continue
+        pool.map(func, hapibd_filtered_list)
 
-            split_ilash_list: list = ilash_string.split("\t")
+        pool.close()
 
-            output_file.write(
-                f"{split_hapibd_list[0]}\t{split_hapibd_list[2]}\t{chr_digit}\t{variant_id}\t{split_hapibd_list[5]}\t{split_hapibd_list[6]}\t{split_hapibd_list[7]}\t{split_ilash_list[5]}\t{split_ilash_list[6]}\t{split_ilash_list[9]}\n")
+        pool.join()
+
+        # # iterating through each string in the filtered list and then matching that with the other filtered list
+        # for pair_string in hapibd_filtered_list:
+
+        #     # splitting the row to get values of interest
+        #     split_hapibd_list: list = pair_string.split("\t")
+        #     # getting the pairs from the split hapibd_string
+        #     pair_1: str = split_hapibd_list[0]
+        #     pair_2: str = split_hapibd_list[2]
+        #     print(pair_1, pair_2)
+        #     # using list comprehension to get the string from the ilash_filtered_list that includes the same rows
+        #     try:
+        #         ilash_string: str = list(filter(lambda string: (pair_1
+        #                                                         in string and pair_2 in string), ilash_filtered_list))[0]
+        #     except IndexError:
+        #         continue
+
+        #     split_ilash_list: list = ilash_string.split("\t")
+
+        #     output_file.write(
+        #         f"{split_hapibd_list[0]}\t{split_hapibd_list[2]}\t{chr_digit}\t{variant_id}\t{split_hapibd_list[5]}\t{split_hapibd_list[6]}\t{split_hapibd_list[7]}\t{split_ilash_list[5]}\t{split_ilash_list[6]}\t{split_ilash_list[9]}\n")
 
 
 def get_full_var_name(allpair_file: str, variant_id: str) -> str:
