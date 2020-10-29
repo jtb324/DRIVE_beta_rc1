@@ -123,21 +123,20 @@ def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
     allpair_df: pd.DataFrame = pd.read_csv(
         allpair_file, sep="\t", usecols=["pair_1", "pair_2"])
 
+    allpair_df_carriers: pd.Dataframe = allpair_df[(allpair_df.pair_1.isin(
+        carrier_list)) & (allpair_df.pair_2.isin(carrier_list))]
+
     # getting all the grids for pair one
-    pair_1_list: list = allpair_df.pair_1.values.tolist()
+    pair_1_list: list = allpair_df_carriers.pair_1.values.tolist()
 
     # getting all the grids for pair two into a list
-    pair_2_list: list = allpair_df.pair_2.values.tolist()
+    pair_2_list: list = allpair_df_carriers.pair_2.values.tolist()
 
     # combining the two pair list into a set so that repeating values get dropped
-    pair_iid_set: set = set(pair_1_list + pair_2_list)
-
-    # getting a list of all the carriers from carrier_list that are also in the set
-    sharing_carrier_list: list = [
-        grid for grid in carrier_list if grid in list(pair_iid_set)]
+    confirmed_carrier_set: set = set(pair_1_list + pair_2_list)
 
     # returning the list of individuals that are carriers for this variant and also share segments
-    return sharing_carrier_list
+    return list(confirmed_carrier_set)
 
 
 def subset_genotype(geno_df: pd.DataFrame, carrier_list: list, variant_id: str) -> pd.DataFrame:
@@ -200,19 +199,20 @@ def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
             # returns 0 if the variant is not found
             return 0
 
-def add_chr_column(df:pd.DataFrame, chr_num:str) -> pd.DataFrame:
+
+def add_chr_column(df: pd.DataFrame, chr_num: str) -> pd.DataFrame:
     '''This function will add a column for the chromosome number to
     the dataframe and then return the dataframe'''
     # getting the  chromosome number
-    chr_num_handler:dict = {
-             4: re.search(r"\d", chr_num),
-             5: re.search(r"\d\d", chr_num)
+    chr_num_handler: dict = {
+        4: re.search(r"\d", chr_num),
+        5: re.search(r"\d\d", chr_num)
     }
 
     chr_match = chr_num_handler[len(chr_num)]
-    
-    #getting the digit from the chr_num
-    chr_digit:str = chr_match.group(0)
+
+    # getting the digit from the chr_num
+    chr_digit: str = chr_match.group(0)
 
     df["chr"] = chr_digit
 
@@ -260,6 +260,8 @@ def run(args):
         genotype_df: pd.DataFrame = form_genotype_df(map_file, file)
 
         # getting the correct carrier file based off of the chromosome
+        print(chr_num)
+        print(carrier_files)
         car_file: str = [carrier_file for carrier_file in carrier_files if "".join(
             [chr_num, "_"]) in carrier_file][0]
 
@@ -346,7 +348,7 @@ def run(args):
                 modified_geno_df: pd.DataFrame = add_column(
                     subset_df, confirmed_carrier_list)
 
-                #adding a column for the chromosome number to be able to differentiate the variants
+                # adding a column for the chromosome number to be able to differentiate the variants
                 modified_geno_df = add_chr_column(modified_geno_df, chr_num)
                 print(modified_geno_df)
 

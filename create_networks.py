@@ -138,7 +138,7 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
 
     # Creating an empty dataframe that the pairs will be written to at the end in the
     # draw networks function
-    allpairs_df: pd.DataFrame = pd.DataFrame()
+    pairs_df: pd.DataFrame = pd.DataFrame()
 
     network_drawer: object = Network_Img_Maker(
         segments_file_dir, variant_file_dir, output_path, logger)
@@ -203,12 +203,15 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
                 filtered_allpair_df = network_drawer.drop_empty_rows(
                     filtered_allpair_df)
 
+            # This makes a dataframe that will list the pairs
+            # network_drawer.making_pairs_df(filtered_allpair_df)
+
             # This class method will determine the percentage of carriers in each network for each variant
             carrier_in_network_dict = network_drawer.carriers_in_network(
                 carrier_list, filtered_allpair_df, ind_in_network_dict, variant_id)
 
-            output_path, allpairs_df = network_drawer.draw_networks(
-                filtered_allpair_df, variant_id, chr_num, allpairs_df)
+            output_path, pairs_df = network_drawer.draw_networks(
+                filtered_allpair_df, variant_id, chr_num, pairs_df)
 
             print(output_path)
             # add_header_row(output_path)

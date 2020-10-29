@@ -3,6 +3,7 @@ import glob
 import os
 from os import path
 import argparse
+import multiprocessing as mp
 
 
 def get_files(file_dir: str, file_extension) -> list:
@@ -49,6 +50,38 @@ def get_ibd_file(file_list: list, chr_str: str) -> str:
     return ibd_file
 
 
+def get_dtype(ibd_file: str) -> dict:
+    '''This function will return a dictionary listing the datatypes for each column of the pandas dataframe'''
+
+    if "match" in ibd_file:
+        dtype_dict: dict = {
+            0: str,
+            1: str,
+            2: str,
+            3: str,
+            4: int,
+            5: int,
+            6: int,
+            7: str,
+            8: str,
+            9: float,
+            10: float
+        }
+    else:
+        dtype_dict: dict = {
+            0: str,
+            1: int,
+            2: str,
+            3: int,
+            4: int,
+            5: int,
+            6: int,
+            7: float
+        }
+
+    return dtype_dict
+
+
 def get_haplotype_info(ibd_file: str, pair_1: str, pair_2: str) -> dict:
     '''This function will get the haplotype information for the pair in the ibd file'''
     indx_list: list = get_index_positions(ibd_file)
@@ -62,8 +95,11 @@ def get_haplotype_info(ibd_file: str, pair_1: str, pair_2: str) -> dict:
     end_indx: int = indx_list[3]
     segment_length_indx: int = indx_list[4]
 
+    # Creating a dictionary with the datatypes to help with memory overhead
+    dtype_dict: dict = get_dtype(ibd_file)
+
     # iterating through chunks in the ibd file to avoid memory issues
-    for chunk in pd.read_csv(ibd_file, sep="\t", chunksize=100000, header=None):
+    for chunk in pd.read_csv(ibd_file, sep="\t", chunksize=1000, header=None, dtype=dtype_dict):
 
         # getting the chunk where the pair one and pair2 are in the same row
         pair_row_df: pd.DataFrame = chunk[(chunk[pair_1_indx] == pair_1) & (
@@ -82,6 +118,8 @@ def get_haplotype_info(ibd_file: str, pair_1: str, pair_2: str) -> dict:
         # these lines break out of the for loop if it has found the row that contains the pair
         if not pair_row_df.empty:
             print(pair_row_df)
+            print(pair_row_df.memory_usage())
+            print(pair_row_df.dtypes)
             break
     print(info_dict)
     return info_dict
@@ -90,7 +128,7 @@ def get_haplotype_info(ibd_file: str, pair_1: str, pair_2: str) -> dict:
 def check_file_size(file_path: str, header: str):
     '''This function will check if the size of the file is zero and if it is then it will write the header to the file'''
 
-    with open(file_path, "w") as output_file:
+    with open(file_path, "a+") as output_file:
 
         # Checks if there is anything previously written to the file
         if os.path.getsize(file_path) == 0:
@@ -131,11 +169,36 @@ def write_to_file(pairs_dict: dict, hapibd_dict: dict, ilash_dict: dict, output:
         else:
             output_file.write(f"{pairs_dict['pair_1']}\t{pairs_dict['pair_2']}\t{pairs_dict['network_id']}\t{pairs_dict['variant_id']}\t{pairs_dict['chr']}\t{hapibd_dict['start'][0]}\t{hapibd_dict['end'][0]}\t{hapibd_dict['length'][0]}\t{ilash_dict['start'][0]}\t{ilash_dict['end'][0]}\t{ilash_dict['length'][0]}\n")
 
+def create_chunk(file_name:str, size=1024*1024):
+    '''This function will break the file into chunks before it gets passed to the pool_async'''
+
+    endpos = os.path.getsize(file_name)
+
+    # opening the pairs file with read permissions
+    with open(file_name, "r") as pairs_file:
+
+        #getting the current position of the file
+        current_pos = pairs_file.tell()
+
+    while True:
+
+        #Creating the start of the chunk at the current position
+        start_chunk_pos = current_pos
+
+        #Moving forward in the file
+        pairs_file.seek(size,1)
+
+        pairs_file.readlines()
 #This is the main function to run the script ###############################################
 
 
 def run(args):
     "function to run"
+    #creating a pool with a certain number of cores
+    pool = mp.Pool(args.cores)
+
+    #this creates a list of all the jobs running
+    jobs = []
 
     # getting the list of ilash files
 
@@ -156,7 +219,7 @@ def run(args):
 
         # iterating through the file
         for pair_row in pairs_file:
-
+            
             # splitting the row
             row_list: list = pair_row.split(",")
 
@@ -215,6 +278,9 @@ def main():
 
     parser.add_argument("--output", help="This argument list the output directory",
                         dest="output", type=str, required=True)
+
+    parser.add_argument("--core", help="This argument list the number of cores to be used",
+                        dest="cores", type=str, required=True)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

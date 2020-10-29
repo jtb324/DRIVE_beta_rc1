@@ -26,6 +26,7 @@ class Network_Img_Maker(Check_File_Exist):
         # This is used in creating an id set for drawing the networks later
         self.id_list = None
         self.curr_dir = os.getcwd()
+        self.pairs_df = None  # Creating an attribute for the pair df
         # self.files: dict = {
         #     "hapibd": self.gather_files(hapibd_dir, ".ibd.gz"),
         #     "ilash": self.gather_files(ilash_dir, ".match.gz")
@@ -142,6 +143,35 @@ class Network_Img_Maker(Check_File_Exist):
 
         return ind_in_networks_dict
 
+    def making_pairs_df(self, subset_df: pd.DataFrame):
+        '''Making a dataframe of the pairs to be used later'''
+        id1_list: list = subset_df.pair_1.values.tolist()
+
+        id2_list: list = subset_df.pair_2.values.tolist()
+
+        pairs_dict: dict = {
+            "pair_1": [],
+            "pair_2": [],
+            "In Network": [],
+            "Network ID": []
+        }
+
+        total_carriers_set: set = set(id1_list) | set(id2_list)
+
+        for iid1, iid2 in zip(id1_list, id2_list):
+
+            bool_int = int(
+                iid1 in total_carriers_set and iid2 in total_carriers_set)
+
+            pairs_dict["pair_1"].append(iid1)
+            pairs_dict["pair_2"].append(iid2)
+            pairs_dict["In Network"].append(bool_int)
+            pairs_dict["Network ID"].append(NaN)
+
+        self.pairs_df = pd.DataFrame(
+            pairs_dict, columns=["pair_1", "pair_2", "In Network", "Network ID"])
+        print(self.pairs_df)
+
     ################################################################
     @staticmethod
     def get_chr_digit(chr_num: str) -> str:
@@ -214,11 +244,6 @@ class Network_Img_Maker(Check_File_Exist):
                 full_subset_df = reformated_df[(reformated_df.pair_1.isin(self.id_list)) | (
                     reformated_df.pair_2.isin(self.id_list))][["pair_1", "pair_2"]]
 
-                # Creating another copy of the above dataframe
-                pairs_df: pd.DataFrame = full_subset_df
-
-                # adding a column of Nan to pairs df to create a column for the network id
-                pairs_df["Network ID"] = np.nan
                 # iterating through each row
                 for row in full_subset_df.itertuples():
 
@@ -272,37 +297,32 @@ class Network_Img_Maker(Check_File_Exist):
 
                 ###########################################################################
                     # adding the network id to he above dataframe
-                    pair_idx1 = pairs_df.index[pairs_df["pair_1"] == Pair_id1]
 
-                    pairs_df.loc[pair_idx1, [
-                        "Network ID"]] = str(network_number)
+                    # pair_idx1 = self.pairs_df.index[(self.pairs_df["pair_1"] == Pair_id1) & (
+                    #     self.pairs_df["pair_2"] == Pair_id2)]
 
-                    pair_idx2 = pairs_df.index[pairs_df["pair_2"] == Pair_id2]
-
-                    pairs_df.loc[pair_idx2, [
-                        "Network ID"]] = str(network_number)
+                    # self.pairs_df.loc[pair_idx1, [
+                    #     "Network ID"]] = str(network_number)
 
                 # This updates which network is being created
                 network_number += 1
                 # Adding values to the pair dictionary
 
                 # Merging all the two pairs dataframe
-                allpairs_df = pd.concat([allpairs_df, pairs_df])
+                # allpairs_df = pd.concat([allpairs_df, self.pairs_df])
 
         # Adding a column for the variant number and the chr number so that we can output just one file
         self.network_carriers = self.add_columns(
             self.network_carriers, variant, chr_num)
 
-        allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
+        # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
         self.network_carriers.to_csv(
             "".join([self.output_path, "/network_groups", ".csv"]), index=False, mode="a")
-        print("This is the network carriers")
-        print(self.network_carriers)
 
-        allpairs_df.to_csv(
-            "".join([self.output_path, "/pairs_in_networks", ".csv"]), index=False, mode="a")
+        # allpairs_df.to_csv(
+        #     "".join([self.output_path, "/pairs_in_networks", ".csv"]), index=False, mode="a")
 
         # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
         return "".join([self.output_path, "/network_groups", ".csv"]), allpairs_df
