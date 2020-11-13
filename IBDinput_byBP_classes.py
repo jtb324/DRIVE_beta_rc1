@@ -6,7 +6,6 @@ import multiprocessing as mp
 import re
 import glob
 import os
-import os.path
 import pandas as pd
 import shutil
 
@@ -228,6 +227,7 @@ class Shared_Segment_Convert(newPOS):
         # This will give the directory for where the chromosome files are found
         self.iid_file = str(pheno_file)
         # This will be the output directory. Need to add the ibd software to the end of it
+        self.output_dir = output_path
         self.output = "".join(
             [output_path, ibd_program_used])
         self.format = str(ibd_program_used)
@@ -329,7 +329,7 @@ class Shared_Segment_Convert(newPOS):
 
         return IBDdata, IBDindex
 
-    def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict):
+    def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict, que_object):
         '''This function will be used in the parallelism function'''
 
         print("entering in the IBDsumm function")
@@ -347,8 +347,6 @@ class Shared_Segment_Convert(newPOS):
             unit = parameter_dict["unit"]
         except KeyError:
             pass
-
-        # Reading through chunks of pandas files
 
         for chunk in pd.read_csv(self.segment_file, sep="\s+", header=None, chunksize=500000):
             # Checking to see if the ids are not in the uniqID dictionary
@@ -393,7 +391,7 @@ class Shared_Segment_Convert(newPOS):
 
                         pair = '{0}:{1}-{2}'.format(cM, id1, id2)
 
-                    elif id2 in uniqID:
+                    elif id2 in uniqID:  # If only id 2 is in the uniqID then it write that pair to the list
                         pair = '{0}:{1}-{2}'.format(cM, id2, id1)
 
                 # start and end not in identified breakpoints
@@ -423,77 +421,70 @@ class Shared_Segment_Convert(newPOS):
 
                         IBDdata[CHR][str(start)].add.append(str(pair))
                         IBDdata[CHR][str(end)].rem.append(str(pair))
-
-        print('identified ' +
-              str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
-
-        # Opening the file .small/txt/gz file to write to
-        # NEED TO FIX THIS LINE HERE
-        # adding a zero the the chr # if it is only one digit
-        if len(str(CHR)) == 1:
-            chr_num = str(CHR).zfill(2)
-        else:
-            chr_num = str(CHR)
-
-        write_path = "".join([self.output, '_', self.variant_name,
-                              '.chr', chr_num, '.small.txt.gz'])
-        print(write_path)
-        out = gzip.open(write_path, 'wt')
-
-        # Writing the header line to the file
-        out.write('chr\tpos\tsegments\tpairs\tadd\tdel\n')
-
-        allibd = set([])
-
-        for pos in sorted(IBDindex[str(CHR)]['allpos']):
-
-            allibd = allibd | set(IBDdata[str(CHR)][str(pos)].add)
-            allibd = allibd - set(IBDdata[str(CHR)][str(pos)].rem)
-
-            allibdpair = {}
-
-            if len(IBDdata[str(CHR)][str(pos)].add) == 0:
-                IBDdata[str(CHR)][str(pos)].add.append('NA')
-            if len(IBDdata[str(CHR)][str(pos)].rem) == 0:
-                IBDdata[str(CHR)][str(pos)].rem.append('NA')
-
-            nseg = str(len(allibd))
-
-            for cM_pair in allibd:
-                pair = cM_pair.split(':')[1]
-                cM = cM_pair.split(':')[0]
-
-                if pair in allibdpair:
-
-                    allibdpair[pair] = '{0};{1}'.format(allibdpair[pair], cM)
-
-                else:
-
-                    allibdpair[pair] = str(cM)
-
-            npair = str(len(allibdpair))
-
-            out.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(str(CHR), str(pos), nseg, npair, ' '.join(
-                IBDdata[str(CHR)][str(pos)].add), ' '.join(IBDdata[str(CHR)][str(pos)].rem)))
-
-        IBDdata[str(CHR)] = []
-        out.close()
-
-    def run_parallel(self, IBDdata, IBDindex, parameter_dict, uniqID):
-
-        pool = mp.Pool(processes=1)
-
         try:
-            pool.apply_async(self.IBDsumm, args=(
-                IBDdata, IBDindex, parameter_dict, uniqID))
-        except:
-            print("Something went wrong")
-            pool.close()
-            pool.join()
 
-        finally:
-            pool.close()
-            pool.join()
+            print(f"This is the CHR: {CHR}")
+            print('identified ' +
+                  str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
+
+            # Opening the file .small/txt/gz file to write to
+            # NEED TO FIX THIS LINE HERE
+            write_path = "".join([self.output, '_', self.variant_name,
+                                  '.chr', str(CHR), '.small.txt.gz'])
+            print(write_path)
+            out = gzip.open(write_path, 'wt')
+
+            # Writing the header line to the file
+            out.write('chr\tpos\tsegments\tpairs\tadd\tdel\n')
+
+            allibd = set([])
+
+            for pos in sorted(IBDindex[str(CHR)]['allpos']):
+
+                allibd = allibd | set(IBDdata[str(CHR)][str(pos)].add)
+                allibd = allibd - set(IBDdata[str(CHR)][str(pos)].rem)
+
+                allibdpair = {}
+
+                if len(IBDdata[str(CHR)][str(pos)].add) == 0:
+                    IBDdata[str(CHR)][str(pos)].add.append('NA')
+                if len(IBDdata[str(CHR)][str(pos)].rem) == 0:
+                    IBDdata[str(CHR)][str(pos)].rem.append('NA')
+
+                nseg = str(len(allibd))
+
+                for cM_pair in allibd:
+                    pair = cM_pair.split(':')[1]
+                    cM = cM_pair.split(':')[0]
+
+                    if pair in allibdpair:
+
+                        allibdpair[pair] = '{0};{1}'.format(
+                            allibdpair[pair], cM)
+
+                    else:
+
+                        allibdpair[pair] = str(cM)
+
+                npair = str(len(allibdpair))
+
+                out.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(str(CHR), str(pos), nseg, npair, ' '.join(
+                    IBDdata[str(CHR)][str(pos)].add), ' '.join(IBDdata[str(CHR)][str(pos)].rem)))
+
+            IBDdata[str(CHR)] = []
+            out.close()
+
+        except UnboundLocalError:
+
+            print(
+                f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'failed_IBDinput_byBP.txt'])}")
+
+            que_object.put(
+                f"No pairs were identified for {self.variant_name} when converting the output from the ibd files to more human readable files")
+
+    def run(self, IBDdata, IBDindex, parameter_dict, uniqID, que_object):
+
+        self.IBDsumm(IBDdata, IBDindex, parameter_dict, uniqID, que_object)
 
         del(IBDdata)
         del(IBDindex)

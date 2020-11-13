@@ -5,9 +5,10 @@ import re
 import argparse
 import pandas as pd
 import sys
-import os.path
+import os
 import shutil
 import multiprocessing as mp
+from functools import partial
 
 from IBDinput_byBP_classes import Shared_Segment_Convert, Pre_Shared_Segment_Converter
 
@@ -16,16 +17,43 @@ from IBDinput_byBP_classes import Shared_Segment_Convert, Pre_Shared_Segment_Con
 # Initializing the parser
 
 
+def listener(que_object, output: str, header: str):
+    '''This function will listen to the que and then write the element of the que to a file'''
+
+    # opening the output file to write to
+    with open(output, "a+") as output_file:
+
+        # checking if the file size is zero
+        if os.path.getsize(output) == 0:
+
+            output_file.write(header)
+
+        while 1:
+
+            m = que_object.get()
+
+            if m == "kill":
+
+                break
+
+            output_file.write(m)
+            output_file.flush()
+
+
+def remove_previous_file(file_path: str):
+    '''This function will remove previous output files from previous runs'''
+    # This section will check if the output file exist from a previous run and if it does then it will delete it
+    if path.exists(file_path):
+
+        os.remove(file_path)
+
+
 def run(args):
     # Instantiating a class object to be raised to break the inner loop
 
     print("running")
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
-
-    if os.path.exists("".join([args.output, "no_carriers_in_file.txt"])):
-        print("removing the no_carriers_in_network.txt file...")
-        os.remove("".join([args.output, "no_carriers_in_file.txt"]))
 
     preformater = Pre_Shared_Segment_Converter(
         args.input, args.pheno, args.format, args.output, args.map_file)
@@ -66,19 +94,9 @@ def run(args):
             # adding a .
             chr_num = "".join([chr_num, "."])
 
-        # dropping the 0 to try and match the naming in the segment files
-        segment_chr_pattern = "".join(chr_num.split("0"))
-
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
-
         segment_map_tuple = [(segment_file, map_file)
                              for segment_file in segment_file_list for map_file in map_file_list if chr_num in segment_file and match.group(0) in map_file]
-
-        # If the shared segment file chr is not "chr0#" it will try the format "chr#"
-        if not segment_map_tuple:
-
-            segment_map_tuple = [(segment_file, map_file)
-                                 for segment_file in segment_file_list for map_file in map_file_list if segment_chr_pattern in segment_file and match.group(0) in map_file]
 
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
 
@@ -109,31 +127,63 @@ def run(args):
 
             variant_id_list = var_info_df.variant_id.values.tolist()
 
-            for var_info_tuple in zip(variant_bp_list, variant_id_list):
+            # creating a list the base pairs with the variant id
+            var_info_list: list = [(var_bp, var_id) for var_bp, var_id in zip(
+                variant_bp_list, variant_id_list)]
 
-                variant_position = int(var_info_tuple[0])
+            run_parallel(segment_file, args.output, args.format,
+                         args.min, iid_file_list, var_info_list, args.thread)
 
-                variant_id = str(var_info_tuple[1])
 
-                iid_file = [
-                    iid_file for iid_file in iid_file_list if variant_id in iid_file][0]
+def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: str, iid_file_list: list, variant_info_list: list, threads: int):
+    print(variant_info_list)
 
-                pheno_file = iid_file
+    # starting a que to create a file that keeps track of errors
+    manager = mp.Manager()
 
-                ibd_file_converter = Shared_Segment_Convert(
-                    segment_file, pheno_file, args.output, args.format, args.min, args.thread, variant_position, variant_id)
+    que = manager.Queue()
 
-                parameter_dict = ibd_file_converter.generate_parameters()
+    header: str = "This file displays the name of each variant that failed the analysis when the IBD_input_by_BP.py script was run. This likely indicates that there were no pairs identified for that variant"
 
-                uniqID, dupID = ibd_file_converter.build_id_pairs()
+    pool = mp.Pool(int(threads))
 
-                IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+    watcher = pool.apply_async(
+        listener, (que, "".join([output_path, "failed_IBDinput_byBP.txt"]), header))
 
-                ibd_file_converter.run_parallel(
-                    IBDdata, IBDindex, parameter_dict, uniqID)
+    func = partial(run_main, segment_file,
+                   output_path, ibd_format, min_CM, iid_file_list, que)
 
-        # delete the variant_list directory for the next iteration
-        # Also delete the variant_info.txt file because this is only good for the selected values
+    pool.map(func, variant_info_list)
+
+    que.put("kill")
+
+    pool.close()
+
+    pool.join()
+
+
+def run_main(segment_file: str, output_path: str, ibd_format: str, min_CM: str, iid_file_list: list, que_object, var_info_tuple):
+
+    variant_position = int(var_info_tuple[0])
+
+    variant_id = str(var_info_tuple[1])
+    print(f"running the variant {variant_id}")
+    iid_file = [
+        iid_file for iid_file in iid_file_list if variant_id in iid_file][0]
+
+    pheno_file = iid_file
+
+    ibd_file_converter = Shared_Segment_Convert(
+        segment_file, pheno_file, output_path, ibd_format, min_CM, 1, variant_position, variant_id)
+
+    parameter_dict = ibd_file_converter.generate_parameters()
+
+    uniqID, dupID = ibd_file_converter.build_id_pairs()
+
+    IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+
+    ibd_file_converter.run(
+        IBDdata, IBDindex, parameter_dict, uniqID, que_object)
 
 
 def main():
