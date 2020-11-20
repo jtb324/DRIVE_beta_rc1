@@ -4,8 +4,7 @@ import multiprocessing as mp
 from functools import partial
 import os
 
-from get_iid_pairs import get_pair_ids
-from plink_haplotype import Plink_Haplotype_Getter
+from haplotype_segments_analysis.plink_haplotype import Plink_Haplotype_Getter
 
 
 def get_uniq_variants(dataframe: pd.DataFrame) -> list:
