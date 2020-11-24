@@ -8,14 +8,14 @@ from graphviz import Digraph
 import glob
 import gzip
 
-from check_directory import check_dir
-from file_exist_checker import Check_File_Exist
+import file_creator_scripts
 
 
-class Network_Img_Maker(Check_File_Exist):
+class Network_Img_Maker(file_creator_scripts.Check_File_Exist):
 
-    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger):
+    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger, file_to_check):
         # This will be the directory to where all the allpair.new.txt files are
+        super().__init__(file_to_check, logger)
         self.file = segments_file_dir
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file_dir

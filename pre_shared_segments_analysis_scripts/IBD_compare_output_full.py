@@ -269,13 +269,13 @@ def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
         return 0
 
 
-def run(args):
-    ibd_file_list: list = gather_ibd_files(args.segment_dir)
+def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: str):
+    ibd_file_list: list = gather_ibd_files(segment_dir)
 
     # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
     max_pairs: int = 0
 
-    file_dict: dict = build_file_dict(ibd_file_list, args.ibd_programs)
+    file_dict: dict = build_file_dict(ibd_file_list, ibd_programs)
 
     for chr_num, variant_id in file_dict.keys():
 
@@ -285,7 +285,7 @@ def run(args):
             sys.exit(f"no files found for this variant {variant_id}")
 
         # Making the first argument the output variable
-        out = "".join([args.output, "IBD_", variant_id,
+        out = "".join([output, "IBD_", variant_id,
                        "_", chr_num[1:len(chr_num)-1]])
         # next three lines write the files to a dictionary
         files = {}
@@ -425,7 +425,7 @@ def run(args):
 
                     # Entering into the get_max_pairs function
                     get_max_pairs(allagree_path, max_pairs_str, variant_id,
-                                  args.car_file, chr_num)
+                                  car_file, chr_num)
 
                     break
 
@@ -454,28 +454,3 @@ def run(args):
         # sumtab.close()
         # uniqtab.close()
         # allagree.close()
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="")
-
-    parser.add_argument("-s", help="This argument list the filepath for the ibd files ending in small.txt.gz output",
-                        dest="segment_dir", type=str, required=True)
-
-    parser.add_argument("-p", help="This argument list the different ibd programs used",
-                        dest="ibd_programs", nargs="+", type=str, required=True)
-
-    parser.add_argument("-o", help="This argument list the output directory",
-                        dest="output", type=str, required=True)
-
-    parser.add_argument("-c", help="This argument list the pathway to the reformated carrier files",
-                        dest="car_file", type=str, required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()

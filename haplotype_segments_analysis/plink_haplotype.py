@@ -1,7 +1,4 @@
 import subprocess
-import pandas as pd
-import os
-import sys
 
 
 class Plink_Haplotype_Getter:

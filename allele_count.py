@@ -1,13 +1,10 @@
 # Determining the allele count in families
 import pandas as pd
-import numpy as np
-import sys
 import logging
-import sidetable
 
 ################################################
 from check_directory import check_dir
-from write_path import writePath
+from file_creator_scripts.write_path import writePath
 from file_exist_checker import Check_File_Exist
 
 ################################################

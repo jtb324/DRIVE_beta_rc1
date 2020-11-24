@@ -2,10 +2,10 @@
 
 # THese are modules used
 import re
-import argparse
 import pandas as pd
 import sys
 import os
+from os import path
 import shutil
 import multiprocessing as mp
 from functools import partial
@@ -48,7 +48,7 @@ def remove_previous_file(file_path: str):
         os.remove(file_path)
 
 
-def run(args):
+def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str, map_file_dir: str, file_suffix: str, min_CM: str, threads: str, variant_file: str):
     # Instantiating a class object to be raised to break the inner loop
 
     print("running")
@@ -56,9 +56,9 @@ def run(args):
     # This first section will be used to get the shared segment files for each chromosome
 
     preformater = Pre_Shared_Segment_Converter(
-        args.input, args.pheno, args.format, args.output, args.map_file)
+        ibd_files, carrier_file, ibd_program, output, map_file_dir)
 
-    segment_file_list = preformater.gather_segment_files(args.suffix)
+    segment_file_list = preformater.gather_segment_files(file_suffix)
     # also need to get all of the possible variant files per chromosome
     chr_var_file_list = preformater.gather_chromosome_files()
 
@@ -111,7 +111,7 @@ def run(args):
             map_file = segment_map_tuple[0][1]
 
             var_info_df, variant_directory = preformater.create_variant_lists(
-                chromo_file, args.var_file, map_file)
+                chromo_file, variant_file, map_file)
 
             # This checks if the var_info_file_path and the variant_directory are empty string because
             # this would mean that the the chromo_file only has one variant and it has no carriers
@@ -131,8 +131,8 @@ def run(args):
             var_info_list: list = [(var_bp, var_id) for var_bp, var_id in zip(
                 variant_bp_list, variant_id_list)]
 
-            run_parallel(segment_file, args.output, args.format,
-                         args.min, iid_file_list, var_info_list, args.thread)
+            run_parallel(segment_file, output, ibd_program,
+                         min_CM, iid_file_list, var_info_list, threads)
 
 
 def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: str, iid_file_list: list, variant_info_list: list, threads: int):
@@ -184,43 +184,3 @@ def run_main(segment_file: str, output_path: str, ibd_format: str, min_CM: str, 
 
     ibd_file_converter.run(
         IBDdata, IBDindex, parameter_dict, uniqID, que_object)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="This script converts the output of the  IBD detection programs to a human readable form")
-
-    parser.add_argument("-i", '--input', help="This argument just list the path to the IBD detection software output",
-                        dest="input", type=str, required=True)
-
-    parser.add_argument("-p", "--pheno", help="This argument just list the directory to the single_variant_list.csv files",
-                        dest="pheno", type=str, required=True)
-
-    parser.add_argument("-o", "--output", help="This argument list the output directory",
-                        dest="output", type=str, required=True)
-
-    parser.add_argument("-f", "--format", help="This argument specifies the IBD program used",
-                        dest="format",  type=str, required=True)
-
-    parser.add_argument("-m", "--min", help="This argument specifies the minimum cM threshold",
-                        dest="min", type=str, required=True)
-
-    parser.add_argument("-t", "--thread", help="This argument specifies the threadcount to be used in parallel",
-                        dest="thread", type=str, required=True)
-
-    parser.add_argument("-s", "--suffix", help="This argument specifies the file suffix used because files may be named different for different IBD programs used",
-                        dest="suffix", type=str, required=True)
-
-    parser.add_argument("-v", "--var", help="This argument provides the path to the original variant file. It is used to get the base position of the variants",
-                        dest="var_file", type=str, required=True)
-
-    parser.add_argument("-mf", "--map_file", help="This argument provides the path to the different map files",
-                        dest="map_file", type=str, required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()

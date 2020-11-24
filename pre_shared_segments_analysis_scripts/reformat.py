@@ -3,7 +3,6 @@ import pandas as pd
 import glob
 import os
 import re
-import argparse
 import numpy as np
 
 # need to get list of carriers
@@ -29,8 +28,8 @@ def get_files(directory: str, file_id: str) -> list:
 
 
 def form_genotype_df(map_file_path: str, ped_file_path: str) -> pd.DataFrame:
-    '''This function will form a dictionary of dictionaries where the outer key is the iid,
-    the inner key is the variant and the inner value is the genotype string'''
+    """ This function will form a dictionary of dictionaries where the outer key is the iid,
+    the inner key is the variant and the inner value is the genotype string """
 
     # form three list for the iid, the variant, and the genotype string
     iid_list: list = []
@@ -153,8 +152,8 @@ def subset_genotype(geno_df: pd.DataFrame, carrier_list: list, variant_id: str) 
 
 
 def add_column(df_subset: pd.DataFrame, confirmed_carrier_list: list) -> pd.DataFrame:
-    '''This function will add a column to the df_subset that contains either a one
-    to indicate that the grid is a carrier confirmed by shared segment or a 0 if they are not'''
+    """This function will add a column to the df_subset that contains either a one
+    to indicate that the grid is a carrier confirmed by shared segment or a 0 if they are not"""
 
     # This line just adds a column that indicates the cconfirmed status
     df_subset["confirmed_status"] = np.where(
@@ -219,11 +218,11 @@ def add_chr_column(df: pd.DataFrame, chr_num: str) -> pd.DataFrame:
     return df
 
 
-def run(args):
+def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: str, no_carrier_file: str):
     "function to run"
 
     # defining an output path and file name for the output file
-    output_path: str = "".join([args.output, "confirmed_carriers.txt"])
+    output_path: str = "".join([output, "confirmed_carriers.txt"])
 
     # checking if the file exist
     if os.path.isfile(output_path):
@@ -238,13 +237,13 @@ def run(args):
             f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\t{'chr'}\n")
 
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
-    carrier_files: list = get_files(args.directory, "*single_variant_list.csv")
+    carrier_files: list = get_files(carrier_dir, "*single_variant_list.csv")
 
-    map_files: list = get_files(args.plink_dir, "*.map")
+    map_files: list = get_files(plink_dir, "*.map")
 
-    ped_files: list = get_files(args.plink_dir, "*.ped")
+    ped_files: list = get_files(plink_dir, "*.ped")
 
-    allpair_files: list = get_files(args.allpair_dir, "*allpair.txt")
+    allpair_files: list = get_files(allpair_dir, "*allpair.txt")
 
     # Iterating through the ped files
     for file in ped_files:
@@ -307,7 +306,7 @@ def run(args):
 
                     # returns either a 1 or 0 if the variant is in the no_carrier_file.txt list
                     carrier_int: int = check_no_carrier(
-                        args.no_carrier_file, variant)
+                        no_carrier_file, variant)
 
                     if carrier_int == 1:
 
@@ -321,14 +320,14 @@ def run(args):
                         print(f"The variant, {variant}, failed")
 
                         # checking if the file exist
-                        if os.path.isfile("".join([args.output, "failed_variants.txt"])):
+                        if os.path.isfile("".join([output, "failed_variants.txt"])):
 
                             # removing the file if it exist
                             os.remove(
-                                "".join([args.output, "failed_variants.txt"]))
+                                "".join([output, "failed_variants.txt"]))
 
                         # writing the variant that failed to a file
-                        with open("".join([args.output, "failed_variants.txt"]), "a+") as file:
+                        with open("".join([output, "failed_variants.txt"]), "a+") as file:
 
                             file.write(f"{variant}\n")
 
@@ -356,29 +355,4 @@ def run(args):
                 write_to_file(modified_geno_df, output_path)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="")
 
-    parser.add_argument("-d", help="This argument list the path for the carrier csv files. These files should end with single_variant_list.csv",
-                        dest="directory", type=str, required=True)
-
-    parser.add_argument("-p", help="This argument list the path for the directory containing the PLINK output files. These files will be the map and ped files",
-                        dest="plink_dir", type=str, required=True)
-
-    parser.add_argument("-a", help="This argument list the path for the allpair.txt files.",
-                        dest="allpair_dir", type=str, required=True)
-
-    parser.add_argument("-o", help="This argument list the path for the output file",
-                        dest="output", type=str, required=True)
-
-    parser.add_argument("-n", help="This argument list the path for the no_carrier_in_file.txt",
-                        dest="no_carrier_file", type=str, required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()

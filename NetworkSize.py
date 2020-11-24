@@ -1,14 +1,13 @@
 #####################################################################
 # importing modules
 
-import os
 import pandas as pd
 import logging
 
 #####################################################################
 # importing necessary functions from other files
 
-from write_path import writePath
+from file_creator_scripts.write_path import writePath
 from check_directory import check_dir
 
 # Using the ind_network_count.csv file

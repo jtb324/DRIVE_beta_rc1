@@ -10,7 +10,7 @@ def get_network_id(network_df_subset: pd.DataFrame) -> str:
     return network_id
 
 
-def filter_for_pairs(network_df: pd.DataFrame, pair_1: str, pair_2: str) -> set:
+def filter_for_pairs(network_df: pd.DataFrame, pair_1: str, pair_2: str) -> str:
     '''This function will filter down the dataframe to just the ideally two rows that 
     contain information about the pairs'''
 

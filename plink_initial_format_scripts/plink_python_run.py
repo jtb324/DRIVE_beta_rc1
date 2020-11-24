@@ -1,7 +1,6 @@
 # This file is used to run plink from python
 
 import subprocess
-import pandas as pd
 import os
 import sys
 import glob

@@ -2,7 +2,6 @@
 
 ###################################################################################
 # importing modules
-from os import path
 import pandas as pd
 import logging
 import glob
@@ -11,11 +10,8 @@ import os
 ###################################################################################
 # importing necessary functions from other files
 
-from write_path import writePath
-from check_directory import check_dir
-from csv_writer_class import Csv_Writer_Object
-from file_exist_checker import Check_File_Exist
-from population_filter import Pop_Filter
+import file_creator_scripts
+import population_filter_scripts
 
 ###################################################################################
 # Function to find the total number of variants
@@ -44,7 +40,7 @@ def totalVariantIDList(iid_list: set, writeLocation: str, chromo_name: str):
 
     file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
 
-    writeDirectory = writePath(writeLocation, file_name)
+    writeDirectory = file_creator_scripts.writePath(writeLocation, file_name)
 
     MyFile = open(
         writeDirectory, 'w')
@@ -104,7 +100,7 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
 
         logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 
-        file_checker = Check_File_Exist(recodeFile, logger)
+        file_checker = file_creator_scripts.Check_File_Exist(recodeFile, logger)
 
         raw_file = file_checker.check_file_exist(separator=" ")
 
@@ -114,7 +110,7 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
 
         if pop_code:
 
-            dataset_filter = Pop_Filter(pop_info, raw_file)
+            dataset_filter = population_filter_scripts.Pop_Filter(pop_info, raw_file)
 
             pop_info_df, recode_df = dataset_filter.load_files()
 
@@ -171,13 +167,13 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             var_reformat_df = pd.DataFrame(
                 var_dict_reformat, columns=["IID", "Variant ID"])
 
-            reformat_directory = check_dir(write_path, "reformated")
+            reformat_directory = file_creator_scripts.check_dir(write_path, "reformated")
 
             var_reformat_df.to_csv("".join([
                 reformat_directory, "/", file_prefix, ".single_var_list_reformat.csv"]), index=False)
 
             logger.info('The list of IIDs for each probe id were written to this filepath, {}'.format(
-                writePath(reformat_directory, "single_var_list_reformat.csv")
+                file_creator_scripts.writePath(reformat_directory, "single_var_list_reformat.csv")
             ))
 
         elif reformat and not bool(var_dict_reformat):
@@ -188,7 +184,7 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
         totalVariantIDList(total_id_set, write_path,
                            file_tuple[1])
 
-        csv_writer = Csv_Writer_Object(
+        csv_writer = file_creator_scripts.Csv_Writer_Object(
             var_dict, write_path, output_fileName, logger)
 
         csv_writer.log_file_path()

@@ -1,5 +1,5 @@
 import os
-from write_path import writePath
+from file_creator_scripts.write_path import writePath
 
 
 def check_dir(output_path: str, directory_name: str) -> str:

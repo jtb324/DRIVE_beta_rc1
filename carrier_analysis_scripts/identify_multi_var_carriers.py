@@ -1,16 +1,12 @@
 ##########################################################################
 # importing modules
-import sys
 import pandas as pd
 import logging
 
 ##########################################################################
 # importing necessary functions from other files
 
-from write_path import writePath
-from check_directory import check_dir
-from csv_writer_class import Csv_Writer_Object
-from file_exist_checker import Check_File_Exist
+import file_creator_scripts
 
 ##########################################################################
 
@@ -24,7 +20,7 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
 
     #Reading in the file ########################################
 
-    file_checker = Check_File_Exist(recodeFile[0], logger)
+    file_checker = file_creator_scripts.Check_File_Exist(recodeFile[0], logger)
 
     raw_file = file_checker.check_file_exist()
 
@@ -85,14 +81,14 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
         reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
             "IID", "Variant ID"])
 
-        reformat_directory = check_dir(write_path, "reformated")
+        reformat_directory = file_creator_scripts.check_dir(write_path, "reformated")
 
         # This writes the reformated dataframe as a csv file
         reformat_df.to_csv(
-            writePath(reformat_directory, "multi_var_reformated.csv"), index=False)
+            file_creator_scripts.writePath(reformat_directory, "multi_var_reformated.csv"), index=False)
 
         logging.info('reformated file written to {}'.format(
-            writePath(reformat_directory, "multi_var_reformated.csv")))
+            file_creator_scripts.writePath(reformat_directory, "multi_var_reformated.csv")))
 
     elif reformat and not bool(multi_var_carriers_reformat):
 
@@ -102,7 +98,7 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
     logger.info(
         'Writing the number of individuals who carry multiple variants to a csv file...')
 
-    csv_writer = Csv_Writer_Object(
+    csv_writer = file_creator_scripts.Csv_Writer_Object(
         multi_var_carriers, write_path, fileName, logger)
 
     csv_writer.log_file_path()
@@ -126,7 +122,7 @@ def individualCount(multiVarDict, write_path, logger):
 
     # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
 
-    csv_writer = Csv_Writer_Object(multiVarDict,
+    csv_writer = file_creator_scripts.Csv_Writer_Object(multiVarDict,
                                    write_path, "IndividualCount.csv", logger)
 
     csv_writer.log_file_path()

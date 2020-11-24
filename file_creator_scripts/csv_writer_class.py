@@ -3,7 +3,7 @@
 import csv
 
 # Import functions from other files
-from write_path import writePath
+import file_creator_scripts
 
 #######################################################
 # Creating the class to write a dictionary to csv file
@@ -22,12 +22,12 @@ class Csv_Writer_Object:
     def log_file_path(self):
         '''This function writes a message to a log file indicating where the output file can be found'''
         self.log_file.info('Writing the dictionary to the file path {}'.format(
-            writePath(self.output_directory, self.output_file_name)))
+            file_creator_scripts.writePath(self.output_directory, self.output_file_name)))
 
     def write_to_csv(self):
         '''This function writes the passed dictionary and writes it to a csv file.'''
 
-        with open(writePath(self.output_directory, self.output_file_name), 'w') as csvfile:
+        with open(file_creator_scripts.writePath(self.output_directory, self.output_file_name), 'w') as csvfile:
 
             # this line creates a writer object that the multiVarDict will be written to
             writer = csv.writer(csvfile)

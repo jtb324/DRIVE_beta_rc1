@@ -5,12 +5,11 @@ import os
 from os import path
 import glob
 import re
-import sys
 import gzip
 from functools import partial
 import multiprocessing as mp
 
-from network_ids import filter_df, filter_for_pairs
+from haplotype_segments_analysis.network_ids import filter_df, filter_for_pairs
 
 
 def identify_unique_variants(confirmed_carrier_file: str) -> list:
@@ -210,7 +209,8 @@ def get_confirmed_carriers(confirmed_file: str, var_id: str) -> list:
     return confirmed_carrier_list
 
 
-def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_num: str, variant_id: str, que_object, var_que_object, network_file_path: str):
+def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_num: str, variant_id: str, que_object,
+                      var_que_object, network_file_path: str):
     '''This function will create a string containing the start and end points for each shared segment between two pairs.
     The function will place this string in the que of a listener that will then write it to a file'''
 
@@ -308,7 +308,9 @@ def get_full_var_name(allpair_file: str, variant_id: str) -> str:
     return full_variant_id
 
 
-def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_list: list, ilash_file_list: list, hapibd_file_list: list, que_object, var_que_object, network_file_path: str, confirmed_carrier_file: str, variant: str):
+def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_list: list, ilash_file_list: list,
+                  hapibd_file_list: list, que_object, var_que_object, network_file_path: str, confirmed_carrier_file: str,
+                  variant: str):
     '''This function will contain the main segments of code that will run in the run function.
     It will be used in the parallel_map funcion which is an attempt to parallelize the function.'''
     print(variant)
@@ -327,8 +329,10 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
         carrier_file_list, "".join([chr_num, "_"]))
 
     carriers_list: list = get_carriers(carrier_file, full_variant_id)
+
     confirmed_carriers_list: list = get_confirmed_carriers(
         confirmed_carrier_file, variant)
+
     var_pos: str = get_var_pos(map_file, variant)
 
     # The next four lines get the hapibd file and the ilash file for the specific chromosome
@@ -355,7 +359,9 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
                       chr_num, full_variant_id, que_object, var_que_object, network_file_path)
 
 
-def parallel_map(workers: int, allpair_file_list: list, variant_list: list, carrier_file_list: list, map_file_list: list, output: str, ilash_file_list: list, hapibd_file_list: list, network_file_path: str, confirmed_carrier_file: str):
+def parallel_map(workers: int, allpair_file_list: list, variant_list: list, carrier_file_list: list, map_file_list: list,
+                 output: str, ilash_file_list: list, hapibd_file_list: list, network_file_path: str,
+                 confirmed_carrier_file: str):
     print("attempting to run in parallel...")
 
     # creating a manager que that can be used to line up how it write to the file
@@ -432,72 +438,34 @@ def sort_file(output_file_path: str):
     haplotype_df.to_csv(output_file_path, na_rep="N/A", index=False, sep="\t")
 
 
-def run(args):
+def get_segment_lengths(confirmed_carrier_file: str, output_path:str, ilash_dir:str,
+                        hapibd_dir: str, threads: str, map_file_dir:str, reformated_carrier_files: str,
+                        network_file:str, allpair_files:str):
     "function to run"
     # removing output files from previous runs
-    remove_previous_file("".join([args.output, "haplotype_info.txt"]))
+    remove_previous_file("".join([output_path, "haplotype_info.txt"]))
 
     remove_previous_file(
-        "".join([args.output, "failed_haplotype_analysis.txt"]))
+        "".join([output_path, "failed_haplotype_analysis.txt"]))
 
     # getting a list of all the variants that have a confirmed carrier
-    variant_list: list = identify_unique_variants(args.variant_file)
+    variant_list: list = identify_unique_variants(confirmed_carrier_file)
 
     # Getting all the carrier files
-    carrier_file_list: list = get_file_list(args.carrier, "*.csv")
+    carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
 
     # getting the map_files
-    map_file_list: list = get_file_list(args.map_dir, "*.map")
+    map_file_list: list = get_file_list(map_file_dir, "*.map")
 
     # getting the list of allpair files
-    allpair_file_list: list = get_file_list(args.allpair_dir, "*.allpair.txt")
+    allpair_file_list: list = get_file_list(allpair_files, "*.allpair.txt")
 
     # getting a list of the ilash and hapibd files
-    ilash_file_list: list = get_file_list(args.ilash_dir, "*.match.gz")
+    ilash_file_list: list = get_file_list(ilash_dir, "*.match.gz")
 
-    hapibd_file_list: list = get_file_list(args.hapibd_dir, "*.ibd.gz")
+    hapibd_file_list: list = get_file_list(hapibd_dir, "*.ibd.gz")
 
-    parallel_map(args.workers, allpair_file_list, variant_list, carrier_file_list,
-                 map_file_list, args.output, ilash_file_list, hapibd_file_list, args.network_file, args.variant_file)
+    parallel_map(int(threads), allpair_file_list, variant_list, carrier_file_list,
+                 map_file_list, output_path, ilash_file_list, hapibd_file_list, network_file, confirmed_carrier_file)
 
-    sort_file("".join([args.output, "haplotype_info.txt"]))
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="")
-
-    parser.add_argument("-v", help="This argument takes the directory of the file that list all the confirmed carriers",
-                        dest="variant_file", type=str, required=True)
-
-    parser.add_argument("-m", help="This argument list the directory for the map files",
-                        dest="map_dir", type=str, required=True)
-
-    parser.add_argument("-a", help="This argument list the directory for all of the allpair files",
-                        dest="allpair_dir", type=str, required=True)
-
-    parser.add_argument("-hap", help="This argument list the directory for all the hapibd files",
-                        dest="hapibd_dir", type=str, required=True)
-
-    parser.add_argument("-ilash", help="This argument list the directory for all of the ilash files",
-                        dest="ilash_dir", type=str, required=True)
-
-    parser.add_argument("-c", help="This argument list the directory for the reformated carrier files",
-                        dest="carrier", type=str, required=True)
-
-    parser.add_argument("-o", help="This argument list the output file path for the final file",
-                        dest="output", type=str, required=True)
-
-    parser.add_argument("-t", help="This argument list the amount of workers to span in the pool",
-                        dest="workers", type=int, required=True)
-
-    parser.add_argument("-n", help="This argument list the path to the network groups file",
-                        dest="network_file", type=str, required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()
+    sort_file("".join([output_path, "haplotype_info.txt"]))

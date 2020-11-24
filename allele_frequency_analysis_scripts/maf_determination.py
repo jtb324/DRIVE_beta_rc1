@@ -1,10 +1,8 @@
-from itertools import count
 import pandas as pd
 import glob
 import os
 import re
-import argparse
-from population_filter import Pop_Filter
+import population_filter_scripts
 # need to gather all of the single var list
 cur_dir = os.getcwd()
 
@@ -71,7 +69,7 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
             variant_list = carrier_file_df.variant_id.values.tolist()
 
             # loading in the raw file into a dataframe and filtering it just for the desired population code using the Pop_Filter code
-            pop_filter = Pop_Filter(pop_info_filepath, raw_file)
+            pop_filter = population_filter_scripts.Pop_Filter(pop_info_filepath, raw_file)
 
             pop_info_df, recode_df = pop_filter.load_files()
 
@@ -101,40 +99,12 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
         myFile.close()
 
 
-def run(args):
+def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str, output: str):
     "function to run"
     carrier_file_list = get_var_files(
-        args.car_dir, "*.single_variant_list.csv")
+        car_dir, "*.single_variant_list.csv")
 
-    raw_file_list = get_var_files(args.raw_dir, "*.raw")
+    raw_file_list = get_var_files(raw_dir, "*.raw")
 
     get_allele_frq(carrier_file_list, raw_file_list,
-                   args.pop_file, args.pop_code, args.output)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="")
-
-    parser.add_argument("-c", help="This argument takes the directory for all the .single_var_list.csv",
-                        dest="car_dir", type=str, required=True)
-
-    parser.add_argument("-r", help="This argument takes the directory for all the raw files",
-                        dest="raw_dir", type=str, required=True)
-
-    parser.add_argument("-i", help="This flag gives the path to a populationn info file that can filter down the raw files for a certain population",
-                        dest="pop_file", type=str, required=True)
-
-    parser.add_argument("-p", help="This flag gives the desired population code",
-                        dest="pop_code", type=str, required=True)
-
-    parser.add_argument("-o", help="This flag gives the output file path",
-                        dest="output", type=str, required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()
+                   pop_file, pop_code, output)

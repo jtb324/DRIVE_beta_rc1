@@ -1,18 +1,15 @@
 #################################################
 # importing packages
-import os
-import csv
 import pandas as pd
 import numpy as np
 import copy
 import logging
-import sys
 
 ###################################################################################
 # importing necessary functions from other files
 
 from NetworkSize import network_sizes
-from write_path import writePath
+from file_creator_scripts.write_path import writePath
 from check_directory import check_dir
 from csv_writer_class import Csv_Writer_Object
 from file_exist_checker import Check_File_Exist

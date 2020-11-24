@@ -9,12 +9,11 @@ import pandas as pd
 import argparse
 import sys
 
-from check_directory import check_dir
-from file_exist_checker import Check_File_Exist
+import file_creator_scripts
 from plink_python_run import PLINK_Runner
 
 
-class Input_Chr_Splitter(Check_File_Exist):
+class Input_Chr_Splitter(file_creator_scripts.Check_File_Exist):
     '''This class splits the input file which contains variants for multiple chromosomes into
     files that contain variants for just one chromosome'''
 
@@ -38,7 +37,7 @@ class Input_Chr_Splitter(Check_File_Exist):
             print(f"The file {self.file} is not a supported file type. \
                 Supported file types are .xlsx and .csv")
 
-        self.output_path = check_dir(output_path, "variants_of_interest/")
+        self.output_path = file_creator_scripts.check_dir(output_path, "variants_of_interest/")
 
         self.split_input_file()
 
@@ -86,41 +85,16 @@ class Input_Chr_Splitter(Check_File_Exist):
         MyFile.close()
 
 
-def run(args):
+def split_input_and_run_plink(input_files:str, output: str, recode_options: list, binary_file: str, plink_files_dir: str,):
     print("splitting the single file of multiple chromosomes into multiple files of a single chromosome")
 
-    Input_Chr_Splitter(args.input, args.output)
+    Input_Chr_Splitter(input_files, output)
 
     print("running PLINK...")
 
-    for recode_option in args.recode:
+    for recode_option in recode_options:
         recode_flag = "".join(["--", recode_option])
-        plink_runner = PLINK_Runner(args.bfile, args.var_dir, recode_flag)
+        plink_runner = PLINK_Runner(binary_file, plink_files_dir, recode_flag)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="This CLI splits the input file into separate files for each chromosome")
 
-    parser.add_argument("--input", help="This argument takes the initial input file which contains variants for multiple chromosomes and splits it into multiple files, one for each chromosome",
-                        dest="input", type=str, required=True)
-
-    parser.add_argument("--output", help="This argument creates the main output directory for the chromosome files",
-                        dest="output", type=str, required=True)
-
-    parser.add_argument("--bfile", help="This argument leads PLINK to the correct binary file path",
-                        dest="bfile", type=str, required=True)
-
-    parser.add_argument("--var_list_dir", help="This argument provides the directory of all the files that lis the variants",
-                        dest="var_dir", type=str, required=True)
-
-    parser.add_argument("--recode", help="This argument tells what kind of recode you want PLINK to run",
-                        dest="recode", type=str, nargs="+", required=True)
-
-    parser.set_defaults(func=run)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()
