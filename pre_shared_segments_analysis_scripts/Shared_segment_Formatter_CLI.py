@@ -10,7 +10,7 @@ import shutil
 import multiprocessing as mp
 from functools import partial
 
-from IBDinput_byBP_classes import Shared_Segment_Convert, Pre_Shared_Segment_Converter
+import pre_shared_segments_analysis_scripts
 
 ####################################################################################################
 
@@ -55,7 +55,7 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
 
-    preformater = Pre_Shared_Segment_Converter(
+    preformater = pre_shared_segments_analysis_scripts.Pre_Shared_Segment_Converter(
         ibd_files, carrier_file, ibd_program, output, map_file_dir)
 
     segment_file_list = preformater.gather_segment_files(file_suffix)
@@ -173,7 +173,7 @@ def run_main(segment_file: str, output_path: str, ibd_format: str, min_CM: str, 
 
     pheno_file = iid_file
 
-    ibd_file_converter = Shared_Segment_Convert(
+    ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
         segment_file, pheno_file, output_path, ibd_format, min_CM, 1, variant_position, variant_id)
 
     parameter_dict = ibd_file_converter.generate_parameters()

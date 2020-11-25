@@ -6,7 +6,7 @@ from os import path
 import sys
 
 import carrier_analysis_scripts
-from create_networks import create_networks
+import create_network_scripts
 import file_creator_scripts
 import allele_frequency_analysis_scripts
 import pre_shared_segments_analysis_scripts
@@ -65,7 +65,8 @@ def run(args):
         logging.info("generating list of individuals at each probe id...")
 
         print("generating list of individuals at each probe id...")
-
+        print(args.input)
+        print(args.input[0])
         # The args.input should be a directory indicating where the raw files are located
         carrier_analysis_scripts.singleVariantAnalysis(args.input, args.output, args.compatible_format,
                                                        'single_variant_list.csv', args.pop_info, args.pop_code)
@@ -94,7 +95,7 @@ def run(args):
         logging.info(
             "Drawing networks for all individuals identified as shared segments...")
 
-        carrier_in_network_dict = create_networks(args.allpair_file, args.var_file, carrier_in_network_dict,
+        carrier_in_network_dict = create_network_scripts.create_networks(args.allpair_file, args.var_file, carrier_in_network_dict,
                                                   output)
 
         logger = logging.getLogger(args.output+'/carriers_in_network.log')
@@ -180,7 +181,12 @@ def main():
     parser.add_argument("--output", "-o", help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
                         dest="output", type=str, required=True)
 
-    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called to analyze how many individuals carry multiple variants. Two csv files are made which contain the indices of the variants and a list of the individuals that contain those variants. This accepts single, total, multi, matchPED, allele_counts, draw_networks", dest="analysis", type=str, default=False)
+    parser.add_argument("--analysis", help="This tag indicates that the multiVariantAnalysis function will be called "
+                                           "to analyze how many individuals carry multiple variants. Two csv files are "
+                                           "made which contain the indices of the variants and a list of the "
+                                           "individuals that contain those variants. This accepts single, total, multi"
+                                           ", matchPED, allele_counts, draw_networks",
+                        dest="analysis", type=str, required=True)
 
     parser.add_argument("--thread", "-t", help="This argument list how many workers the program can use for multiprocessing",
                         dest="threads", type=str, required=False, default=1)
@@ -237,7 +243,7 @@ def main():
     parser.add_argument("--pop_code", help="This argument can be a single population code or a list of population "
                                            "codes that someone is looking for. Population codes have to match the "
                                            "1000 genomes.",
-                        dest="pop_code", type=str, required=False, nargs="+")
+                        dest="pop_code", type=str, required=False)
 
     parser.set_defaults(func=run)
     args = parser.parse_args()

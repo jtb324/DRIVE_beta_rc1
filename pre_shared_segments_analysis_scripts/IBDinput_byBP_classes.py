@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import shutil
 
-from file_exist_checker import Check_File_Exist
+import file_creator_scripts
 
 min_cM = 3
 cpu = 1

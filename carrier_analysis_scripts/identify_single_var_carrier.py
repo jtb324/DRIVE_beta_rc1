@@ -58,7 +58,7 @@ def find_all_files(input_file_path: str):
     cur_dir = os.getcwd()
 
     os.chdir(input_file_path)
-
+    print(f"current directory: {os.getcwd()}")
     recode_file_list = []
 
     for file in glob.glob("*.raw"):
@@ -90,6 +90,7 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             file_prefix = file_tuple[1][21:30]
 
             output_fileName = "".join([file_prefix, ".", fileName])
+
         elif len(file_tuple[1]) == 35:
 
             file_prefix = file_tuple[1][21:31]
@@ -120,6 +121,7 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             raw_file = dataset_filter.filter_recode_df(
                 pop_info_subset_df, recode_df)
 
+        print(raw_file)
         column_list = list(raw_file.columns[6:].values)
 
         var_dict = dict()
@@ -127,11 +129,12 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
         var_dict_reformat = dict()
 
         total_id_set = set()
+
         for column in column_list:
 
             iid_list = []
 
-            index_list = raw_file.index[raw_file[column].isin([1, 2])].tolist()
+            index_list = raw_file.index[raw_file[column].isin([1.0, 2.0])].tolist()
 
             for i in index_list:
                 iid_list.append(raw_file.loc[i, "IID"])

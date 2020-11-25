@@ -1,10 +1,9 @@
 import logging
 import re
 import os
-import glob
 import pandas as pd
 
-from network_creator_class import Network_Img_Maker
+import create_network_scripts
 
 
 def get_chr_num(file: str) -> str:
@@ -140,7 +139,7 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
     # draw networks function
     pairs_df: pd.DataFrame = pd.DataFrame()
 
-    network_drawer: object = Network_Img_Maker(
+    network_drawer: object = create_network_scripts.Network_Img_Maker(
         segments_file_dir, variant_file_dir, output_path, logger)
 
     # Getting all of the allpair files into a list

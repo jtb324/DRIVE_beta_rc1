@@ -10,22 +10,23 @@ import argparse
 import sys
 
 import file_creator_scripts
-from plink_python_run import PLINK_Runner
+import plink_initial_format_scripts
 
 
-class Input_Chr_Splitter(file_creator_scripts.Check_File_Exist):
+class Input_Chr_Splitter:
     '''This class splits the input file which contains variants for multiple chromosomes into
     files that contain variants for just one chromosome'''
 
     def __init__(self, variant_csv_path: str, output_path: str):
 
         # Create property called file that is just the path to the input file
-        self.file = variant_csv_path
-
+        
+        self.file = variant_csv_path[0]
+        print(self.file)
         # check if the file is an csv file
         if self.file[-4:] == ".csv":
 
-            self.var_df = self.check_file_exist(separator=",")
+            self.var_df = pd.read_csv(self.file)
 
         # check if it is an excel file
         elif self.file[-5:] == ".xlsx":
@@ -39,6 +40,7 @@ class Input_Chr_Splitter(file_creator_scripts.Check_File_Exist):
 
         self.output_path = file_creator_scripts.check_dir(output_path, "variants_of_interest/")
 
+        print(self.var_df)
         self.split_input_file()
 
     def split_input_file(self):
@@ -94,7 +96,7 @@ def split_input_and_run_plink(input_files:str, output: str, recode_options: list
 
     for recode_option in recode_options:
         recode_flag = "".join(["--", recode_option])
-        plink_runner = PLINK_Runner(binary_file, plink_files_dir, recode_flag)
+        plink_runner = plink_initial_format_scripts.PLINK_Runner(binary_file, plink_files_dir, recode_flag)
 
 
 
