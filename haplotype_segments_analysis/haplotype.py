@@ -51,7 +51,7 @@ def get_file_list(file_dir: str, file_tag: str) -> list:
 def get_chr_id(allpair_file: str) -> str:
     '''This will get the chromosome number from the allpair file name'''
 
-    match = re.search(r'_chr\d\d\.', allpair_file)
+    match = re.search(r'.chr\d\d\.', allpair_file)
 
     # find chromosome number
     if match:
@@ -68,10 +68,30 @@ def get_chr_id(allpair_file: str) -> str:
     return chr_num
 
 
+def alternate_chr_num_format(chr_num: str) -> str:
+    '''This removes the string in some of the chromosome files'''
+
+    zero_indx: int = chr_num.find("0")
+
+    if zero_indx and zero_indx == 4:
+
+        chr_list: list = chr_num.split("0")
+
+        chr_num = "".join(chr_list)
+
+    return chr_num
+
+
 def get_file(file_list: list, identifier: str) -> str:
     '''This function gets the file that matches a condition from a list of files'''
+    print(f"{file_list} : {identifier}")
 
-    file_str: str = [file for file in file_list if identifier in file][0]
+    # generate alternate chr number incase the formatting does not contain a zero
+    alt_chr_num: str = alternate_chr_num_format(identifier)
+    print(alt_chr_num)
+
+    file_str: str = [
+        file for file in file_list if identifier in file or alt_chr_num in file][0]
 
     return file_str
 
@@ -438,9 +458,9 @@ def sort_file(output_file_path: str):
     haplotype_df.to_csv(output_file_path, na_rep="N/A", index=False, sep="\t")
 
 
-def get_segment_lengths(confirmed_carrier_file: str, output_path:str, ilash_dir:str,
-                        hapibd_dir: str, threads: str, map_file_dir:str, reformated_carrier_files: str,
-                        network_file:str, allpair_files:str):
+def get_segment_lengths(confirmed_carrier_file: str, output_path: str, ilash_dir: str,
+                        hapibd_dir: str, threads: str, map_file_dir: str, reformated_carrier_files: str,
+                        network_file: str, allpair_files: str):
     "function to run"
     # removing output files from previous runs
     remove_previous_file("".join([output_path, "haplotype_info.txt"]))

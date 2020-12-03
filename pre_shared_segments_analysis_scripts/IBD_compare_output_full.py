@@ -5,7 +5,7 @@ import itertools
 import glob
 import os
 import re
-import argparse
+
 
 # Getting all the ibd files that end in .small.txt.gz
 
@@ -31,6 +31,7 @@ def gather_ibd_files(segment_dir: str) -> list:
 def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
     '''This function aligns all the files from each ibd program together'''
     file_dict = dict()
+    print(ibd_file_list)
     # iterate through the files to build the dictionary
     for ibd_file in ibd_file_list:
 
@@ -187,6 +188,18 @@ def get_carrier_list(file: str, variant_id: str) -> list:
     return carrier_list
 
 
+def alternate_chr_num_format(chr_num: str) -> str:
+    '''This function will add a zero between the number if it is a single digit chromosome'''
+
+    if len(chr_num. strip(".")) == 4:
+
+        chr_num = chr_num.strip(".")
+
+        chr_num = "".join([".", chr_num[:-1], "0", chr_num[3], "."])
+
+    return chr_num
+
+
 def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir: str, chr_num: str):
     '''this function takes the original allpair.txt file and reformats it to four columns.
     The first columnn is the ibd program that identified the pairs, the second column is the 
@@ -194,7 +207,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     second pair is a carrier'''
 
     # Removing the allpair.txt file if it already exists from a previous run
-    if os.path.isfile('filename.txt'):
+    if os.path.isfile(write_path):
 
         # removing the file
         os.remove(write_path)
@@ -202,9 +215,10 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     carrier_list = get_carrier_file_list(carrier_file_dir)
 
     # use list comprehension to find the file with that chr_num
+    alt_chr_num: str = alternate_chr_num_format(chr_num)
 
     carrier_file = [
-        file for file in carrier_list if chr_num.strip(".") in file][0]
+        file for file in carrier_list if chr_num.strip(".") in file or alt_chr_num.strip(".") in file][0]
 
     # getting the list of carriers' iids for the specific variant
 
@@ -269,29 +283,32 @@ def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
         return 0
 
 
-def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: str):
+def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: str):
     ibd_file_list: list = gather_ibd_files(segment_dir)
-
-    # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
-    max_pairs: int = 0
 
     file_dict: dict = build_file_dict(ibd_file_list, ibd_programs)
 
     for chr_num, variant_id in file_dict.keys():
 
+        # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
+        max_pairs: int = 0
+
         file_list: list = file_dict[(chr_num, variant_id)]
+
+        alt_chr_num: str = alternate_chr_num_format(chr_num)
 
         if len(file_list) == 0:  # Checking length of system arguments
             sys.exit(f"no files found for this variant {variant_id}")
 
         # Making the first argument the output variable
+
         out = "".join([output, "IBD_", variant_id,
-                       "_", chr_num[1:len(chr_num)-1]])
+                       alt_chr_num[:-1]])
         # next three lines write the files to a dictionary
         files = {}
 
         for f in file_list:
-            print(f)
+
             files[f.split(':', 1)[0]] = f.split(':', 1)[1]
 
         print('input {0} files: {1}'.format(
@@ -332,7 +349,7 @@ def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: s
         for item in allcomb:
             combtab.loc[item, allcomb[item]] = len(allcomb[item])
         print("printing output path...")
-        print(out)
+        # print(out)
         # sumtab = open(out+'.sum.txt', 'w')
         # uniqtab = open(out+'.uniquq.txt', 'w')
 
@@ -351,6 +368,7 @@ def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: s
         while sum(list(map(lambda f: endtest[f], endtest.keys()))) < len(endtest):
             pos = min(newpos.values())
             nowf = findkey(pos, newpos)
+
         #    print('{0} from {1}'.format(str(pos), ' '.join(nowf)))
             for f in nowf:
 
@@ -384,6 +402,7 @@ def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: s
             sumrow = list(map(lambda comb: len(
                 allinter(comb, curr_pair)), allcomb.values()))
             uniqrow = get_uniqrow(1, allcomb, curr_pair, combtab)
+
             newallpair: list = all_agree_pair(curr_pair)
 
             max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
@@ -435,22 +454,8 @@ def combine_output(segment_dir: str, ibd_programs: str, output: str, car_file: s
                 # Reseting the counter
                 count = 0
 
-            # sumtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
-            #     pos), ",".join(nowf), '\t'.join(map(str, sumrow))))
-            # uniqtab.write('{0}\t{1}\t{2}\t{3}\n'.format(str(CHR), str(
-            #     pos), ",".join(nowf), '\t'.join(map(str, uniqrow))))
-            max_pairs = len(newallpair)
-
-            print(len(newallpair))
-
-            print(outpair)
-
             # keeping track of the previous row so that it can be used if necessary
             previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
 
             # Also keeping track of the base position
             previous_row_bp: str = str(pos)
-
-        # sumtab.close()
-        # uniqtab.close()
-        # allagree.close()

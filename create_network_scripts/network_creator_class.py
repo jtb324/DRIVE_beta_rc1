@@ -11,11 +11,11 @@ import gzip
 import file_creator_scripts
 
 
-class Network_Img_Maker(file_creator_scripts.Check_File_Exist):
+class Network_Img_Maker():
 
-    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger, file_to_check):
+    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger, ):
         # This will be the directory to where all the allpair.new.txt files are
-        super().__init__(file_to_check, logger)
+
         self.file = segments_file_dir
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file_dir
@@ -27,10 +27,6 @@ class Network_Img_Maker(file_creator_scripts.Check_File_Exist):
         self.id_list = None
         self.curr_dir = os.getcwd()
         self.pairs_df = None  # Creating an attribute for the pair df
-        # self.files: dict = {
-        #     "hapibd": self.gather_files(hapibd_dir, ".ibd.gz"),
-        #     "ilash": self.gather_files(ilash_dir, ".match.gz")
-        # }
 
     def gather_files(self, file_directory: str, file_tag: str) -> list:
         '''This function will gather all of the allpair.new.txt files which contain information about pairs. It will also be used to get the 'chr#_list.single_variant.csv' files.'''

@@ -173,7 +173,7 @@ def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
     '''This function will check if the variant is in a file called no_carriers_in_file.txt'''
 
     # if this file is not present than the function needs to return 0
-    if os.path.isfile(no_carrier_file):
+    if not os.path.isfile(no_carrier_file):
 
         return 0
 
@@ -299,6 +299,7 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
 
                 # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
                 try:
+                    print(allpair_files)
                     allpair_file: str = [file for file in allpair_files if "".join(
                         [chr_num, "."]) in file and variant in file][0]
 
@@ -353,6 +354,3 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
 
                 # Combining the dataframes
                 write_to_file(modified_geno_df, output_path)
-
-
-

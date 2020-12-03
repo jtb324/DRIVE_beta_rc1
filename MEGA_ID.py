@@ -12,14 +12,14 @@ import allele_frequency_analysis_scripts
 import pre_shared_segments_analysis_scripts
 import plink_initial_format_scripts
 import haplotype_segments_analysis
-
+import full_analysis
 
 
 def run(args):
 
     analysis_arguments: list = [
-        "multi", "single", "draw_networks", "maf_determination", "shared_segments_preformat",
-        "get_haplotype", "split_input_file"]
+        "multi", "single", "draw_networks", "maf_determination", "shared_segment_preformat",
+        "get_haplotypes", "split_input_file", "combine_segment_output", "get_all_genotypes"]
 
     if args.analysis.lower() not in analysis_arguments:
         print("The analysis method selected was not recognized. Please use one of the following analysis methods: \
@@ -29,8 +29,10 @@ def run(args):
             *plink_splitter\
             *maf_determination\
             *shared_segment_preformat\
-            *get_haplotype\
-            *split_input_file")
+            *get_haplotypes\
+            *split_input_file\
+            *combine_segment_output\
+            *get_all_genotypes")
 
         # This line stops the program if the analysis method is not recognized
         sys.exit(1)
@@ -96,7 +98,7 @@ def run(args):
             "Drawing networks for all individuals identified as shared segments...")
 
         carrier_in_network_dict = create_network_scripts.create_networks(args.allpair_file, args.var_file, carrier_in_network_dict,
-                                                  output)
+                                                                         output)
 
         logger = logging.getLogger(args.output+'/carriers_in_network.log')
 
@@ -112,7 +114,7 @@ def run(args):
 
         print("determine the minor allele frequency within the provided binary file")
         allele_frequency_analysis_scripts.determine_maf(args.carrier_file, args.raw_file,
-                     args.pop_info, args.pop_code, args.output)
+                                                        args.pop_info, args.pop_code, args.output)
 
     elif args.analysis.lower() == "shared_segment_preformat":
         print("converting the ibd output to a human readable version...")
@@ -121,11 +123,14 @@ def run(args):
                                                          args.output, args.map_file, args.ibd_file_suffix, args.min_CM,
                                                          args.threads, args.var_input_file)
 
+    elif args.analysis.lower() == "combine_segment_output":
+        print("combining segment output...")
+
         pre_shared_segments_analysis_scripts.combine_output(
             args.segment_files, args.ibd_programs, args.output, args.reformat_files)
 
         pre_shared_segments_analysis_scripts.reformat_files(args.carrier_file, args.plink_dir, args.allpair_file,
-                                                            args.no_carriers_file)
+                                                            args.output, args.no_carriers_file)
 
     elif args.analysis.lower() == "split_input_file":
         print("splitting the input excel or csv file and then extracting the variants through PLINK")
@@ -136,8 +141,16 @@ def run(args):
     elif args.analysis.lower() == "get_haplotypes":
         print("getting information about the haplotypes for the confirmed carriers")
 
-        haplotype_segments_analysis.get_segment_lengths(args.input, args.output, args.ilash_dir, args.hapibd_dir,
-                                                        args.threads, args.plink_dir, args.reformat_files, args.allpair_file)
+        haplotype_segments_analysis.get_segment_lengths(args.input[0], args.output, args.ilash_dir, args.hapibd_dir,
+                                                        args.threads, args.plink_dir, args.reformat_files, args.network_files, args.allpair_file)
+
+    elif args.analysis.lower() == "get_all_genotypes":
+        print("generating a file contain the genotypes for all IIDs in the provided file")
+
+        full_analysis.get_all_genotypes(
+            args.plink_dir, args.input[0], args.pop_info, args.output, args.pop_code)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="This identifies individuals who have a specific variant in a raw file from PLINK")
@@ -202,7 +215,7 @@ def main():
                         dest="no_carriers_file", type=str, required=False)
 
     parser.add_argument("--ibd_programs", help="This argument list which ibd programs were used",
-                        dest="ibd_programs", type=str, required=False)
+                        dest="ibd_programs", type=str, nargs="+", required=False)
 
     parser.add_argument("--file_suffix", "-fs", help="This argument list the suffix for the different ibd files because it could change",
                         dest="ibd_file_suffix", type=str, required=False)

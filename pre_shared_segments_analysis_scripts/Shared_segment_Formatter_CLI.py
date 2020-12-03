@@ -2,6 +2,7 @@
 
 # THese are modules used
 import re
+from numpy.lib.function_base import msort
 import pandas as pd
 import sys
 import os
@@ -48,6 +49,20 @@ def remove_previous_file(file_path: str):
         os.remove(file_path)
 
 
+def alternate_chr_num_format(chr_num: str) -> str:
+    '''This removes the string in some of the chromosome files'''
+
+    zero_indx: int = chr_num.find("0")
+
+    if zero_indx and zero_indx == 3:
+
+        chr_list: list = chr_num.split("0")
+
+        chr_num = "".join(chr_list)
+
+    return chr_num
+
+
 def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str, map_file_dir: str, file_suffix: str, min_CM: str, threads: str, variant_file: str):
     # Instantiating a class object to be raised to break the inner loop
 
@@ -59,6 +74,7 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
         ibd_files, carrier_file, ibd_program, output, map_file_dir)
 
     segment_file_list = preformater.gather_segment_files(file_suffix)
+
     # also need to get all of the possible variant files per chromosome
     chr_var_file_list = preformater.gather_chromosome_files()
 
@@ -94,12 +110,15 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             # adding a .
             chr_num = "".join([chr_num, "."])
 
+        alt_chr_num: str = alternate_chr_num_format(chr_num)
+        print(alt_chr_num)
+        print(match.group(0))
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
         segment_map_tuple = [(segment_file, map_file)
-                             for segment_file in segment_file_list for map_file in map_file_list if chr_num in segment_file and match.group(0) in map_file]
-
+                             for segment_file in segment_file_list for map_file in map_file_list if (chr_num in segment_file or alt_chr_num in segment_file) and "".join([".", match.group(0)]) in map_file]
+        print(map_file_list)
         # iterating through the segment_file_list to find the shared segment file for the right chromosome
-
+        print(segment_map_tuple)
         # This checks to see if the tuple is empty or not
         if segment_map_tuple:
 
@@ -113,6 +132,7 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             var_info_df, variant_directory = preformater.create_variant_lists(
                 chromo_file, variant_file, map_file)
 
+            print(var_info_df)
             # This checks if the var_info_file_path and the variant_directory are empty string because
             # this would mean that the the chromo_file only has one variant and it has no carriers
             if variant_directory == "":
@@ -120,9 +140,11 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
                     f"There were no carriers in the file {chromo_file}")
                 continue
 
+            print("This is the variant directory")
+            print(variant_directory)
             iid_file_list = preformater.get_iid_files(
                 variant_directory)
-
+            print(iid_file_list)
             variant_bp_list = var_info_df.site.values.tolist()
 
             variant_id_list = var_info_df.variant_id.values.tolist()
@@ -130,13 +152,12 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             # creating a list the base pairs with the variant id
             var_info_list: list = [(var_bp, var_id) for var_bp, var_id in zip(
                 variant_bp_list, variant_id_list)]
-
+            print(f"This is the var_info_list: {var_info_list}")
             run_parallel(segment_file, output, ibd_program,
                          min_CM, iid_file_list, var_info_list, threads)
 
 
 def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: str, iid_file_list: list, variant_info_list: list, threads: int):
-    print(variant_info_list)
 
     # starting a que to create a file that keeps track of errors
     manager = mp.Manager()
@@ -151,7 +172,7 @@ def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: s
         listener, (que, "".join([output_path, "failed_IBDinput_byBP.txt"]), header))
 
     func = partial(run_main, segment_file,
-                   output_path, ibd_format, min_CM, iid_file_list, que)
+                   output_path, ibd_format[0], min_CM, iid_file_list, que)
 
     pool.map(func, variant_info_list)
 
@@ -162,8 +183,8 @@ def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: s
     pool.join()
 
 
-def run_main(segment_file: str, output_path: str, ibd_format: str, min_CM: str, iid_file_list: list, que_object, var_info_tuple):
-
+def run_main(segment_file: str, output_path: str, ibd_format: list, min_CM: str, iid_file_list: list, que_object, var_info_tuple):
+    print("in main run function:")
     variant_position = int(var_info_tuple[0])
 
     variant_id = str(var_info_tuple[1])

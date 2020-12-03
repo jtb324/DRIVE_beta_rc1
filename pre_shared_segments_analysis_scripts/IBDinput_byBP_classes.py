@@ -29,6 +29,7 @@ class Pre_Shared_Segment_Converter:
         self.map_file_dir = map_file_dir
 
     def gather_segment_files(self, segment_file_suffix: str) -> list:
+        print(self.segment_dir)
         os.chdir(self.segment_dir)
 
         segment_files_list = []
@@ -77,14 +78,10 @@ class Pre_Shared_Segment_Converter:
     # returns a dataframe and a string
     def create_variant_lists(self, chromo_var_file: str, original_var_filepath: str, map_file_path: str):
         '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
+        print("This is in the create_variant_lists function")
         print(chromo_var_file)
         # this makes the directory name to output the files to
         var_list_dir = "".join([self.output, "variant_lists/"])
-
-        # making sure there is no directory from a previous run
-        if os.path.isdir(var_list_dir):
-            print("removing the var_list_dir")
-            shutil.rmtree(var_list_dir)
 
         # This attempts to make the directory for the list of IIDs per variant
         try:
@@ -106,14 +103,16 @@ class Pre_Shared_Segment_Converter:
 
         # load in the csv file that list the IIDs of grids per variant on a specific chromosome
         carrier_df = pd.read_csv(chromo_var_file, sep=",", header=None)
+        print("This is the carrier df")
 
+        print(f"{carrier_df}\n{map_file_path}")
         # Need to determine the # of rows of the carrier_df
         carrier_df_size = len(carrier_df)
 
         # reading in the map file
         map_file_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
                                   "chr", "variant id", "cM", "site"])
-
+        print(map_file_df)
         # bringing in the original variant excel file to get the variant site position
         # iterate through each row of the chromosome so that
         # going to create two list where one contains the variant_id, one contains a list of base positions,

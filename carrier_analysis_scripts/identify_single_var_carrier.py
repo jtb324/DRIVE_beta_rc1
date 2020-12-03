@@ -90,7 +90,6 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             file_prefix = file_tuple[1][21:30]
 
             output_fileName = "".join([file_prefix, ".", fileName])
-
         elif len(file_tuple[1]) == 35:
 
             file_prefix = file_tuple[1][21:31]
@@ -108,9 +107,11 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
         logger.info('Using raw recode file found at {}'.format(recodeFile))
 
         # subsetting the raw_file for a specific population if the population code, pop_code, is provided
-
+        print(pop_code)
         if pop_code:
 
+            print(f"this is the pop code: {pop_info}")
+            print(raw_file)
             dataset_filter = population_filter_scripts.Pop_Filter(pop_info, raw_file)
 
             pop_info_df, recode_df = dataset_filter.load_files()
