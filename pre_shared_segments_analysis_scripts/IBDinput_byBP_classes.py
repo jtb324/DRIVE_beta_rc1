@@ -29,7 +29,7 @@ class Pre_Shared_Segment_Converter:
         self.map_file_dir = map_file_dir
 
     def gather_segment_files(self, segment_file_suffix: str) -> list:
-        print(self.segment_dir)
+
         os.chdir(self.segment_dir)
 
         segment_files_list = []
@@ -78,8 +78,7 @@ class Pre_Shared_Segment_Converter:
     # returns a dataframe and a string
     def create_variant_lists(self, chromo_var_file: str, original_var_filepath: str, map_file_path: str):
         '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
-        print("This is in the create_variant_lists function")
-        print(chromo_var_file)
+
         # this makes the directory name to output the files to
         var_list_dir = "".join([self.output, "variant_lists/"])
 
@@ -103,16 +102,14 @@ class Pre_Shared_Segment_Converter:
 
         # load in the csv file that list the IIDs of grids per variant on a specific chromosome
         carrier_df = pd.read_csv(chromo_var_file, sep=",", header=None)
-        print("This is the carrier df")
 
-        print(f"{carrier_df}\n{map_file_path}")
         # Need to determine the # of rows of the carrier_df
         carrier_df_size = len(carrier_df)
 
         # reading in the map file
         map_file_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
                                   "chr", "variant id", "cM", "site"])
-        print(map_file_df)
+
         # bringing in the original variant excel file to get the variant site position
         # iterate through each row of the chromosome so that
         # going to create two list where one contains the variant_id, one contains a list of base positions,
@@ -331,8 +328,6 @@ class Shared_Segment_Convert(newPOS):
     def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict, que_object):
         '''This function will be used in the parallelism function'''
 
-        print("entering in the IBDsumm function")
-
         # undoing the parameter_dict
         id1_indx = int(parameter_dict["id1_indx"])
         id2_indx = int(parameter_dict["id2_indx"])
@@ -422,7 +417,6 @@ class Shared_Segment_Convert(newPOS):
                         IBDdata[CHR][str(end)].rem.append(str(pair))
         try:
 
-            print(f"This is the CHR: {CHR}")
             print('identified ' +
                   str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
 
@@ -430,7 +424,7 @@ class Shared_Segment_Convert(newPOS):
             # NEED TO FIX THIS LINE HERE
             write_path = "".join([self.output, '_', self.variant_name,
                                   '.chr', str(CHR), '.small.txt.gz'])
-            print(write_path)
+
             out = gzip.open(write_path, 'wt')
 
             # Writing the header line to the file

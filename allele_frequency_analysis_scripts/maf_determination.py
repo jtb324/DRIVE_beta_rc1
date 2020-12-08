@@ -69,7 +69,8 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
             variant_list = carrier_file_df.variant_id.values.tolist()
 
             # loading in the raw file into a dataframe and filtering it just for the desired population code using the Pop_Filter code
-            pop_filter = population_filter_scripts.Pop_Filter(pop_info_filepath, raw_file)
+            pop_filter = population_filter_scripts.Pop_Filter(
+                pop_info_filepath, raw_file)
 
             pop_info_df, recode_df = pop_filter.load_files()
 
@@ -77,13 +78,10 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
 
             raw_file_df = pop_filter.filter_recode_df(pop_info_df, recode_df)
 
-            print(raw_file_df.columns.tolist())
             for variant in variant_list:
-                print(variant)
                 # get all rows for that variant in the raw-file_df
 
                 total_allele_count = len(raw_file_df)*2
-                print(total_allele_count)
 
                 carry_allele_df = raw_file_df[raw_file_df[variant].isin(
                     [1, 2])][variant]
@@ -91,8 +89,7 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
                 minor_allele_count = carry_allele_df.count()
 
                 allele_frq = minor_allele_count/total_allele_count
-                print(allele_frq)
-                print(chr_num[:len(chr_num)-1])
+
                 myFile.write(
                     f"{chr_num[:len(chr_num)-1]}\t{variant}\t{allele_frq}\n")
 

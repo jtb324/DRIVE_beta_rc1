@@ -58,7 +58,7 @@ def find_all_files(input_file_path: str):
     cur_dir = os.getcwd()
 
     os.chdir(input_file_path)
-    print(f"current directory: {os.getcwd()}")
+
     recode_file_list = []
 
     for file in glob.glob("*.raw"):
@@ -100,19 +100,21 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
 
         logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 
-        file_checker = file_creator_scripts.Check_File_Exist(recodeFile, logger)
+        file_checker = file_creator_scripts.Check_File_Exist(
+            recodeFile, logger)
 
         raw_file = file_checker.check_file_exist(separator=" ")
 
         logger.info('Using raw recode file found at {}'.format(recodeFile))
 
         # subsetting the raw_file for a specific population if the population code, pop_code, is provided
-        print(pop_code)
+
         if pop_code:
 
             print(f"this is the pop code: {pop_info}")
-            print(raw_file)
-            dataset_filter = population_filter_scripts.Pop_Filter(pop_info, raw_file)
+
+            dataset_filter = population_filter_scripts.Pop_Filter(
+                pop_info, raw_file)
 
             pop_info_df, recode_df = dataset_filter.load_files()
 
@@ -122,7 +124,6 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             raw_file = dataset_filter.filter_recode_df(
                 pop_info_subset_df, recode_df)
 
-        print(raw_file)
         column_list = list(raw_file.columns[6:].values)
 
         var_dict = dict()
@@ -135,7 +136,8 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
 
             iid_list = []
 
-            index_list = raw_file.index[raw_file[column].isin([1.0, 2.0])].tolist()
+            index_list = raw_file.index[raw_file[column].isin(
+                [1.0, 2.0])].tolist()
 
             for i in index_list:
                 iid_list.append(raw_file.loc[i, "IID"])
@@ -171,13 +173,15 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
             var_reformat_df = pd.DataFrame(
                 var_dict_reformat, columns=["IID", "Variant ID"])
 
-            reformat_directory = file_creator_scripts.check_dir(write_path, "reformated")
+            reformat_directory = file_creator_scripts.check_dir(
+                write_path, "reformated")
 
             var_reformat_df.to_csv("".join([
                 reformat_directory, "/", file_prefix, ".single_var_list_reformat.csv"]), index=False)
 
             logger.info('The list of IIDs for each probe id were written to this filepath, {}'.format(
-                file_creator_scripts.writePath(reformat_directory, "single_var_list_reformat.csv")
+                file_creator_scripts.writePath(
+                    reformat_directory, "single_var_list_reformat.csv")
             ))
 
         elif reformat and not bool(var_dict_reformat):

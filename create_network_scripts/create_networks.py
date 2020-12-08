@@ -71,7 +71,6 @@ def add_header_row(output_path: str):
 
     # Loading the data into a dataframe
     output_df: pd.DataFrame = pd.read_csv(output_path)
-    print(output_df)
 
     # writing the file to the same csv with a new header
     output_df.to_csv(output_path, header=[
@@ -84,8 +83,7 @@ def get_size(network_groups_file: str):
 
     # Load the file into a dataframe
     network_groups_df: pd.DataFrame = pd.read_csv(network_groups_file)
-    print(network_groups_df)
-    print(network_groups_df.columns)
+
     # group the dataframe by two columns and then count the values in the group
     # this block catches an error where for some reason there is a space in teh variant id column name
     try:

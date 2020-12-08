@@ -254,17 +254,12 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
         map_file: str = [
             map_file for map_file in map_files if chr_num in map_file][0]
 
-        print(map_file)
-
         genotype_df: pd.DataFrame = form_genotype_df(map_file, file)
 
         # getting the correct carrier file based off of the chromosome
-        print(chr_num)
-        print(carrier_files)
+
         car_file: str = [carrier_file for carrier_file in carrier_files if "".join(
             [chr_num, "_"]) in carrier_file][0]
-
-        print(car_file)
 
         # load the car_file into a dataframe
         with open(car_file, "r") as carrier_file:
@@ -295,11 +290,10 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
                 carrier_list: list = carrier_str.split(" ")
 
                 # using list comprehension to get the allpair file for a specific chromosome and variant
-                print(f"{chr_num},{variant}")
 
                 # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
                 try:
-                    print(allpair_files)
+
                     allpair_file: str = [file for file in allpair_files if "".join(
                         [chr_num, "."]) in file and variant in file][0]
 
@@ -334,7 +328,6 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
 
                         continue
 
-                print(allpair_file)
                 # getting a list of carriers that share segments and therefore are "confirmed"
 
                 confirmed_carrier_list: list = search_allpair_file(
@@ -350,7 +343,6 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
 
                 # adding a column for the chromosome number to be able to differentiate the variants
                 modified_geno_df = add_chr_column(modified_geno_df, chr_num)
-                print(modified_geno_df)
 
                 # Combining the dataframes
                 write_to_file(modified_geno_df, output_path)

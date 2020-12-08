@@ -28,10 +28,26 @@ def gather_ibd_files(segment_dir: str) -> list:
     return ibd_file_list
 
 
+def get_variant_id(ibd_file: str) -> str:
+    '''This function will get the proper variant_id'''
+
+    dot_indx_list: list = [indx for indx,
+                           letter in enumerate(ibd_file) if letter == "."]
+
+    variant_id_handler = {
+        4: ibd_file[:dot_indx_list[0]],
+        5: ibd_file[:dot_indx_list[1]]
+    }
+
+    variant_id: str = variant_id_handler[len(dot_indx_list)]
+
+    return variant_id
+
+
 def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
     '''This function aligns all the files from each ibd program together'''
     file_dict = dict()
-    print(ibd_file_list)
+
     # iterate through the files to build the dictionary
     for ibd_file in ibd_file_list:
 
@@ -55,26 +71,14 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
         for ibd_program in program_list:
 
             if ibd_program in ibd_file:
-
+                print(ibd_file)
                 underscore_indx = ibd_file.find(
                     "".join([ibd_program, "_"]))
 
-                ibd_program_indx = underscore_indx+len(ibd_program)+1
+                shorten_ibd_file_string: str = ibd_file[underscore_indx+len(
+                    ibd_program)+1:]
 
-        dot_indx = ibd_file.find(".")
-
-        variant_id = ibd_file[ibd_program_indx:dot_indx]
-
-        # There are a few variants that have a dot in the middle and therefore
-        # the above code would split it.
-        # Therefore if there is no number in the string than it enters this if
-        # statement and then finds the next dot.
-        if not any(map(str.isdigit, variant_id)):
-            # This finds the second dot in the string
-            dot_indx = ibd_file.find(".", dot_indx+1)
-
-            # This finds the full variant id
-            variant_id = ibd_file[ibd_program_indx:dot_indx]
+        variant_id = get_variant_id(shorten_ibd_file_string)
 
         # using list comprehension to get all the files that contain that
         # variant and chromosome
@@ -200,13 +204,35 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
+def check_for_missed_carriers(pair_2: str, pair_list: list, carrier_list: list) -> int:
+    '''This function will check for variants that may be missed carriers'''
+
+    # get a list of all strings that contain the pair
+    pair2_in_str: list = [string for string in pair_list if pair_2 in string]
+
+    connected_carriers_list: list = []
+
+    for pair in pair2_in_str:
+
+        pair_iids: list = pair.split(":")[1]
+
+        pair_1, pair_2 = pair_iids.split("-")
+
+        if pair_1 in carrier_list or pair_2 in carrier_list:
+
+            connected_carriers_list.append(pair)
+
+    return int(len(connected_carriers_list))
+
+
 def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir: str, chr_num: str):
     '''this function takes the original allpair.txt file and reformats it to four columns.
-    The first columnn is the ibd program that identified the pairs, the second column is the 
-    first pair, the third column is the second pair, and then the fourth column tells if the 
+    The first columnn is the ibd program that identified the pairs, the second column is the
+    first pair, the third column is the second pair, and then the fourth column tells if the
     second pair is a carrier'''
-
+    print("in reformat function")
     # Removing the allpair.txt file if it already exists from a previous run
+    print(os.path.isfile(write_path))
     if os.path.isfile(write_path):
 
         # removing the file
@@ -218,7 +244,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     alt_chr_num: str = alternate_chr_num_format(chr_num)
 
     carrier_file = [
-        file for file in carrier_list if chr_num.strip(".") in file or alt_chr_num.strip(".") in file][0]
+        file for file in carrier_list if "".join([chr_num.strip("."), "_"]) in file or "".join([alt_chr_num.strip("."), "_"]) in file][0]
 
     # getting the list of carriers' iids for the specific variant
 
@@ -231,7 +257,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
             if os.path.getsize(write_path) == 0:
 
                 allpair_new_file.write(
-                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\n")
+                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n")
 
             # getting the IBD programs that found the output
             programs = pair.split(":")[0]
@@ -256,10 +282,27 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
             else:
                 # If the second iid pair is not in the list of carriers then the status is a 0
                 car_status = 0
+            # This function will check if the second pair is a potential missed carrierq
+            if car_status == 0:
 
-            # writing the pairs to different columns
+                connected_carriers = check_for_missed_carriers(
+                    pair2, pair_list, carrier_iid_list)
+
+                if connected_carriers >= 2:
+
+                    potential_missed_carrier = 1
+
+                else:
+                    potential_missed_carrier = 0
+
+            else:
+                connected_carriers = "N/A"
+
+                potential_missed_carrier = 0
+
+                # writing the pairs to different columns
             allpair_new_file.write(
-                f"{programs}\t{pair1}\t{pair2}\t{car_status}\n")
+                f"{programs}\t{pair1}\t{pair2}\t{car_status}\t{str(potential_missed_carrier)}\t{str(connected_carriers)}\n")
 
 
 def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
@@ -348,17 +391,6 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
 
         for item in allcomb:
             combtab.loc[item, allcomb[item]] = len(allcomb[item])
-        print("printing output path...")
-        # print(out)
-        # sumtab = open(out+'.sum.txt', 'w')
-        # uniqtab = open(out+'.uniquq.txt', 'w')
-
-        # allagree = open(out+'.allpair.txt', 'w')
-        # # sumtab.write('chr\tpos\tsource\t{}\n'.format(
-        # #     '\t'.join(allcomb.keys())))
-        # # uniqtab.write('chr\tpos\tsource\t{}\n'.format(
-        # #     '\t'.join(allcomb.keys())))
-        # allagree.write('chr\tpos\tsegments\tnpair\tpair.list\n')
 
         oldallpair = set([])
 
@@ -439,6 +471,7 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
 
                 if after_max_pair == 1:
                     # creating an output path that just has the allpair.txt files and
+
                     allagree_path = "".join(
                         [out, ".", start_bp, "-", end_bp, ".allpair.txt"])
 
@@ -454,6 +487,7 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
                 # Reseting the counter
                 count = 0
 
+            max_pairs = len(newallpair)
             # keeping track of the previous row so that it can be used if necessary
             previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
 

@@ -16,14 +16,14 @@ class Pop_Filter:
         '''This function loads both the file containing population info for the database, and the extracted recode file to pandas dataframes. The pop_info_file needs to contain a column titled "Pop" that has the population codes for each grid. This file also needs to have a column named ']"grid" with the IIDs for each grid.'''
 
         pop_info_df = pd.read_csv(self.info_file, sep="\t")
-        print(self.recode_file)
+
         if isinstance(self.recode_file, pd.DataFrame):
 
             recode_df = self.recode_file
         else:
 
             recode_df = pd.read_csv(self.recode_file, sep=" ")
-        print(recode_df)
+
         return pop_info_df, recode_df
 
     def get_pop_info_subset(self, pop_info_df, pop_code):

@@ -84,11 +84,9 @@ def alternate_chr_num_format(chr_num: str) -> str:
 
 def get_file(file_list: list, identifier: str) -> str:
     '''This function gets the file that matches a condition from a list of files'''
-    print(f"{file_list} : {identifier}")
 
     # generate alternate chr number incase the formatting does not contain a zero
     alt_chr_num: str = alternate_chr_num_format(identifier)
-    print(alt_chr_num)
 
     file_str: str = [
         file for file in file_list if identifier in file or alt_chr_num in file][0]
@@ -333,7 +331,7 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
                   variant: str):
     '''This function will contain the main segments of code that will run in the run function.
     It will be used in the parallel_map funcion which is an attempt to parallelize the function.'''
-    print(variant)
+
     allpair_file: str = get_file(allpair_file_list, variant)
 
     print(f"using allpair file {allpair_file}")
@@ -374,7 +372,6 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
     hapibd_carriers_list: list = filter_for_carriers(
         hapibd_list, carriers_list, confirmed_carriers_list)
 
-    print("creating output string")
     create_output_str(hapibd_carriers_list, ilash_carriers_list,
                       chr_num, full_variant_id, que_object, var_que_object, network_file_path)
 

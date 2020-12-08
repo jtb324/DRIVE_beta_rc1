@@ -48,7 +48,15 @@ def identify_file(file_list: list, chr_num: str) -> str:
     '''This function will identify the files of interest'''
     print(file_list)
     print(chr_num)
-    file_name: str = [file for file in file_list if chr_num in file][0]
+    try:
+        file_name: str = [file for file in file_list if chr_num in file][0]
+
+    # This catches the error that potentially the files will have a name like .chr1_ instead of the expected format .chr01_
+    except IndexError:
+
+        alt_chr_num = "".join(chr_num.split("0"))
+
+        file_name = [file for file in file_list if alt_chr_num in file][0]
 
     return file_name
 
@@ -112,9 +120,6 @@ def getting_the_other_iids(confirmed_IID_list: list, ped_file_genotype_df: pd.Da
 
     filter_df: pd.DataFrame = ped_file_genotype_df[~ped_file_genotype_df.IID.isin(
         confirmed_IID_list)]
-
-    print(confirmed_IID_list)
-    print(filter_df)
 
     return filter_df
 

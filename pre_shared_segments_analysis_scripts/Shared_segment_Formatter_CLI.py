@@ -64,9 +64,7 @@ def alternate_chr_num_format(chr_num: str) -> str:
 
 
 def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str, map_file_dir: str, file_suffix: str, min_CM: str, threads: str, variant_file: str):
-    # Instantiating a class object to be raised to break the inner loop
 
-    print("running")
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
 
@@ -83,8 +81,6 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
 
     # Need to make sure that the proper segment file is passed with the proper chromosome file
     for chromo_file in chr_var_file_list:
-
-        print("In outer loop")
 
         match = re.search(r'chr\d_', chromo_file)
 
@@ -111,14 +107,11 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             chr_num = "".join([chr_num, "."])
 
         alt_chr_num: str = alternate_chr_num_format(chr_num)
-        print(alt_chr_num)
-        print(match.group(0))
+
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
         segment_map_tuple = [(segment_file, map_file)
                              for segment_file in segment_file_list for map_file in map_file_list if (chr_num in segment_file or alt_chr_num in segment_file) and "".join([".", match.group(0)]) in map_file]
-        print(map_file_list)
-        # iterating through the segment_file_list to find the shared segment file for the right chromosome
-        print(segment_map_tuple)
+
         # This checks to see if the tuple is empty or not
         if segment_map_tuple:
 
@@ -132,7 +125,6 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             var_info_df, variant_directory = preformater.create_variant_lists(
                 chromo_file, variant_file, map_file)
 
-            print(var_info_df)
             # This checks if the var_info_file_path and the variant_directory are empty string because
             # this would mean that the the chromo_file only has one variant and it has no carriers
             if variant_directory == "":
@@ -140,11 +132,9 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
                     f"There were no carriers in the file {chromo_file}")
                 continue
 
-            print("This is the variant directory")
-            print(variant_directory)
             iid_file_list = preformater.get_iid_files(
                 variant_directory)
-            print(iid_file_list)
+
             variant_bp_list = var_info_df.site.values.tolist()
 
             variant_id_list = var_info_df.variant_id.values.tolist()
@@ -152,7 +142,7 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str, output: str
             # creating a list the base pairs with the variant id
             var_info_list: list = [(var_bp, var_id) for var_bp, var_id in zip(
                 variant_bp_list, variant_id_list)]
-            print(f"This is the var_info_list: {var_info_list}")
+
             run_parallel(segment_file, output, ibd_program,
                          min_CM, iid_file_list, var_info_list, threads)
 
@@ -184,7 +174,7 @@ def run_parallel(segment_file: str, output_path: str, ibd_format: str, min_CM: s
 
 
 def run_main(segment_file: str, output_path: str, ibd_format: list, min_CM: str, iid_file_list: list, que_object, var_info_tuple):
-    print("in main run function:")
+
     variant_position = int(var_info_tuple[0])
 
     variant_id = str(var_info_tuple[1])
