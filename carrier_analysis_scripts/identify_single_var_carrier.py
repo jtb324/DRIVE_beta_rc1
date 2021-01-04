@@ -12,6 +12,7 @@ import os
 
 import file_creator_scripts
 import population_filter_scripts
+import utility_scripts
 
 ###################################################################################
 # Function to find the total number of variants
@@ -98,11 +99,21 @@ def singleVariantAnalysis(recodeFile: list, write_path: str, reformat: bool, fil
 
         recodeFile = file_tuple[0]
 
+        # this if statement checks to see if the recodeFile matches the expected file type.
+        # If it doesn't then the program will quit
+        if utility_scripts.check_file_extenstion(recodeFile, [".raw"]) == 0:
+
+            print("Input a .raw file as the recoded plink file")
+
+            sys.exit(1)
+
         logger = logging.getLogger(write_path+'/single_variant_analysis.log')
 
+        # TODO: Need to check if this function is the best error checking mechanism or if
+        # I can get rid of it
         file_checker = file_creator_scripts.Check_File_Exist(
             recodeFile, logger)
-
+        # TODO: Above todo also applies to this
         raw_file = file_checker.check_file_exist(separator=" ")
 
         logger.info('Using raw recode file found at {}'.format(recodeFile))

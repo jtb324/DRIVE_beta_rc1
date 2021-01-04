@@ -2,12 +2,13 @@
 # importing modules
 import pandas as pd
 import logging
+import sys
 
 ##########################################################################
 # importing necessary functions from other files
 
 import file_creator_scripts
-
+import utility_scripts
 ##########################################################################
 
 # Function that groups individuals by which variants they carry
@@ -19,6 +20,14 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
     logger = logging.getLogger(write_path+'/multi_variant_analysis.log')
 
     #Reading in the file ########################################
+
+    # This function checks to see if the recode file is the correct .raw format
+    # If the file is not the proper format then the program will quit
+    if utility_scripts.check_file_extenstion(recodeFile[0], [".raw"]) == 0:
+
+        print("Input a .raw file as the recoded plink file")
+
+        sys.exit(1)
 
     file_checker = file_creator_scripts.Check_File_Exist(recodeFile[0], logger)
 
@@ -81,7 +90,8 @@ def multiVariantAnalysis(recodeFile, write_path, reformat, fileName):
         reformat_df = pd.DataFrame(multi_var_carriers_reformat, columns=[
             "IID", "Variant ID"])
 
-        reformat_directory = file_creator_scripts.check_dir(write_path, "reformated")
+        reformat_directory = file_creator_scripts.check_dir(
+            write_path, "reformated")
 
         # This writes the reformated dataframe as a csv file
         reformat_df.to_csv(
@@ -123,7 +133,7 @@ def individualCount(multiVarDict, write_path, logger):
     # This uses the csvDictWriter function to write the individCountDict to a csv file named IndividualCount.csv
 
     csv_writer = file_creator_scripts.Csv_Writer_Object(multiVarDict,
-                                   write_path, "IndividualCount.csv", logger)
+                                                        write_path, "IndividualCount.csv", logger)
 
     csv_writer.log_file_path()
 
