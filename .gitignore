@@ -1,4 +1,5 @@
 __pycache__
+gnomad_analysis/
 *.log
 *.txt
 *.docx

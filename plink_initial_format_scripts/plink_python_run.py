@@ -7,7 +7,14 @@ import glob
 
 
 class PLINK_Runner:
-    def __init__(self, binary_file: str, recode_flag: str, output: str, maf_filter: str = None, var_list_directory: str = None,):
+    def __init__(
+        self,
+        binary_file: str,
+        recode_flag: str,
+        output: str,
+        maf_filter: str = None,
+        var_list_directory: str = None,
+    ):
         self.binary_file = binary_file
         self.output = output
         self.current_dir = os.getcwd()
@@ -26,7 +33,8 @@ class PLINK_Runner:
 
             if len(file) == 0:
                 print(
-                    "There were no txt files found which contained a list of variant ids to be fed to PLINK")
+                    "There were no txt files found which contained a list of variant ids to be fed to PLINK"
+                )
 
                 sys.exit(1)
 
@@ -47,25 +55,27 @@ class PLINK_Runner:
 
             output_file_name = var_file[:-4]
 
-            subprocess.run(["plink",
-                            "--bfile",
-                            self.binary_file,
-                            "--extract",
-                            var_file,
-                            "--out",
-                            output_file_name,
-                            self.recode,
-                            ])
+            subprocess.run([
+                "plink",
+                "--bfile",
+                self.binary_file,
+                "--extract",
+                var_file,
+                "--out",
+                output_file_name,
+                self.recode,
+            ])
 
     def run_PLINK_maf_filter(self):
         '''This function will use the subprocess module to run PLINK and extract snps from a specified list'''
 
-        subprocess.run(["plink",
-                        "--bfile",
-                        self.binary_file,
-                        "--max_maf",
-                        self.maf,
-                        "--out",
-                        self.output,
-                        self.recode,
-                        ])
+        subprocess.run([
+            "plink",
+            "--bfile",
+            self.binary_file,
+            "--max_maf",
+            self.maf,
+            "--out",
+            self.output,
+            self.recode,
+        ])
