@@ -14,15 +14,14 @@ import plink_initial_format_scripts
 
 
 class Input_Chr_Splitter:
-    '''This class splits the input file which contains variants for multiple chromosomes into
-    files that contain variants for just one chromosome'''
+    """This class splits the input file which contains variants for multiple chromosomes into
+    files that contain variants for just one chromosome"""
 
     def __init__(self, variant_csv_path: str, output_path: str):
 
         # Create property called file that is just the path to the input file
 
         self.file = variant_csv_path[0]
-        print(self.file)
         # check if the file is an csv file
         if self.file[-4:] == ".csv":
 
@@ -35,11 +34,14 @@ class Input_Chr_Splitter:
 
         # Fail if it is any other file format
         else:
-            print(f"The file {self.file} is not a supported file type. \
-                Supported file types are .xlsx and .csv")
+            print(
+                f"The file {self.file} is not a supported file type. \
+                Supported file types are .xlsx and .csv"
+            )
 
         self.output_path = file_creator_scripts.check_dir(
-            output_path, "variants_of_interest/")
+            output_path, "plink_output_files/"
+        )
 
         print(self.var_df)
         self.split_input_file()
@@ -67,7 +69,17 @@ class Input_Chr_Splitter:
             # writing this  subset to csv file
 
             variant_df_subset.to_csv(
-                "".join([self.output_path, "variants_of_interest", ".chr", chromo, "_list", ".csv"]))
+                "".join(
+                    [
+                        self.output_path,
+                        "variants_of_interest",
+                        ".chr",
+                        chromo,
+                        "_list",
+                        ".csv",
+                    ]
+                )
+            )
 
             self.write_variants_to_file(variant_df_subset, str(chromo))
 
@@ -79,17 +91,36 @@ class Input_Chr_Splitter:
         # write the variant_list to a file
         # Open a file at the out
         MyFile = open(
-            "".join([self.output_path, "variants_of_interest", ".chr", chromosome, "_list", ".txt"]), 'w')
+            "".join(
+                [
+                    self.output_path,
+                    "variants_of_interest",
+                    ".chr",
+                    chromosome,
+                    "_list",
+                    ".txt",
+                ]
+            ),
+            "w",
+        )
 
         for variant_id in variant_list:
             # Write each SNP id to each line in the txt file
             MyFile.write(variant_id)
-            MyFile.write('\n')
+            MyFile.write("\n")
         MyFile.close()
 
 
-def split_input_and_run_plink(input_files: str, output: str, recode_options: list, binary_file: str, plink_files_dir: str,):
-    print("splitting the single file of multiple chromosomes into multiple files of a single chromosome")
+def split_input_and_run_plink(
+    input_files: str,
+    output: str,
+    recode_options: list,
+    binary_file: str,
+    plink_files_dir: str,
+):
+    print(
+        "splitting the single file of multiple chromosomes into multiple files of a single chromosome"
+    )
 
     Input_Chr_Splitter(input_files, output)
 
@@ -98,9 +129,11 @@ def split_input_and_run_plink(input_files: str, output: str, recode_options: lis
     for recode_option in recode_options:
 
         recode_flag = "".join(["--", recode_option])
+
         plink_runner = plink_initial_format_scripts.PLINK_Runner(
-            binary_file,  recode_flag, plink_files_dir)
+            binary_file, recode_flag, plink_files_dir
+        )
 
         variant_file_list: list = plink_runner.generate_file_list()
 
-        plink_runner.run_PLINK_snps(variant_file_list, recode_flag)
+        plink_runner.run_PLINK_snps(variant_file_list)
