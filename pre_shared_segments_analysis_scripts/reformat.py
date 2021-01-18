@@ -101,7 +101,7 @@ def get_chr_num(file: str, pattern: str, alt_pattern: str) -> str:
         chr_num: str = match.group(0)
 
         # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num)-1]
+        chr_num = chr_num[:len(chr_num) - 1]
 
     else:
 
@@ -110,7 +110,7 @@ def get_chr_num(file: str, pattern: str, alt_pattern: str) -> str:
         chr_num: str = match.group(0)
 
         # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num)-1]
+        chr_num = chr_num[:len(chr_num) - 1]
 
     return chr_num
 
@@ -119,11 +119,13 @@ def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
     '''This function will return a list of carriers that also share segments'''
 
     # loading only the columns that contain pairs from the allpair file
-    allpair_df: pd.DataFrame = pd.read_csv(
-        allpair_file, sep="\t", usecols=["pair_1", "pair_2"])
+    allpair_df: pd.DataFrame = pd.read_csv(allpair_file,
+                                           sep="\t",
+                                           usecols=["pair_1", "pair_2"])
 
-    allpair_df_carriers: pd.Dataframe = allpair_df[(allpair_df.pair_1.isin(
-        carrier_list)) & (allpair_df.pair_2.isin(carrier_list))]
+    allpair_df_carriers: pd.Dataframe = allpair_df[
+        (allpair_df.pair_1.isin(carrier_list))
+        & (allpair_df.pair_2.isin(carrier_list))]
 
     # getting all the grids for pair one
     pair_1_list: list = allpair_df_carriers.pair_1.values.tolist()
@@ -138,20 +140,21 @@ def search_allpair_file(allpair_file: str, carrier_list: list) -> list:
     return list(confirmed_carrier_set)
 
 
-def subset_genotype(geno_df: pd.DataFrame, carrier_list: list, variant_id: str) -> pd.DataFrame:
+def subset_genotype(geno_df: pd.DataFrame, carrier_list: list,
+                    variant_id: str) -> pd.DataFrame:
     '''This function will suvbset the genotype df for only those who are carriers.
     This does not necessarily include only those who are confirmed carriers'''
 
     # subsetting the dataframe to only the list of identified carriers
-    geno_df_subset: pd.DataFrame = geno_df[geno_df["IID"].isin(
-        carrier_list)]
+    geno_df_subset: pd.DataFrame = geno_df[geno_df["IID"].isin(carrier_list)]
 
     geno_df_subset = geno_df_subset[geno_df_subset.Variant == variant_id]
 
     return geno_df_subset
 
 
-def add_column(df_subset: pd.DataFrame, confirmed_carrier_list: list) -> pd.DataFrame:
+def add_column(df_subset: pd.DataFrame,
+               confirmed_carrier_list: list) -> pd.DataFrame:
     """This function will add a column to the df_subset that contains either a one
     to indicate that the grid is a carrier confirmed by shared segment or a 0 if they are not"""
 
@@ -179,8 +182,9 @@ def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
 
     else:
         # loading the file into a dataframe
-        no_carrier_df: pd.DataFrame = pd.read_csv(
-            no_carrier_file, sep="\t", names=["variant", "chr"])
+        no_carrier_df: pd.DataFrame = pd.read_csv(no_carrier_file,
+                                                  sep="\t",
+                                                  names=["variant", "chr"])
 
         # getting a list of all variants that had no carriers
         variant_list: list = no_carrier_df.variant.values.tolist()
@@ -218,7 +222,8 @@ def add_chr_column(df: pd.DataFrame, chr_num: str) -> pd.DataFrame:
     return df
 
 
-def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: str, no_carrier_file: str):
+def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
+                   output: str, no_carrier_file: str):
     "function to run"
 
     # defining an output path and file name for the output file
@@ -234,7 +239,8 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
     with open(output_path, "w") as output_file:
 
         output_file.write(
-            f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\t{'chr'}\n")
+            f"{'IID'}\t{'variant_id'}\t{'genotype'}\t{'confirmed_status'}\t{'chr'}\n"
+        )
 
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
     carrier_files: list = get_files(carrier_dir, "*single_variant_list.csv")
@@ -252,14 +258,17 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
         chr_num: str = get_chr_num(file, r"chr\d_", r"chr\d\d_")
 
         map_file: str = [
-            map_file for map_file in map_files if chr_num in map_file][0]
+            map_file for map_file in map_files if chr_num in map_file
+        ][0]
 
         genotype_df: pd.DataFrame = form_genotype_df(map_file, file)
 
         # getting the correct carrier file based off of the chromosome
 
-        car_file: str = [carrier_file for carrier_file in carrier_files if "".join(
-            [chr_num, "_"]) in carrier_file][0]
+        car_file: str = [
+            carrier_file for carrier_file in carrier_files
+            if "".join([chr_num, "_"]) in carrier_file
+        ][0]
 
         # load the car_file into a dataframe
         with open(car_file, "r") as carrier_file:
@@ -276,16 +285,13 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
                 carrier_str = carrier_str.replace('"', '')
                 carrier_str = carrier_str.strip("[]")
 
-                carrier_str = carrier_str.replace(
-                    "'", "")
+                carrier_str = carrier_str.replace("'", "")
                 carrier_str = carrier_str.replace(']', '')
                 # carrier_str = carrier_str.strip("")
 
-                carrier_str = carrier_str.replace(
-                    ",", "")
+                carrier_str = carrier_str.replace(",", "")
 
-                carrier_str = carrier_str.replace(
-                    "\n", "")
+                carrier_str = carrier_str.replace("\n", "")
 
                 carrier_list: list = carrier_str.split(" ")
 
@@ -294,8 +300,10 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
                 # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
                 try:
 
-                    allpair_file: str = [file for file in allpair_files if "".join(
-                        [chr_num, "."]) in file and variant in file][0]
+                    allpair_file: str = [
+                        file for file in allpair_files
+                        if "".join([chr_num, "."]) in file and variant in file
+                    ][0]
 
                 except IndexError:
 
@@ -315,14 +323,15 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str, output: s
                         print(f"The variant, {variant}, failed")
 
                         # checking if the file exist
-                        if os.path.isfile("".join([output, "failed_variants.txt"])):
+                        if os.path.isfile("".join(
+                            [output, "failed_variants.txt"])):
 
                             # removing the file if it exist
-                            os.remove(
-                                "".join([output, "failed_variants.txt"]))
+                            os.remove("".join([output, "failed_variants.txt"]))
 
                         # writing the variant that failed to a file
-                        with open("".join([output, "failed_variants.txt"]), "a+") as file:
+                        with open("".join([output, "failed_variants.txt"]),
+                                  "a+") as file:
 
                             file.write(f"{variant}\n")
 

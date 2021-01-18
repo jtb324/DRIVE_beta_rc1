@@ -9,21 +9,20 @@ import glob
 class PLINK_Runner:
     def __init__(
         self,
-        binary_file: str,
-        recode_flag: str,
+        recode_flag: list,
         output: str,
-        maf_filter: str = None,
-        var_list_directory: str = None,
+        binary_file: str,
+        **name,
     ):
         self.binary_file = binary_file
         self.output = output
         self.current_dir = os.getcwd()
-        self.var_list_dir = var_list_directory
+        self.var_list_dir = name["var_list_dir"]
         self.recode = recode_flag
-        self.maf = maf_filter
+        self.maf = name["maf_filter"]
 
     def generate_file_list(self) -> list:
-        '''This function will return a list of all the variant files that can be fed to PLINK'''
+        """This function will return a list of all the variant files that can be fed to PLINK"""
 
         os.chdir(self.var_list_dir)
 
@@ -49,33 +48,69 @@ class PLINK_Runner:
         return file_list
 
     def run_PLINK_snps(self, file_list: list):
-        '''This function will use the subprocess module to run PLINK and extract snps from a specified list'''
+        """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
 
         for var_file in file_list:
 
-            output_file_name = var_file[:-4]
+            for option in self.recode:
 
-            subprocess.run([
-                "plink",
-                "--bfile",
-                self.binary_file,
-                "--extract",
-                var_file,
-                "--out",
-                output_file_name,
-                self.recode,
-            ])
+                output_file_name = var_file[:-4]
 
-    def run_PLINK_maf_filter(self):
-        '''This function will use the subprocess module to run PLINK and extract snps from a specified list'''
+                subprocess.run(
+                    [
+                        "plink",
+                        "--bfile",
+                        self.binary_file,
+                        "--extract",
+                        var_file,
+                        "--out",
+                        output_file_name,
+                        option,
+                    ],
+                    check=False,
+                )
 
-        subprocess.run([
-            "plink",
-            "--bfile",
-            self.binary_file,
-            "--max_maf",
-            self.maf,
-            "--out",
-            self.output,
-            self.recode,
-        ])
+        return "".join([self.output, "plink_output_files/"])
+
+    def run_PLINK_maf_filter(self,
+                             from_rs: str = None,
+                             to_rs: str = None) -> str:
+        """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
+
+        full_output_path: str = "".join(
+            [self.output, "plink_output_files/", from_rs, "_", to_rs])
+
+        for options in self.recode:
+            if from_rs and to_rs:
+                subprocess.run(
+                    [
+                        "plink",
+                        "--bfile",
+                        self.binary_file,
+                        "--max-maf",
+                        self.maf,
+                        "--out",
+                        full_output_path,
+                        "--from",
+                        from_rs,
+                        "to_rs",
+                        to_rs,
+                        "".join(["--", options]),
+                    ],
+                    check=False,
+                )
+            else:
+                subprocess.run(
+                    [
+                        "plink",
+                        "--bfile",
+                        self.binary_file,
+                        "--max_maf",
+                        self.maf,
+                        "--out",
+                        self.output,
+                        "".join(["--", options]),
+                    ],
+                    check=False,
+                )
+        return "".join([self.output, "plink_output_files/"])

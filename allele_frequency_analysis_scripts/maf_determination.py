@@ -4,7 +4,6 @@ import os
 import re
 import population_filter_scripts
 # need to gather all of the single var list
-cur_dir = os.getcwd()
 
 
 def get_var_files(directory: str, file_id: str) -> list:
@@ -34,7 +33,7 @@ def get_chr_num(carrier_file: str) -> str:
         chr_num = match.group(0)
 
         # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num)-1]
+        chr_num = chr_num[:len(chr_num) - 1]
 
     else:
         match = re.search(r'chr\d\d_', carrier_file)
@@ -42,29 +41,36 @@ def get_chr_num(carrier_file: str) -> str:
         chr_num = match.group(0)
 
         # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num)-1]
+        chr_num = chr_num[:len(chr_num) - 1]
 
     return chr_num
 
 
-def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepath: str, pop_code: str, output_path: str):
-    with open("".join([output_path, "allele_frequencies.txt"]), "a+") as myFile:
+def get_allele_frq(carrier_file_list: list, raw_file_list: list,
+                   pop_info_filepath: str, pop_code: str, output_path: str):
+    with open("".join([output_path, "allele_frequencies.txt"]),
+              "a+") as myFile:
         myFile.write("chr\tvariant_id\tallele_freq\n")
         for file in carrier_file_list:
 
             chr_num = get_chr_num(file)
             chr_num = "".join([chr_num, "_"])
 
-            car_raw_file_tuple = [(carrier_file, raw_file)
-                                  for carrier_file in carrier_file_list for raw_file in raw_file_list if chr_num in carrier_file and chr_num in raw_file]
+            car_raw_file_tuple = [
+                (carrier_file, raw_file) for carrier_file in carrier_file_list
+                for raw_file in raw_file_list
+                if chr_num in carrier_file and chr_num in raw_file
+            ]
 
             carrier_file = car_raw_file_tuple[0][0]
 
             raw_file = car_raw_file_tuple[0][1]
 
             # getting all the variants in a list
-            carrier_file_df = pd.read_csv(carrier_file, sep=",", header=None, names=[
-                "variant_id", "iid_list"])
+            carrier_file_df = pd.read_csv(carrier_file,
+                                          sep=",",
+                                          header=None,
+                                          names=["variant_id", "iid_list"])
 
             variant_list = carrier_file_df.variant_id.values.tolist()
 
@@ -81,14 +87,14 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
             for variant in variant_list:
                 # get all rows for that variant in the raw-file_df
 
-                total_allele_count = len(raw_file_df)*2
+                total_allele_count = len(raw_file_df) * 2
 
                 carry_allele_df = raw_file_df[raw_file_df[variant].isin(
                     [1, 2])][variant]
 
                 minor_allele_count = carry_allele_df.count()
 
-                allele_frq = minor_allele_count/total_allele_count
+                allele_frq = minor_allele_count / total_allele_count
 
                 myFile.write(
                     f"{chr_num[:len(chr_num)-1]}\t{variant}\t{allele_frq}\n")
@@ -96,12 +102,12 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list, pop_info_filepa
         myFile.close()
 
 
-def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str, output: str):
+def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str,
+                  output: str):
     "function to run"
-    carrier_file_list = get_var_files(
-        car_dir, "*.single_variant_list.csv")
+    carrier_file_list = get_var_files(car_dir, "*.single_variant_list.csv")
 
     raw_file_list = get_var_files(raw_dir, "*.raw")
 
-    get_allele_frq(carrier_file_list, raw_file_list,
-                   pop_file, pop_code, output)
+    get_allele_frq(carrier_file_list, raw_file_list, pop_file, pop_code,
+                   output)
