@@ -19,7 +19,9 @@ class PLINK_Runner:
         self.current_dir = os.getcwd()
         self.var_list_dir = name["var_list_dir"]
         self.recode = recode_flag
-        self.maf = name["maf_filter"]
+        if "maf_filter" in name:
+
+            self.maf = name["maf_filter"]
 
     def generate_file_list(self) -> list:
         """This function will return a list of all the variant files that can be fed to PLINK"""
@@ -39,8 +41,6 @@ class PLINK_Runner:
 
             full_file_path = "".join([self.var_list_dir, file])
 
-            print(full_file_path)
-
             file_list.append(full_file_path)
 
         os.chdir(self.current_dir)
@@ -53,7 +53,7 @@ class PLINK_Runner:
         for var_file in file_list:
 
             for option in self.recode:
-
+                print(option)
                 output_file_name = var_file[:-4]
 
                 subprocess.run(
@@ -65,7 +65,7 @@ class PLINK_Runner:
                         var_file,
                         "--out",
                         output_file_name,
-                        option,
+                        "".join(["--", option]),
                     ],
                     check=False,
                 )

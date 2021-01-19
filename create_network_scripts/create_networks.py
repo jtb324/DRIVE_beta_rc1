@@ -43,7 +43,8 @@ def create_carrier_dict(file) -> dict:
     for variant in variant_list:
 
         # subsetting the dataframe for the specific variant
-        carrier_df_subset: pd.DataFrame = carrier_df[carrier_df["Variant ID"] == variant]
+        carrier_df_subset: pd.DataFrame = carrier_df[carrier_df["Variant ID"]
+                                                     == variant]
 
         # Getting a list of carriers for this variant
         carrier_list: list = carrier_df_subset["IID"].values.tolist()
@@ -73,8 +74,11 @@ def add_header_row(output_path: str):
     output_df: pd.DataFrame = pd.read_csv(output_path)
 
     # writing the file to the same csv with a new header
-    output_df.to_csv(output_path, header=[
-                     "grid", "in_network_status", "network_id", " variant_id", "chr_num"])
+    output_df.to_csv(output_path,
+                     header=[
+                         "grid", "in_network_status", "network_id",
+                         " variant_id", "chr_num"
+                     ])
 
 
 def get_size(network_groups_file: str):
@@ -115,30 +119,31 @@ def write_missing_variants(variant: str, output_path: str):
         if os.path.getsize(missing_files) == 0:
 
             missing_files.write(
-                "Showing a list of variants for which an allpairs.txt file was not found")
+                "Showing a list of variants for which an allpairs.txt file was not found"
+            )
         else:
             missing_files.write(variant)
             missing_files.write("\n")
 
 
-def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_network_dict: dict, output_path: str) -> dict:
-
-    check_file_exist(
-        "".join([output_path, "/network_groups", ".csv"]))
+def create_networks(segments_file_dir: str, variant_file_dir: str,
+                    ind_in_network_dict: dict, output_path: str) -> dict:
+    print(segments_file_dir)
+    print(variant_file_dir)
+    print(output_path)
+    check_file_exist("".join([output_path, "/network_groups", ".csv"]))
 
     check_file_exist("".join([output_path, "/pairs_in_networks", ".csv"]))
 
     # checking if the file that documnets whether or not there is an allpair file exist
     check_file_exist("".join([output_path, "missing_allpairs.txt"]))
 
-    logger = logging.getLogger(output_path+'/drawing_networks.log')
-
     # Creating an empty dataframe that the pairs will be written to at the end in the
     # draw networks function
     pairs_df: pd.DataFrame = pd.DataFrame()
 
     network_drawer: object = create_network_scripts.Network_Img_Maker(
-        segments_file_dir, variant_file_dir, output_path, logger)
+        segments_file_dir, variant_file_dir, output_path)
 
     # Getting all of the allpair files into a list
     allpair_file_list: list = network_drawer.gather_files(
@@ -168,12 +173,15 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
             try:
 
                 allpair_file_path: str = [
-                    file for file in allpair_file_list if chr_num in file and variant_id in file][0]
+                    file for file in allpair_file_list
+                    if chr_num in file and variant_id in file
+                ][0]
 
             except IndexError:
 
                 print(
-                    f"There was no allpair.txt file found for the variant, {variant_id}")
+                    f"There was no allpair.txt file found for the variant, {variant_id}"
+                )
 
                 # TODO: add a function to write these variants to a file so that you can identify them
 
@@ -190,13 +198,15 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
             # if the dataframe is empty then the loop needs to skip that variant
             if filtered_allpair_df.empty:
                 print(
-                    f"There were no pairs found where both individuals were carriers for the variant {variant_id}")
+                    f"There were no pairs found where both individuals were carriers for the variant {variant_id}"
+                )
 
                 # prints the message and then moves onto the next iteration
                 continue
 
             # This just drops any empty rows in the dataframe
-            if filtered_allpair_df["pair_1"].isnull().any() or filtered_allpair_df["pair_2"].isnull().any():
+            if filtered_allpair_df["pair_1"].isnull().any(
+            ) or filtered_allpair_df["pair_2"].isnull().any():
                 filtered_allpair_df = network_drawer.drop_empty_rows(
                     filtered_allpair_df)
 
@@ -205,7 +215,8 @@ def create_networks(segments_file_dir: str, variant_file_dir: str, ind_in_networ
 
             # This class method will determine the percentage of carriers in each network for each variant
             carrier_in_network_dict = network_drawer.carriers_in_network(
-                carrier_list, filtered_allpair_df, ind_in_network_dict, variant_id)
+                carrier_list, filtered_allpair_df, ind_in_network_dict,
+                variant_id)
 
             output_path, pairs_df = network_drawer.draw_networks(
                 filtered_allpair_df, variant_id, chr_num, pairs_df)

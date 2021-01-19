@@ -190,6 +190,7 @@ def get_carrier_file_list(carrier_files_dir: str) -> list:
 
 def get_carrier_list(file: str, variant_id: str) -> list:
     '''Getting the list of characters'''
+    print(file)
     carrier_df = pd.read_csv(file, sep=",")
 
     # filter dataframe for those individuals carrying the variant
@@ -239,9 +240,8 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
     The first columnn is the ibd program that identified the pairs, the second column is the
     first pair, the third column is the second pair, and then the fourth column tells if the
     second pair is a carrier'''
-    print("in reformat function")
+
     # Removing the allpair.txt file if it already exists from a previous run
-    print(os.path.isfile(write_path))
     if os.path.isfile(write_path):
 
         # removing the file

@@ -48,8 +48,10 @@ def get_chr_num(carrier_file: str) -> str:
 
 def get_allele_frq(carrier_file_list: list, raw_file_list: list,
                    pop_info_filepath: str, pop_code: str, output_path: str):
-    with open("".join([output_path, "allele_frequencies.txt"]),
-              "a+") as myFile:
+    with open(
+            "".join([
+                output_path, "carrier_analysis_output/allele_frequencies.txt"
+            ]), "a+") as myFile:
         myFile.write("chr\tvariant_id\tallele_freq\n")
         for file in carrier_file_list:
 
@@ -105,7 +107,7 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list,
 def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str,
                   output: str):
     "function to run"
-    carrier_file_list = get_var_files(car_dir, "*.single_variant_list.csv")
+    carrier_file_list = get_var_files(car_dir, "*.single_variant_carrier.csv")
 
     raw_file_list = get_var_files(raw_dir, "*.raw")
 

@@ -171,7 +171,7 @@ def run_parallel(segment_file: str, output_path: str, ibd_format: str,
         listener,
         (que, "".join([output_path, "failed_IBDinput_byBP.txt"]), header))
 
-    func = partial(run_main, segment_file, output_path, ibd_format[0], min_CM,
+    func = partial(run_main, segment_file, output_path, ibd_format, min_CM,
                    iid_file_list, que)
 
     pool.map(func, variant_info_list)
@@ -190,12 +190,14 @@ def run_main(segment_file: str, output_path: str, ibd_format: list,
 
     variant_id = str(var_info_tuple[1])
     print(f"running the variant {variant_id}")
+
     iid_file = [
         iid_file for iid_file in iid_file_list if variant_id in iid_file
     ][0]
 
     pheno_file = iid_file
 
+    print(pheno_file)
     ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
         segment_file, pheno_file, output_path, ibd_format, min_CM, 1,
         variant_position, variant_id)

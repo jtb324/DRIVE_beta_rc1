@@ -243,7 +243,7 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
         )
 
     # Getting list of the carrier files, the map files, the ped files and the allpair_files
-    carrier_files: list = get_files(carrier_dir, "*single_variant_list.csv")
+    carrier_files: list = get_files(carrier_dir, "*single_variant_carrier.csv")
 
     map_files: list = get_files(plink_dir, "*.map")
 

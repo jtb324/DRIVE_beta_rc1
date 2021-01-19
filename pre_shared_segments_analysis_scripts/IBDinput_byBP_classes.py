@@ -49,7 +49,7 @@ class Pre_Shared_Segment_Converter:
 
         chromo_file_list = []
 
-        for file in glob.glob("*.single_variant_list.csv"):
+        for file in glob.glob("*.single_variant_carrier.csv"):
 
             full_file_path = "".join([self.chromosome_dir, file])
 
@@ -76,10 +76,9 @@ class Pre_Shared_Segment_Converter:
         return map_file_list
 
     # returns a dataframe and a string
-    def create_variant_lists(self, chromo_var_file: str,
-                             original_var_filepath: str, map_file_path: str):
+    def create_variant_lists(self, chromo_var_file: str, map_file_path: str):
         '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
-
+        print(self.output)
         # this makes the directory name to output the files to
         var_list_dir = "".join([self.output, "variant_lists/"])
 

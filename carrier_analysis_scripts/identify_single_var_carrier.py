@@ -95,7 +95,7 @@ def singleVariantAnalysis(
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
 
-    recode_file_list = find_all_files(recodeFile[0])
+    recode_file_list = find_all_files(recodeFile)
 
     for file_tuple in recode_file_list:
 
@@ -112,7 +112,7 @@ def singleVariantAnalysis(
 
             output_fileName = "".join(
                 [file_prefix, ".", "single_variant_carrier.csv"])
-
+        print(output_fileName)
         recodeFile = file_tuple[0]
 
         file_checker = file_creator_scripts.Check_File_Exist(recodeFile)
