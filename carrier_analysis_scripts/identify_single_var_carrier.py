@@ -6,6 +6,7 @@ import pandas as pd
 import logging
 import glob
 import os
+import re
 
 ###################################################################################
 # importing necessary functions from other files
@@ -19,20 +20,12 @@ import population_filter_scripts
 # THIS NEEDS TO BE REVAMPED TO WORK WITH DATAFRAME
 
 
-def totalVariantIDList(iid_list: set, writeLocation: str, chromo_name: str):
+def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
     """this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row."""
 
     print(
         "The total number of individual carrier of at least one desired variant is: {}"
         .format(len(iid_list)))
-
-    if len(chromo_name) == 34:
-
-        file_name_head = chromo_name[21:30]
-
-    elif len(chromo_name) == 35:
-
-        file_name_head = chromo_name[21:31]
 
     file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
 
@@ -76,7 +69,7 @@ def find_all_files(input_file_path: str):
 
 
 def singleVariantAnalysis(
-    recodeFile: list,
+    recodeFile: str,
     write_path: str,
     pop_info: str,
     pop_code: str,
@@ -94,24 +87,32 @@ def singleVariantAnalysis(
         pass
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
-
+    print(recodeFile)
     recode_file_list = find_all_files(recodeFile)
-
+    print(recode_file_list)
     for file_tuple in recode_file_list:
+        match = re.search(r".chr\d\d_", file_tuple[1])
 
-        if len(file_tuple[1]) == 34:
+        chr_num: str = match.group(0)
 
-            file_prefix = file_tuple[1][21:30]
+        chr_num: str = chr_num.strip(".")
 
-            output_fileName = "".join(
-                [file_prefix, ".", "single_variant_carrier.csv"])
+        file_prefix: str = chr_num.strip("_")
 
-        elif len(file_tuple[1]) == 35:
+        # if len(file_tuple[1]) == 34:
 
-            file_prefix = file_tuple[1][21:31]
+        #     file_prefix = file_tuple[1][21:30]
 
-            output_fileName = "".join(
-                [file_prefix, ".", "single_variant_carrier.csv"])
+        #     output_fileName = "".join(
+        #         [file_prefix, ".", "single_variant_carrier.csv"])
+
+        # elif len(file_tuple[1]) == 35:
+
+        #     file_prefix = file_tuple[1][21:31]
+
+        output_fileName = "".join(
+            [file_prefix, ".", "single_variant_carrier.csv"])
+
         print(output_fileName)
         recodeFile = file_tuple[0]
 
@@ -198,13 +199,13 @@ def singleVariantAnalysis(
                 index=False,
             )
 
-        elif reformat and not bool(var_dict_reformat):
+        elif not bool(var_dict_reformat):
 
             print(
                 "There were no individuals found so there dictionary was not written to a csv file."
             )
 
-        totalVariantIDList(total_id_set, output_path, file_tuple[1])
+        totalVariantIDList(total_id_set, output_path, file_prefix)
 
         csv_writer = file_creator_scripts.Csv_Writer_Object(
             var_dict, output_path, output_fileName)
