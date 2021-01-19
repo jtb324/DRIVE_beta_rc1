@@ -38,16 +38,14 @@ def get_variants(confirmed_carriers_df: pd.DataFrame) -> list:
 def get_chr_num(confirmed_carrier_df: pd.DataFrame, variant_id: str) -> str:
     '''This returns the chromosome number for a specific variant'''
 
-    chr_num: str = confirmed_carrier_df[confirmed_carrier_df.variant_id == variant_id]["chr"].values.tolist()[
-        0]
+    chr_num: str = confirmed_carrier_df[confirmed_carrier_df.variant_id ==
+                                        variant_id]["chr"].values.tolist()[0]
 
     return chr_num
 
 
 def identify_file(file_list: list, chr_num: str) -> str:
     '''This function will identify the files of interest'''
-    print(file_list)
-    print(chr_num)
     try:
         file_name: str = [file for file in file_list if chr_num in file][0]
 
@@ -77,14 +75,17 @@ def get_genotype_df(ped_df: pd.DataFrame, var_indx: int) -> pd.DataFrame:
     '''This will return a dataframe that has all the carriers for  a specific variant'''
 
     # adjusting the index for the first six columns in the ped file
-    first_indx: int = var_indx*2 + 6
-    second_indx: int = var_indx*2 + 7
+    first_indx: int = var_indx * 2 + 6
+    second_indx: int = var_indx * 2 + 7
 
     # subsetting the ped file to only the IID, and then the two genotypes for the IID
     ped_file_subset: pd.DataFrame = ped_df[[1, first_indx, second_indx]]
 
-    ped_file_subset = ped_file_subset.rename(
-        columns={1: "IID", first_indx: "allele_1", second_indx: "allele_2"})
+    ped_file_subset = ped_file_subset.rename(columns={
+        1: "IID",
+        first_indx: "allele_1",
+        second_indx: "allele_2"
+    })
 
     ped_file_subset["genotype"] = ped_file_subset["allele_1"] + \
         ped_file_subset["allele_2"]
@@ -97,14 +98,15 @@ def get_genotype_df(ped_df: pd.DataFrame, var_indx: int) -> pd.DataFrame:
 
 def write_to_file(output: str, genotype_df: pd.DataFrame):
 
-    genotype_df.to_csv(
-        output, index=False, mode="a", sep="\t")
+    genotype_df.to_csv(output, index=False, mode="a", sep="\t")
 
 
-def getting_confirmed_carrier_df_subset(confirmed_carrier_df: pd.DataFrame, variant: str) -> pd.DataFrame:
+def getting_confirmed_carrier_df_subset(confirmed_carrier_df: pd.DataFrame,
+                                        variant: str) -> pd.DataFrame:
     '''This function will return the subset of the dataframe for the specified variant'''
 
-    df_subset: pd.DataFrame = confirmed_carrier_df[confirmed_carrier_df.variant_id == variant]
+    df_subset: pd.DataFrame = confirmed_carrier_df[
+        confirmed_carrier_df.variant_id == variant]
 
     return df_subset
 
@@ -115,16 +117,18 @@ def get_IIDs(confirmed_carriers_df_subset: pd.DataFrame) -> list:
     return confirmed_carriers_df_subset.IID.tolist()
 
 
-def getting_the_other_iids(confirmed_IID_list: list, ped_file_genotype_df: pd.DataFrame) -> pd.DataFrame:
+def getting_the_other_iids(confirmed_IID_list: list,
+                           ped_file_genotype_df: pd.DataFrame) -> pd.DataFrame:
     '''This function returns a dataframe that has all the IIDs that are not in the confirmed_carriers.txt file'''
 
-    filter_df: pd.DataFrame = ped_file_genotype_df[~ped_file_genotype_df.IID.isin(
-        confirmed_IID_list)]
+    filter_df: pd.DataFrame = ped_file_genotype_df[~ped_file_genotype_df.IID.
+                                                   isin(confirmed_IID_list)]
 
     return filter_df
 
 
-def merge_df(confirmed_carrier_subset: pd.DataFrame, genotype_df: str) -> pd.DataFrame:
+def merge_df(confirmed_carrier_subset: pd.DataFrame,
+             genotype_df: str) -> pd.DataFrame:
     '''This function merges the two dataframes to get all the iids for each variant'''
 
     return pd.concat([confirmed_carrier_subset, genotype_df])
@@ -136,7 +140,11 @@ def reformat_chr_num(chr_num) -> str:
     return chr_num[4:6]
 
 
-def get_all_genotypes(ped_file_path: str, confirmed_carrier_file: str, population_info_file: str, output_path: str, pop_code: str = None):
+def get_all_genotypes(ped_file_path: str,
+                      confirmed_carrier_file: str,
+                      population_info_file: str,
+                      output_path: str,
+                      pop_code: str = None):
     '''This function will be the main run script for this script'''
 
     full_output_path: str = "".join([output_path, "all_genotypes.txt"])
@@ -151,8 +159,8 @@ def get_all_genotypes(ped_file_path: str, confirmed_carrier_file: str, populatio
     ped_file_list: list = gather_files(ped_file_path, "*.ped")
 
     # load the confirmed carriers file
-    confirmed_carriers_df: pd.DataFrame = pd.read_csv(
-        confirmed_carrier_file, sep="\t")
+    confirmed_carriers_df: pd.DataFrame = pd.read_csv(confirmed_carrier_file,
+                                                      sep="\t")
 
     # getting the list of variants from the confirmed_carriers_df
     confirmed_variants_list: list = get_variants(confirmed_carriers_df)
@@ -182,7 +190,7 @@ def get_all_genotypes(ped_file_path: str, confirmed_carrier_file: str, populatio
         # filtering the genotypes down to only the specified pop_code
         if pop_code:
 
-            print(f"this is the pop code: {population_info_file}")
+            # print(f"this is the pop code: {population_info_file}")
 
             dataset_filter = population_filter_scripts.Pop_Filter(
                 population_info_file, ped_file_genotypes)
@@ -203,8 +211,8 @@ def get_all_genotypes(ped_file_path: str, confirmed_carrier_file: str, populatio
         iid_list: list = get_IIDs(confirmed_carrier_subset)
 
         # subsetting the ped_file_genotypes to the iids not in the above list
-        ped_file_genotypes = getting_the_other_iids(
-            iid_list, ped_file_genotypes)
+        ped_file_genotypes = getting_the_other_iids(iid_list,
+                                                    ped_file_genotypes)
 
         ped_file_genotypes["confirmed_status"] = "N/A"
 
@@ -217,8 +225,8 @@ def get_all_genotypes(ped_file_path: str, confirmed_carrier_file: str, populatio
 
         # merging the dataframe
 
-        merged_df: pd.DataFrame = merge_df(
-            confirmed_carrier_subset, ped_file_genotypes)
+        merged_df: pd.DataFrame = merge_df(confirmed_carrier_subset,
+                                           ped_file_genotypes)
 
         # writing the genotype to a file
         write_to_file(full_output_path, merged_df)
