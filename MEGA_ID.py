@@ -45,10 +45,14 @@ def run(args):
 
     if ANALYSIS_TYPE == "maf":
 
-        MAF_FILTER: int = int(
-            input(
-                "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
-            ))
+        MAF_FILTER: str = '0.05'
+        MAF_FILTER: str = input(
+            "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
+        )
+
+        CHR: str = input(
+            "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
+        )
 
     ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
@@ -73,20 +77,22 @@ def run(args):
 
     elif ANALYSIS_TYPE.lower() == "maf":
         print(
-            f"extracting all variants below a minor allele frequency of {args.maf_filter}"
+            f"extracting all variants below a minor allele frequency of {MAF_FILTER}"
         )
-        #TODO: adjust this so that it accept a range of variants not a numeric range
+
+        # TODO: adjust this so that it accept a range of variants not a numeric range
         if args.range:
-            START: int = int(args.range[0])
-            END: int = int(args.range[1])
+            START_RS: str = args.range[0]
+            END_RS: str = args.range[1]
 
             plink_runner = plink_initial_format_scripts.PLINK_Runner(
                 args.recode_options,
                 args.output,
                 args.binary_file,
                 maf_filter=MAF_FILTER,
-                start=START,
-                end=END,
+                start_rs=START_RS,
+                end_rs=END_RS,
+                chr_num=CHR,
             )
         else:
             plink_runner = plink_initial_format_scripts.PLINK_Runner(
@@ -128,7 +134,6 @@ def run(args):
         args.pop_info,
         args.pop_code,
     )
-
     # The above function outputs files to a subdirectory called "carrier_analysis_output"
 
     print(
@@ -339,7 +344,7 @@ def main():
         "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
         dest="range",
         nargs="+",
-        type=list,
+        type=str,
         required=False,
     )
 

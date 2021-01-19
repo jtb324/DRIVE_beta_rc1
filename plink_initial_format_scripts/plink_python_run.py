@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+from os import path
 import sys
 import glob
 
@@ -17,17 +18,21 @@ class PLINK_Runner:
         self.binary_file = binary_file
         self.output = output
         self.current_dir = os.getcwd()
-        self.var_list_dir = name["var_list_dir"]
+        if "var_list_dir" in name:
+            self.var_list_dir = name["var_list_dir"]
         self.recode = recode_flag
         if "maf_filter" in name:
 
             self.maf = name["maf_filter"]
-        if "start" in name:
+        if "start_rs" in name:
 
-            self.start = name["start"]
-        if "end" in name:
+            self.start = name["start_rs"]
+        if "end_rs" in name:
 
-            self.end = name["end"]
+            self.end = name["end_rs"]
+        if "chr_num" in name:
+
+            self.chr_num = name["chr_num"]
 
     def generate_file_list(self) -> list:
         """This function will return a list of all the variant files that can be fed to PLINK"""
@@ -80,9 +85,17 @@ class PLINK_Runner:
 
     def run_PLINK_maf_filter(self) -> str:
         """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
+        print(self.start)
+        print(self.end)
+        print(self.output)
+        full_output_path: str = "".join([
+            self.output, "plink_output_files/", self.start, "_", self.end,
+            ".chr", self.chr_num, "_list"
+        ])
 
-        full_output_path: str = "".join(
-            [self.output, "plink_output_files/", self.start, "_", self.end])
+        if not path.exists("".join([self.output, "plink_output_files/"])):
+
+            os.mkdir("".join([self.output, "plink_output_files/"]))
 
         for options in self.recode:
             if self.start and self.end:
@@ -97,7 +110,7 @@ class PLINK_Runner:
                         full_output_path,
                         "--from",
                         self.start,
-                        "to_rs",
+                        "--to",
                         self.end,
                         "".join(["--", options]),
                     ],
