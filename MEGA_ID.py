@@ -207,7 +207,7 @@ def run(args):
     csv_writer = file_creator_scripts.Csv_Writer_Object(
         carrier_in_network_dict, "".join([args.output, "networks/"]),
         "carriers_in_networks.csv")
-
+    
     csv_writer.write_to_csv()
 
     print(
@@ -248,15 +248,13 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description=
-        "This identifies individuals who have a specific variant in a raw file from PLINK"
+        description="This identifies individuals who have a specific variant in a raw file from PLINK"
     )
 
     parser.add_argument(
         "--bfile",
         "-b",
-        help=
-        "This argument will list the directory to the bim file which give them"
+        help="This argument will list the directory to the bim file which give them"
         "genotype information that PLINK uses",
         dest="binary_file",
         type=str,
@@ -270,13 +268,21 @@ def main():
         nargs="+",
         type=str,
         required=True,
+
+
+    parser.add_argument(
+        "--maf_filter",
+        help="This argument list the maximum minor allele frequency to be used (ex: 0.01)",
+        dest="maf_filter",
+        type=str,
+        required=False,
     )
+
 
     parser.add_argument(
         "--output",
         "-o",
-        help=
-        "This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
+        help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
         dest="output",
         type=str,
         required=True,
@@ -284,10 +290,14 @@ def main():
 
     parser.add_argument(
         "--analysis",
-        help=
-        "This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
+        help="This tag indicates that the multiVariantAnalysis function will be called "
+        "to analyze how many individuals carry multiple variants. Two csv files are "
+        "made which contain the indices of the variants and a list of the "
+        "individuals that contain those variants. This accepts single, total, multi"
+        ", matchPED, allele_counts, draw_networks",
         dest="analysis",
         type=str,
+        required=True,
     )
 
     parser.add_argument(
@@ -311,8 +321,7 @@ def main():
 
     parser.add_argument(
         "--pop_info",
-        help=
-        "This argument provides the file path to a file containing the population "
+        help="This argument provides the file path to a file containing the population "
         "distribution of a dataset for each grid. This file should be a text file "
         "and at least contain two columns, where one column is 'Pop', the "
         "population code for each grid based on 1000 genomes, and then the second "
@@ -324,8 +333,7 @@ def main():
 
     parser.add_argument(
         "--pop_code",
-        help=
-        "This argument can be a single population code or a list of population "
+        help="This argument can be a single population code or a list of population "
         "codes that someone is looking for. Population codes have to match the "
         "1000 genomes.",
         dest="pop_code",

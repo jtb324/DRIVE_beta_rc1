@@ -12,7 +12,7 @@ class PLINK_Runner:
         recode_flag: list,
         output: str,
         binary_file: str,
-        **name,
+        **name,e
     ):
         self.binary_file = binary_file
         self.output = output
@@ -61,7 +61,6 @@ class PLINK_Runner:
             for option in self.recode:
                 print(option)
                 output_file_name = var_file[:-4]
-
                 subprocess.run(
                     [
                         "plink",

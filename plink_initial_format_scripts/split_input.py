@@ -21,6 +21,7 @@ class Input_Chr_Splitter:
         # Create property called file that is just the path to the input file
 
         self.file = variant_csv_path
+
         # check if the file is an csv file
         if self.file[-4:] == ".csv":
 
@@ -33,8 +34,10 @@ class Input_Chr_Splitter:
 
         # Fail if it is any other file format
         else:
-            print(f"The file {self.file} is not a supported file type. \
-                Supported file types are .xlsx and .csv")
+            print(
+                f"The file {self.file} is not a supported file type. \
+                Supported file types are .xlsx and .csv"
+            )
 
         self.output_path = file_creator_scripts.check_dir(
             output_path, "plink_output_files/")
@@ -102,12 +105,14 @@ class Input_Chr_Splitter:
 
 
 def split_input_and_run_plink(
+
     input_file: str,
     output: str,
     recode_options: list,
     binary_file: str,
     plink_files_dir: str,
 ) -> str:
+
     print(
         "splitting the single file of multiple chromosomes into multiple files of a single chromosome"
     )
@@ -119,6 +124,8 @@ def split_input_and_run_plink(
     plink_runner = plink_initial_format_scripts.PLINK_Runner(
         recode_options, output, binary_file, var_list_dir=plink_files_dir)
 
+
     variant_file_list: list = plink_runner.generate_file_list()
 
     return plink_runner.run_PLINK_snps(variant_file_list)
+
