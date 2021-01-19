@@ -87,11 +87,6 @@ def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
     '''This function gets the file that matches a condition from a list of files'''
 
     # generate alternate chr number incase the formatting does not contain a zero
-    # alt_chr_num: str = alternate_chr_num_format(identifier)
-    print(file_list)
-    # print("This is the identifier")
-    # print(identifier)
-    # print("This is the alternate chromosome")
     if identifier:
         file_str: str = [file for file in file_list if identifier in file][0]
 

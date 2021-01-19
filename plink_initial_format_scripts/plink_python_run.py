@@ -22,6 +22,12 @@ class PLINK_Runner:
         if "maf_filter" in name:
 
             self.maf = name["maf_filter"]
+        if "start" in name:
+
+            self.start = name["start"]
+        if "end" in name:
+
+            self.end = name["end"]
 
     def generate_file_list(self) -> list:
         """This function will return a list of all the variant files that can be fed to PLINK"""
@@ -72,16 +78,14 @@ class PLINK_Runner:
 
         return "".join([self.output, "plink_output_files/"])
 
-    def run_PLINK_maf_filter(self,
-                             from_rs: str = None,
-                             to_rs: str = None) -> str:
+    def run_PLINK_maf_filter(self) -> str:
         """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
 
         full_output_path: str = "".join(
-            [self.output, "plink_output_files/", from_rs, "_", to_rs])
+            [self.output, "plink_output_files/", self.start, "_", self.end])
 
         for options in self.recode:
-            if from_rs and to_rs:
+            if self.start and self.end:
                 subprocess.run(
                     [
                         "plink",
@@ -92,9 +96,9 @@ class PLINK_Runner:
                         "--out",
                         full_output_path,
                         "--from",
-                        from_rs,
+                        self.start,
                         "to_rs",
-                        to_rs,
+                        self.end,
                         "".join(["--", options]),
                     ],
                     check=False,

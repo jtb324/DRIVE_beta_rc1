@@ -75,13 +75,26 @@ def run(args):
         print(
             f"extracting all variants below a minor allele frequency of {args.maf_filter}"
         )
+        #TODO: adjust this so that it accept a range of variants not a numeric range
+        if args.range:
+            START: int = int(args.range[0])
+            END: int = int(args.range[1])
 
-        plink_runner = plink_initial_format_scripts.PLINK_Runner(
-            args.recode_options,
-            args.output,
-            args.binary_file,
-            maf_filter=MAF_FILTER,
-        )
+            plink_runner = plink_initial_format_scripts.PLINK_Runner(
+                args.recode_options,
+                args.output,
+                args.binary_file,
+                maf_filter=MAF_FILTER,
+                start=START,
+                end=END,
+            )
+        else:
+            plink_runner = plink_initial_format_scripts.PLINK_Runner(
+                args.recode_options,
+                args.output,
+                args.binary_file,
+                maf_filter=MAF_FILTER,
+            )
 
         plink_file_path: str = plink_runner.run_PLINK_maf_filter()
         # TODO: need to return a string listing the location of the plink
@@ -106,69 +119,69 @@ def run(args):
     #         "Finished creating a list of individuals carrying multiple variants"
     #     )
 
-    # print("generating list of individuals at each probe id...")
+    print("generating list of individuals at each probe id...")
 
-    # # The args.input should be a directory indicating where the raw files are located
-    # carrier_analysis_scripts.singleVariantAnalysis(
-    #     plink_file_path,
-    #     args.output,
-    #     args.pop_info,
-    #     args.pop_code,
-    # )
+    # The args.input should be a directory indicating where the raw files are located
+    carrier_analysis_scripts.singleVariantAnalysis(
+        plink_file_path,
+        args.output,
+        args.pop_info,
+        args.pop_code,
+    )
 
-    # # The above function outputs files to a subdirectory called "carrier_analysis_output"
+    # The above function outputs files to a subdirectory called "carrier_analysis_output"
 
-    # print(
-    #     "determining the minor allele frequency within the provided binary file..."
-    # )
-    # allele_frequency_analysis_scripts.determine_maf(
-    #     "".join([args.output, "carrier_analysis_output/"]),
-    #     "".join([args.output, "plink_output_files/"]), args.pop_info,
-    #     args.pop_code, args.output)
+    print(
+        "determining the minor allele frequency within the provided binary file..."
+    )
+    allele_frequency_analysis_scripts.determine_maf(
+        "".join([args.output, "carrier_analysis_output/"]),
+        "".join([args.output, "plink_output_files/"]), args.pop_info,
+        args.pop_code, args.output)
 
-    # print("converting the ibd output to a human readable version...")
+    print("converting the ibd output to a human readable version...")
 
     IBD_search_output_files: str = "".join(
         [args.output, "formated_ibd_output/"])
 
-    # if not path.exists(IBD_search_output_files):
+    if not path.exists(IBD_search_output_files):
 
-    #     os.mkdir(IBD_search_output_files)
+        os.mkdir(IBD_search_output_files)
 
-    # for program in args.ibd_programs:
+    for program in args.ibd_programs:
 
-    #     suffix_dict: dict = {
-    #         "ilash": ".match.gz",
-    #         "hapibd": ".ibd.gz",
-    #     }
+        suffix_dict: dict = {
+            "ilash": ".match.gz",
+            "hapibd": ".ibd.gz",
+        }
 
-    #     file_suffix: str = suffix_dict[program]
+        file_suffix: str = suffix_dict[program]
 
-    #     # getting the correct ibd_file_path
-    #     ibd_file: str = [
-    #         file for file in IBD_PATHS_LIST if program in file.lower()
-    #     ][0]
+        # getting the correct ibd_file_path
+        ibd_file: str = [
+            file for file in IBD_PATHS_LIST if program in file.lower()
+        ][0]
 
-    #     print(ibd_file)
+        print(ibd_file)
 
-    #     pre_shared_segments_analysis_scripts.convert_ibd(
-    #         ibd_file, "".join([args.output, "carrier_analysis_output/"]),
-    #         program, IBD_search_output_files,
-    #         "".join([args.output,
-    #                  "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
-    # print("combining segment output...")
+        pre_shared_segments_analysis_scripts.convert_ibd(
+            ibd_file, "".join([args.output, "carrier_analysis_output/"]),
+            program, IBD_search_output_files,
+            "".join([args.output,
+                     "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
+    print("combining segment output...")
 
-    # pre_shared_segments_analysis_scripts.combine_output(
-    #     IBD_search_output_files, args.ibd_programs, IBD_search_output_files,
-    #     "".join([args.output, "carrier_analysis_output/reformated/"]))
+    pre_shared_segments_analysis_scripts.combine_output(
+        IBD_search_output_files, args.ibd_programs, IBD_search_output_files,
+        "".join([args.output, "carrier_analysis_output/reformated/"]))
 
-    # pre_shared_segments_analysis_scripts.reformat_files(
-    #     "".join([args.output, "carrier_analysis_output/"]),
-    #     "".join([args.output, "plink_output_files/"]),
-    #     IBD_search_output_files,
-    #     IBD_search_output_files,
-    #     "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
-    # )
+    pre_shared_segments_analysis_scripts.reformat_files(
+        "".join([args.output, "carrier_analysis_output/"]),
+        "".join([args.output, "plink_output_files/"]),
+        IBD_search_output_files,
+        IBD_search_output_files,
+        "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
+    )
 
     print(
         "generating pdf files of networks of individuals who share segments..."
@@ -226,7 +239,7 @@ def run(args):
         args.pop_info, "".join([args.output,
                                 "haplotype_analysis/"]), args.pop_code)
 
-    #TODO": Fix the timing issue so that it gives the correct time
+    # TODO": Fix the timing issue so that it gives the correct time
     finishing_time = datetime.utcnow()
     print(
         f"The program successfully finished at {finishing_time.strftime('%H:%M:%S')}"
@@ -317,6 +330,16 @@ def main():
         "1000 genomes.",
         dest="pop_code",
         type=str,
+        required=False,
+    )
+
+    parser.add_argument(
+        "--range",
+        help=
+        "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
+        dest="range",
+        nargs="+",
+        type=list,
         required=False,
     )
 
