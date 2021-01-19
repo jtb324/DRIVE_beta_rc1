@@ -6,7 +6,6 @@ import glob
 import os
 import re
 
-
 # Getting all the ibd files that end in .small.txt.gz
 
 
@@ -31,8 +30,9 @@ def gather_ibd_files(segment_dir: str) -> list:
 def get_variant_id(ibd_file: str) -> str:
     '''This function will get the proper variant_id'''
 
-    dot_indx_list: list = [indx for indx,
-                           letter in enumerate(ibd_file) if letter == "."]
+    dot_indx_list: list = [
+        indx for indx, letter in enumerate(ibd_file) if letter == "."
+    ]
 
     variant_id_handler = {
         4: ibd_file[:dot_indx_list[0]],
@@ -71,19 +71,19 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
         for ibd_program in program_list:
 
             if ibd_program in ibd_file:
-                print(ibd_file)
-                underscore_indx = ibd_file.find(
-                    "".join([ibd_program, "_"]))
+                underscore_indx = ibd_file.find("".join([ibd_program, "_"]))
 
-                shorten_ibd_file_string: str = ibd_file[underscore_indx+len(
-                    ibd_program)+1:]
+                shorten_ibd_file_string: str = ibd_file[underscore_indx +
+                                                        len(ibd_program) + 1:]
 
         variant_id = get_variant_id(shorten_ibd_file_string)
 
         # using list comprehension to get all the files that contain that
         # variant and chromosome
         filter_ibd_file_list = [
-            file for file in ibd_file_list if variant_id in file and chr_num in file]
+            file for file in ibd_file_list
+            if variant_id in file and chr_num in file
+        ]
 
         # match up the variants with the IBD program
         for ibd_program in program_list:
@@ -93,20 +93,23 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
 
                 # This checks to see if the variant id is in the dictionary
                 # and that the ibd program is in the file
-                if ibd_program in file and (chr_num, variant_id) not in file_dict.keys():
+                if ibd_program in file and (
+                        chr_num, variant_id) not in file_dict.keys():
 
                     # If it is not then the
                     file_dict[(chr_num, variant_id)] = set()
 
-                    file_dict[(chr_num, variant_id)].add(
-                        "".join([ibd_program, ":", file]))
+                    file_dict[(chr_num, variant_id)].add("".join(
+                        [ibd_program, ":", file]))
 
-                elif ibd_program in file and (chr_num, variant_id) in file_dict.keys():
+                elif ibd_program in file and (chr_num,
+                                              variant_id) in file_dict.keys():
 
-                    file_dict[(chr_num, variant_id)].add(
-                        "".join([ibd_program, ":", file]))
+                    file_dict[(chr_num, variant_id)].add("".join(
+                        [ibd_program, ":", file]))
 
     return file_dict
+
 
 # Checking the system arguments
 
@@ -116,13 +119,14 @@ def findkey(i, mydict):
     offset = -1
     while True:
         try:
-            offset = list(mydict.values()).index(i, offset+1)
+            offset = list(mydict.values()).index(i, offset + 1)
         except ValueError:
             return list(map(lambda i: list(mydict.keys())[i], result))
         result.append(offset)
 
 
-def allinter(mylist, curr_pair) -> int:  # Finds the pair that intersects for all files
+def allinter(mylist,
+             curr_pair) -> int:  # Finds the pair that intersects for all files
     intu = curr_pair[mylist[0]]
     for f in mylist[1:]:
         intu = intu & curr_pair[f]
@@ -134,7 +138,8 @@ def get_uniqrow(i, allcomb, curr_pair, combtab) -> list:
     for comb in allcomb.keys():
         raw_n = len(allinter(allcomb[comb], curr_pair))
         octab = pd.DataFrame(
-            map(lambda ff: combtab[ff] > combtab.loc[comb, ff], allcomb[comb])).all()
+            map(lambda ff: combtab[ff] > combtab.loc[comb, ff],
+                allcomb[comb])).all()
         overcount = octab.index[octab == True].tolist()
         uniqdic[comb] = raw_n - \
             sum(list(map(lambda oc: uniqdic[oc], overcount)))
@@ -149,7 +154,8 @@ def all_agree_pair(pair_list: dict) -> list:
     return unionpair
 
 
-def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str, carrier_file_dir: str, chr_num: str):
+def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str,
+                  carrier_file_dir: str, chr_num: str):
     '''This function will find the highest number of pairs and writes it to a file called .allpair.txt'''
 
     # spliting the pair row
@@ -159,8 +165,8 @@ def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str, carri
 
     pair_list: list = pair_str.split(" ")
 
-    reformat(allpair_file_name,
-             pair_list, variant_id, carrier_file_dir, chr_num)
+    reformat(allpair_file_name, pair_list, variant_id, carrier_file_dir,
+             chr_num)
 
 
 def get_carrier_file_list(carrier_files_dir: str) -> list:
@@ -186,8 +192,8 @@ def get_carrier_list(file: str, variant_id: str) -> list:
     carrier_df = pd.read_csv(file, sep=",")
 
     # filter dataframe for those individuals carrying the variant
-    carrier_list = carrier_df[carrier_df["Variant ID"]
-                              == variant_id]["IID"].values.tolist()
+    carrier_list = carrier_df[carrier_df["Variant ID"] ==
+                              variant_id]["IID"].values.tolist()
 
     return carrier_list
 
@@ -195,7 +201,7 @@ def get_carrier_list(file: str, variant_id: str) -> list:
 def alternate_chr_num_format(chr_num: str) -> str:
     '''This function will add a zero between the number if it is a single digit chromosome'''
 
-    if len(chr_num. strip(".")) == 4:
+    if len(chr_num.strip(".")) == 4:
 
         chr_num = chr_num.strip(".")
 
@@ -204,7 +210,8 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
-def check_for_missed_carriers(pair_2: str, pair_list: list, carrier_list: list) -> int:
+def check_for_missed_carriers(pair_2: str, pair_list: list,
+                              carrier_list: list) -> int:
     '''This function will check for variants that may be missed carriers'''
 
     # get a list of all strings that contain the pair
@@ -225,14 +232,14 @@ def check_for_missed_carriers(pair_2: str, pair_list: list, carrier_list: list) 
     return int(len(connected_carriers_list))
 
 
-def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir: str, chr_num: str):
+def reformat(write_path: str, pair_list: list, variant_id: str,
+             carrier_file_dir: str, chr_num: str):
     '''this function takes the original allpair.txt file and reformats it to four columns.
     The first columnn is the ibd program that identified the pairs, the second column is the
     first pair, the third column is the second pair, and then the fourth column tells if the
     second pair is a carrier'''
-    print("in reformat function")
+
     # Removing the allpair.txt file if it already exists from a previous run
-    print(os.path.isfile(write_path))
     if os.path.isfile(write_path):
 
         # removing the file
@@ -244,7 +251,10 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
     alt_chr_num: str = alternate_chr_num_format(chr_num)
 
     carrier_file = [
-        file for file in carrier_list if "".join([chr_num.strip("."), "_"]) in file or "".join([alt_chr_num.strip("."), "_"]) in file][0]
+        file for file in carrier_list
+        if "".join([chr_num.strip("."), "_"]) in file
+        or "".join([alt_chr_num.strip("."), "_"]) in file
+    ][0]
 
     # getting the list of carriers' iids for the specific variant
 
@@ -257,7 +267,8 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
             if os.path.getsize(write_path) == 0:
 
                 allpair_new_file.write(
-                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n")
+                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n"
+                )
 
             # getting the IBD programs that found the output
             programs = pair.split(":")[0]
@@ -302,15 +313,13 @@ def reformat(write_path: str, pair_list: list, variant_id: str, carrier_file_dir
 
                 # writing the pairs to different columns
             allpair_new_file.write(
-                f"{programs}\t{pair1}\t{pair2}\t{car_status}\t{str(potential_missed_carrier)}\t{str(connected_carriers)}\n")
+                f"{programs}\t{pair1}\t{pair2}\t{car_status}\t{str(potential_missed_carrier)}\t{str(connected_carriers)}\n"
+            )
 
 
 def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
 
-    pair_handler_dict = {
-        False: 0,
-        True: 1
-    }
+    pair_handler_dict = {False: 0, True: 1}
 
     # This function will return either 1 or zero from the pair handler_dict based on whether or not curr_max_pair from the previous row is less than or greater than the max pairs from the current row
     return pair_handler_dict[curr_max_pairs >= new_max_pairs]
@@ -326,7 +335,10 @@ def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
         return 0
 
 
-def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: str):
+def combine_output(segment_dir: str, ibd_programs: list, output: str,
+                   car_file: str):
+
+    output: str = "".join([output, ""])
     ibd_file_list: list = gather_ibd_files(segment_dir)
 
     file_dict: dict = build_file_dict(ibd_file_list, ibd_programs)
@@ -345,8 +357,7 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
 
         # Making the first argument the output variable
 
-        out = "".join([output, "IBD_", variant_id,
-                       alt_chr_num[:-1]])
+        out = "".join([output, "IBD_", variant_id, alt_chr_num[:-1]])
         # next three lines write the files to a dictionary
         files = {}
 
@@ -354,8 +365,8 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
 
             files[f.split(':', 1)[0]] = f.split(':', 1)[1]
 
-        print('input {0} files: {1}'.format(
-            len(files), ' '.join(files.keys())))
+        print('input {0} files: {1}'.format(len(files),
+                                            ' '.join(files.keys())))
 
         curr_pair = {}
         curr_pos = {}
@@ -397,11 +408,12 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
         # this sets a counter to determine how many times the max_pair_int branch is entered
         count: int = 0
 
-        while sum(list(map(lambda f: endtest[f], endtest.keys()))) < len(endtest):
+        while sum(list(map(lambda f: endtest[f],
+                           endtest.keys()))) < len(endtest):
             pos = min(newpos.values())
             nowf = findkey(pos, newpos)
 
-        #    print('{0} from {1}'.format(str(pos), ' '.join(nowf)))
+            #    print('{0} from {1}'.format(str(pos), ' '.join(nowf)))
             for f in nowf:
 
                 CHR = str(newline[f].split('\t')[0])
@@ -431,8 +443,9 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str, car_file: 
 
             # print('chr{0}:{1} from {2}'.format(CHR, str(pos), ' '.join(nowf)))
 
-            sumrow = list(map(lambda comb: len(
-                allinter(comb, curr_pair)), allcomb.values()))
+            sumrow = list(
+                map(lambda comb: len(allinter(comb, curr_pair)),
+                    allcomb.values()))
             uniqrow = get_uniqrow(1, allcomb, curr_pair, combtab)
 
             newallpair: list = all_agree_pair(curr_pair)

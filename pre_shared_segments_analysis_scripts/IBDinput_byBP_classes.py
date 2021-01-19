@@ -19,8 +19,8 @@ cpu = 1
 
 class Pre_Shared_Segment_Converter:
     '''This class will prepare the input for all of the shared segment converter'''
-
-    def __init__(self, ibd_output_directory: str, chromosome_files_dir: str, ibd_software: str, output_dir: str, map_file_dir: str):
+    def __init__(self, ibd_output_directory: str, chromosome_files_dir: str,
+                 ibd_software: str, output_dir: str, map_file_dir: str):
         self.segment_dir = ibd_output_directory
         self.chromosome_dir = chromosome_files_dir
         self.output = output_dir
@@ -49,7 +49,7 @@ class Pre_Shared_Segment_Converter:
 
         chromo_file_list = []
 
-        for file in glob.glob("*.single_variant_list.csv"):
+        for file in glob.glob("*.single_variant_carrier.csv"):
 
             full_file_path = "".join([self.chromosome_dir, file])
 
@@ -76,9 +76,9 @@ class Pre_Shared_Segment_Converter:
         return map_file_list
 
     # returns a dataframe and a string
-    def create_variant_lists(self, chromo_var_file: str, original_var_filepath: str, map_file_path: str):
+    def create_variant_lists(self, chromo_var_file: str, map_file_path: str):
         '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
-
+        print(self.output)
         # this makes the directory name to output the files to
         var_list_dir = "".join([self.output, "variant_lists/"])
 
@@ -90,16 +90,6 @@ class Pre_Shared_Segment_Converter:
         except FileExistsError:
             pass
 
-        # Check if the file is a csv file and then load it in using pd.read_csv
-        if original_var_filepath[-4:] == ".csv":
-
-            var_df = pd.read_csv(original_var_filepath, sep=",")
-
-        # check if it is an excel file
-        elif original_var_filepath[-5:] == ".xlsx":
-            # Load in file using pd.read_excel if it is an excel file
-            var_df = pd.read_excel(original_var_filepath)
-
         # load in the csv file that list the IIDs of grids per variant on a specific chromosome
         carrier_df = pd.read_csv(chromo_var_file, sep=",", header=None)
 
@@ -107,8 +97,10 @@ class Pre_Shared_Segment_Converter:
         carrier_df_size = len(carrier_df)
 
         # reading in the map file
-        map_file_df = pd.read_csv(map_file_path, sep="\t", header=None, names=[
-                                  "chr", "variant id", "cM", "site"])
+        map_file_df = pd.read_csv(map_file_path,
+                                  sep="\t",
+                                  header=None,
+                                  names=["chr", "variant id", "cM", "site"])
 
         # bringing in the original variant excel file to get the variant site position
         # iterate through each row of the chromosome so that
@@ -122,23 +114,26 @@ class Pre_Shared_Segment_Converter:
 
             ###################################################################################################
             # getting the list of variants and writing to a single text file for each variant in the chromosome.
-            iid_list = row[2].strip("[]").replace(
-                "\'", "").replace(" ", "").split(",")
+            iid_list = row[2].strip("[]").replace("\'",
+                                                  "").replace(" ",
+                                                              "").split(",")
 
-            chr_num = map_file_df[map_file_df["variant id"] ==
-                                  variant_id[:(len(variant_id)-2)]].chr.values[0]
+            chr_num = map_file_df[map_file_df["variant id"] == variant_id[:(
+                len(variant_id) - 2)]].chr.values[0]
 
             if carrier_df_size == 1:
 
                 print(
-                    f"There was only {carrier_df_size} row found within the provided list of carriers per variant")
+                    f"There was only {carrier_df_size} row found within the provided list of carriers per variant"
+                )
 
                 # If this single variant has no carriers than the function returns empty strings for the
                 #var_info_file_path, variant_directory
                 # If the iid_list has no carriers thant eh first element would just be a ""
                 if iid_list[0] == "":
                     no_carriers_file = open(
-                        "".join([self.output, "no_carriers_in_file.txt"]), "a+")
+                        "".join([self.output, "no_carriers_in_file.txt"]),
+                        "a+")
                     no_carriers_file.write(variant_id)
                     no_carriers_file.write("\t")
                     no_carriers_file.write(str(chr_num))
@@ -157,12 +152,12 @@ class Pre_Shared_Segment_Converter:
                 no_carriers_file.write("\n")
                 no_carriers_file.close()
                 print(
-                    f"There were no carriers found for the variant {variant_id}")
+                    f"There were no carriers found for the variant {variant_id}"
+                )
                 continue
 
             # Writing the variants to a txt file in a specific directory
-            MyFile = open(
-                "".join([var_list_dir, variant_id, ".txt"]), 'w')
+            MyFile = open("".join([var_list_dir, variant_id, ".txt"]), 'w')
 
             for element in iid_list:
                 MyFile.write(element)
@@ -177,14 +172,16 @@ class Pre_Shared_Segment_Converter:
             variant_id_list.append(variant_id)
 
             # getting the base post
-            base_pos = map_file_df[map_file_df["variant id"] ==
-                                   variant_id[:(len(variant_id)-2)]].site.values[0]
+            base_pos = map_file_df[map_file_df["variant id"] == variant_id[:(
+                len(variant_id) - 2)]].site.values[0]
 
             # appending the base position to the list
             base_pos_list.append(base_pos)
 
         variant_info_dict = {
-            "variant_id": variant_id_list, "site": base_pos_list}
+            "variant_id": variant_id_list,
+            "site": base_pos_list
+        }
 
         variant_info_df = pd.DataFrame(variant_info_dict)
 
@@ -215,17 +212,17 @@ class newPOS:
 
 
 class Shared_Segment_Convert(newPOS):
-
-    def __init__(self, shared_segment_file: str, pheno_file: str, output_path: str, ibd_program_used: str,
-                 min_cM_threshold: int, thread: int, base_position, variant_id):
+    def __init__(self, shared_segment_file: str, pheno_file: str,
+                 output_path: str, ibd_program_used: str,
+                 min_cM_threshold: int, thread: int, base_position,
+                 variant_id):
         # This is the germline or hapibd or ilash file
         self.segment_file = str(shared_segment_file)
         # This will give the directory for where the chromosome files are found
         self.iid_file = str(pheno_file)
         # This will be the output directory. Need to add the ibd software to the end of it
         self.output_dir = output_path
-        self.output = "".join(
-            [output_path, ibd_program_used])
+        self.output = "".join([output_path, ibd_program_used])
         self.format = str(ibd_program_used)
         self.min_cM = int(min_cM_threshold)
         self.thread = int(thread)
@@ -270,16 +267,17 @@ class Shared_Segment_Convert(newPOS):
         else:
             if self.format.lower().split(':')[0] in ['other', 'others']:
                 indx = self.format.lower().split(':')[1].split(';')
-                parameter_dict["id1_indx"] = int(indx[0])-1
-                parameter_dict["id2_indx"] = int(indx[1])-1
-                parameter_dict["chr_indx"] = int(indx[2])-1
-                parameter_dict["str_indx"] = int(indx[3])-1
-                parameter_dict["end_indx"] = int(indx[4])-1
-                parameter_dict["cM_indx"] = int(indx[5])-1
+                parameter_dict["id1_indx"] = int(indx[0]) - 1
+                parameter_dict["id2_indx"] = int(indx[1]) - 1
+                parameter_dict["chr_indx"] = int(indx[2]) - 1
+                parameter_dict["str_indx"] = int(indx[3]) - 1
+                parameter_dict["end_indx"] = int(indx[4]) - 1
+                parameter_dict["cM_indx"] = int(indx[5]) - 1
 
             else:
                 sys.exit(
-                    'unrecognized or incorrect format: GREMLINE/iLASH/RaPID/hap-ibd/other:id1;id2;chr;str;start bp;end bp;cM')
+                    'unrecognized or incorrect format: GREMLINE/iLASH/RaPID/hap-ibd/other:id1;id2;chr;str;start bp;end bp;cM'
+                )
         return parameter_dict
 
     def build_id_pairs(self):
@@ -302,9 +300,9 @@ class Shared_Segment_Convert(newPOS):
             else:
 
                 uniqID[line] = IDnum
-                IDnum = IDnum+1
+                IDnum = IDnum + 1
 
-        print('identified '+str(len(uniqID))+' unique IDs')
+        print('identified ' + str(len(uniqID)) + ' unique IDs')
 
         # Closing the file
         pheno_file.close()
@@ -320,12 +318,19 @@ class Shared_Segment_Convert(newPOS):
         # The 22 is for the different chromosomes.
         # the "allpos" is the breakpoints
         IBDdata = {str(i): {} for i in range(1, 23)}
-        IBDindex = {str(i): {'start': 999999999, 'end': 0, 'allpos': []}
-                    for i in range(1, 23)}
+        IBDindex = {
+            str(i): {
+                'start': 999999999,
+                'end': 0,
+                'allpos': []
+            }
+            for i in range(1, 23)
+        }
 
         return IBDdata, IBDindex
 
-    def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict, uniqID: dict, que_object):
+    def IBDsumm(self, IBDdata: dict, IBDindex: dict, parameter_dict: dict,
+                uniqID: dict, que_object):
         '''This function will be used in the parallelism function'''
 
         # undoing the parameter_dict
@@ -342,33 +347,38 @@ class Shared_Segment_Convert(newPOS):
         except KeyError:
             pass
 
-        for chunk in pd.read_csv(self.segment_file, sep="\s+", header=None, chunksize=500000):
+        for chunk in pd.read_csv(self.segment_file,
+                                 sep="\s+",
+                                 header=None,
+                                 chunksize=500000):
             # Checking to see if the ids are not in the uniqID dictionary
-            chunk_not_in_uniqID = chunk[(chunk[id1_indx].isin(
-                uniqID)) | (chunk[id2_indx].isin(uniqID))]
+            chunk_not_in_uniqID = chunk[(chunk[id1_indx].isin(uniqID)) |
+                                        (chunk[id2_indx].isin(uniqID))]
 
             # This is reducing the dataframe to only pairs greater than min_cM threshold
             chunk_greater_than_3_cm = chunk_not_in_uniqID[(
                 chunk_not_in_uniqID[cM_indx] >= self.min_cM)]
             # Need to check if the unit doesn't equal cM. This only applies in the case of germline
             try:
-                chunk_greater_than_3_cm = chunk_greater_than_3_cm[chunk_greater_than_3_cm[unit] == "cM"]
+                chunk_greater_than_3_cm = chunk_greater_than_3_cm[
+                    chunk_greater_than_3_cm[unit] == "cM"]
 
             except NameError:
                 pass
 
-            chunk = chunk_greater_than_3_cm[(chunk_greater_than_3_cm[str_indx] < self.bp) & (
-                chunk_greater_than_3_cm[end_indx] > self.bp)]
+            chunk = chunk_greater_than_3_cm[
+                (chunk_greater_than_3_cm[str_indx] < self.bp)
+                & (chunk_greater_than_3_cm[end_indx] > self.bp)]
             # This will iterate through each row of the filtered chunk
             if not chunk.empty:
                 for row in chunk.itertuples():
 
-                    id1 = str(row[id1_indx+1])
-                    id2 = str(row[id2_indx+1])
-                    cM = str(row[cM_indx+1])
-                    CHR = str(row[chr_indx+1])
-                    start = min(int(row[str_indx+1]), int(row[end_indx+1]))
-                    end = max(int(row[str_indx+1]), int(row[end_indx+1]))
+                    id1 = str(row[id1_indx + 1])
+                    id2 = str(row[id2_indx + 1])
+                    cM = str(row[cM_indx + 1])
+                    CHR = str(row[chr_indx + 1])
+                    start = min(int(row[str_indx + 1]), int(row[end_indx + 1]))
+                    end = max(int(row[str_indx + 1]), int(row[end_indx + 1]))
 
                     if id1 in uniqID and id2 in uniqID:  # Checks to see if the ids are in the uniqID list
 
@@ -389,7 +399,8 @@ class Shared_Segment_Convert(newPOS):
                         pair = '{0}:{1}-{2}'.format(cM, id2, id1)
 
                 # start and end not in identified breakpoints
-                    if int(start) not in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
+                    if int(start) not in IBDindex[CHR]['allpos'] and int(
+                            end) not in IBDindex[CHR]['allpos']:
 
                         IBDdata[CHR][str(start)] = newPOS([pair], [])
                         IBDdata[CHR][str(end)] = newPOS([], [pair])
@@ -397,33 +408,38 @@ class Shared_Segment_Convert(newPOS):
                         IBDindex[CHR]['allpos'].append(int(end))
 
                     # start is not in identified breakpoints but end is
-                    elif int(start) not in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
+                    elif int(start) not in IBDindex[CHR]['allpos'] and int(
+                            end) in IBDindex[CHR]['allpos']:
 
                         IBDdata[CHR][str(start)] = newPOS([pair], [])
                         IBDdata[CHR][str(end)].rem.append(str(pair))
                         IBDindex[CHR]['allpos'].append(int(start))
                 #
                 # start is in identified breakpoints but end not
-                    elif int(start) in IBDindex[CHR]['allpos'] and int(end) not in IBDindex[CHR]['allpos']:
+                    elif int(start) in IBDindex[CHR]['allpos'] and int(
+                            end) not in IBDindex[CHR]['allpos']:
 
                         IBDdata[CHR][str(start)].add.append(str(pair))
                         IBDdata[CHR][str(end)] = newPOS([], [pair])
                         IBDindex[CHR]['allpos'].append(int(end))
             #
             # both start and end in identified breakpoints
-                    elif int(start) in IBDindex[CHR]['allpos'] and int(end) in IBDindex[CHR]['allpos']:
+                    elif int(start) in IBDindex[CHR]['allpos'] and int(
+                            end) in IBDindex[CHR]['allpos']:
 
                         IBDdata[CHR][str(start)].add.append(str(pair))
                         IBDdata[CHR][str(end)].rem.append(str(pair))
         try:
 
-            print('identified ' +
-                  str(len(IBDindex[str(CHR)]['allpos']))+' breakpoints on chr'+str(CHR))
+            print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
+                  ' breakpoints on chr' + str(CHR))
 
             # Opening the file .small/txt/gz file to write to
             # NEED TO FIX THIS LINE HERE
-            write_path = "".join([self.output, '_', self.variant_name,
-                                  '.chr', str(CHR), '.small.txt.gz'])
+            write_path = "".join([
+                self.output, '_', self.variant_name, '.chr',
+                str(CHR), '.small.txt.gz'
+            ])
 
             out = gzip.open(write_path, 'wt')
 
@@ -461,8 +477,10 @@ class Shared_Segment_Convert(newPOS):
 
                 npair = str(len(allibdpair))
 
-                out.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(str(CHR), str(pos), nseg, npair, ' '.join(
-                    IBDdata[str(CHR)][str(pos)].add), ' '.join(IBDdata[str(CHR)][str(pos)].rem)))
+                out.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
+                    str(CHR), str(pos), nseg, npair,
+                    ' '.join(IBDdata[str(CHR)][str(pos)].add),
+                    ' '.join(IBDdata[str(CHR)][str(pos)].rem)))
 
             IBDdata[str(CHR)] = []
             out.close()
@@ -470,14 +488,16 @@ class Shared_Segment_Convert(newPOS):
         except UnboundLocalError:
 
             print(
-                f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'failed_IBDinput_byBP.txt'])}")
+                f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'failed_IBDinput_byBP.txt'])}"
+            )
 
             que_object.put(
-                f"No pairs were identified for {self.variant_name} when converting the output from the ibd files to more human readable files")
+                f"No pairs were identified for {self.variant_name} when converting the output from the ibd files to more human readable files"
+            )
 
     def run(self, IBDdata, IBDindex, parameter_dict, uniqID, que_object):
 
         self.IBDsumm(IBDdata, IBDindex, parameter_dict, uniqID, que_object)
 
-        del(IBDdata)
-        del(IBDindex)
+        del (IBDdata)
+        del (IBDindex)

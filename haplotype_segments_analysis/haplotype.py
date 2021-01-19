@@ -16,8 +16,9 @@ def identify_unique_variants(confirmed_carrier_file: str) -> list:
     '''This function will get all the unique variants that we have a confirmed carrier for'''
 
     # loads the variant_id column from the file into dataframe
-    confirmed_carrier_df: pd.DataFrame = pd.read_csv(
-        confirmed_carrier_file, sep="\t", usecols=["variant_id"])
+    confirmed_carrier_df: pd.DataFrame = pd.read_csv(confirmed_carrier_file,
+                                                     sep="\t",
+                                                     usecols=["variant_id"])
 
     # gets a list of all the unique variants in the file
     unique_var_list: list = confirmed_carrier_df.variant_id.unique().tolist()
@@ -82,14 +83,21 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
-def get_file(file_list: list, identifier: str) -> str:
+def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
     '''This function gets the file that matches a condition from a list of files'''
 
     # generate alternate chr number incase the formatting does not contain a zero
-    alt_chr_num: str = alternate_chr_num_format(identifier)
+    if identifier:
+        file_str: str = [file for file in file_list if identifier in file][0]
 
-    file_str: str = [
-        file for file in file_list if identifier in file or alt_chr_num in file][0]
+    alt_chr_num = None
+    if chr_num:
+        alt_chr_num: str = alternate_chr_num_format(chr_num)
+
+        file_str: str = [
+            file for file in file_list
+            if chr_num in file or alt_chr_num in file
+        ][0]
 
     return file_str
 
@@ -98,8 +106,10 @@ def get_var_pos(map_file: str, variant_id: str) -> str:
     '''This function find the position of the variant id and return that as a string'''
 
     # This reads in the columns from the map file that contains the variant probe id and the pos
-    map_df: pd.DataFrame = pd.read_csv(
-        map_file, sep="\t", header=None, usecols=[1, 3])
+    map_df: pd.DataFrame = pd.read_csv(map_file,
+                                       sep="\t",
+                                       header=None,
+                                       usecols=[1, 3])
 
     # getting the value
     pos: str = str(map_df[map_df[1] == variant_id][3].values[0])
@@ -111,10 +121,7 @@ def check_ibd_program(file_str: str) -> int:
     '''This function will return a zero or a 1 depending on whether or not the file is a hapibd file or an ilash file respectively'''
 
     # create a dictionary to handle the situation
-    ibd_handler: dict = {
-        True: 1,
-        False: 0
-    }
+    ibd_handler: dict = {True: 1, False: 0}
 
     # Checks to see if the file is a ilash file
     handler_int: int = ibd_handler["match" in file_str]
@@ -127,11 +134,7 @@ def get_index_positions(ibd_program_int: int) -> list:
     # This dictionary contains the index of values such as IID1, IID2, Start point
     # end point, and the shared segment length. True will contain indixes for an iLash
     # file and false will contain the indices for a hapibd file
-    indx_dict: dict = {
-        1: [0, 2, 5, 6, 9],
-        0: [0, 2, 5, 6, 7]
-
-    }
+    indx_dict: dict = {1: [0, 2, 5, 6, 9], 0: [0, 2, 5, 6, 7]}
 
     indx_list: list = indx_dict[ibd_program_int]
 
@@ -162,7 +165,8 @@ def filter_file(file: str, variant_pos: str) -> list:
             split_row: list = row.split()
 
             # This line checks to see if the variant position falls inbetween the start and end position of the row
-            if int(split_row[start_indx]) <= int(variant_pos) and int(split_row[end_indx]) >= int(variant_pos):
+            if int(split_row[start_indx]) <= int(variant_pos) and int(
+                    split_row[end_indx]) >= int(variant_pos):
                 # if it matches then it will append that value to the pair_list
                 pair_list.append(row)
 
@@ -179,13 +183,14 @@ def get_carriers(carrier_file: str, variant_id: str) -> list:
     carrier_df: pd.DataFrame = pd.read_csv(carrier_file)
 
     # subsetting to get only the variant of interest carriers
-    carrier_list: list = carrier_df[carrier_df["Variant ID"]
-                                    == variant_id]["IID"].values.tolist()
+    carrier_list: list = carrier_df[carrier_df["Variant ID"] ==
+                                    variant_id]["IID"].values.tolist()
 
     return carrier_list
 
 
-def filter_for_carriers(ibd_pair_list: list, carrier_on_mega_list: list, confirmed_carrier_list: list) -> list:
+def filter_for_carriers(ibd_pair_list: list, carrier_on_mega_list: list,
+                        confirmed_carrier_list: list) -> list:
     '''This function will filter the pair list for only pairs where both individual are carriers'''
 
     filtered_list: list = []
@@ -222,12 +227,14 @@ def get_confirmed_carriers(confirmed_file: str, var_id: str) -> list:
     filtered_for_confirmed_status_df: pd.DataFrame = filter_for_var_df[
         filter_for_var_df.confirmed_status == 1]
 
-    confirmed_carrier_list: list = filtered_for_confirmed_status_df.IID.values.tolist()
+    confirmed_carrier_list: list = filtered_for_confirmed_status_df.IID.values.tolist(
+    )
 
     return confirmed_carrier_list
 
 
-def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_num: str, variant_id: str, que_object,
+def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str,
+                      chr_num: str, variant_id: str, que_object,
                       var_que_object, network_file_path: str):
     '''This function will create a string containing the start and end points for each shared segment between two pairs.
     The function will place this string in the que of a listener that will then write it to a file'''
@@ -241,8 +248,11 @@ def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_n
     output_str: str = f"N/A\tN/A\t{chr_digit}\t{variant_id}\tN/A\tN/A\tN/A\tN/A\tN/A\tN/A\tN/A\n"
 
     # getting the matched values
-    matched_list: list = [(string, pair) for string in hapibd_filtered_list for pair in ilash_filtered_list if string.split(
-        "\t")[0] in pair and string.split("\t")[2] in pair]
+    matched_list: list = [
+        (string, pair) for string in hapibd_filtered_list
+        for pair in ilash_filtered_list
+        if string.split("\t")[0] in pair and string.split("\t")[2] in pair
+    ]
 
     # getting the values that are unique in the hapibd_filtered_list
 
@@ -250,14 +260,17 @@ def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_n
     hapibd_matched: list = [pair[0] for pair in matched_list]
 
     hapibd_only_list: list = [
-        string for string in hapibd_filtered_list if string not in hapibd_matched]
+        string for string in hapibd_filtered_list
+        if string not in hapibd_matched
+    ]
 
     # getting all the values that are only in the ilash set
 
     ilash_matched: list = [pair[1] for pair in matched_list]
 
     ilash_only_list: list = [
-        string for string in ilash_filtered_list if string not in ilash_matched]
+        string for string in ilash_filtered_list if string not in ilash_matched
+    ]
 
     # Combining the previous list to make a total of three list
     total_pair_list: list = matched_list + hapibd_only_list + ilash_only_list
@@ -279,12 +292,12 @@ def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_n
             pair_1: str = split_hapibd_list[0]
             pair_2: str = split_hapibd_list[2]
 
-        # getting the network ids for this set of pairs. Have to remove final two characters from teh variant id name
+            # getting the network ids for this set of pairs. Have to remove final two characters from teh variant id name
             filtered_network_df: pd.DataFrame = filter_df(
                 network_file_path, variant_id)
 
-            network_id: str = filter_for_pairs(
-                filtered_network_df, pair_1, pair_2)
+            network_id: str = filter_for_pairs(filtered_network_df, pair_1,
+                                               pair_2)
 
             output_str: str = f"{split_hapibd_list[0]}\t{split_hapibd_list[2]}\t{chr_digit}\t{variant_id}\t{network_id}\t{split_hapibd_list[5]}\t{split_hapibd_list[6]}\t{split_hapibd_list[7]}\t{split_ilash_list[5]}\t{split_ilash_list[6]}\t{split_ilash_list[9]}\n"
 
@@ -295,12 +308,12 @@ def create_output_str(hapibd_filtered_list: str, ilash_filtered_list: str, chr_n
             pair_1: str = split_str_list[0]
             pair_2: str = split_str_list[2]
 
-        # getting the network ids for this set of pairs. Have to remove final two characters from teh variant id name
+            # getting the network ids for this set of pairs. Have to remove final two characters from teh variant id name
             filtered_network_df: pd.DataFrame = filter_df(
                 network_file_path, variant_id)
 
-            network_id: str = filter_for_pairs(
-                filtered_network_df, pair_1, pair_2)
+            network_id: str = filter_for_pairs(filtered_network_df, pair_1,
+                                               pair_2)
 
             if len(split_str_list) == 11:
 
@@ -319,20 +332,22 @@ def get_full_var_name(allpair_file: str, variant_id: str) -> str:
     variant_indx: int = allpair_file.index(variant_id)
 
     # This is the ending index of the slice
-    second_indx: int = variant_indx+len(variant_id)+2
+    second_indx: int = variant_indx + len(variant_id) + 2
 
     full_variant_id: str = allpair_file[variant_indx:second_indx]
 
     return full_variant_id
 
 
-def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_list: list, ilash_file_list: list,
-                  hapibd_file_list: list, que_object, var_que_object, network_file_path: str, confirmed_carrier_file: str,
+def get_haplotype(allpair_file_list: list, carrier_file_list: list,
+                  map_file_list: list, ilash_file_list: list,
+                  hapibd_file_list: list, que_object, var_que_object,
+                  network_file_path: str, confirmed_carrier_file: str,
                   variant: str):
     '''This function will contain the main segments of code that will run in the run function.
     It will be used in the parallel_map funcion which is an attempt to parallelize the function.'''
 
-    allpair_file: str = get_file(allpair_file_list, variant)
+    allpair_file: str = get_file(allpair_file_list, identifier=variant)
 
     print(f"using allpair file {allpair_file}")
 
@@ -340,11 +355,12 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
 
     full_variant_id: str = get_full_var_name(allpair_file, variant)
 
-    map_file: str = get_file(map_file_list, "".join([".", chr_num, "_"]))
+    map_file: str = get_file(map_file_list,
+                             chr_num="".join([".", chr_num, "_"]))
 
     # getting the specific carrier file for the chromosome
-    carrier_file: str = get_file(
-        carrier_file_list, "".join([chr_num, "_"]))
+    carrier_file: str = get_file(carrier_file_list,
+                                 chr_num="".join([chr_num, "_"]))
 
     carriers_list: list = get_carriers(carrier_file, full_variant_id)
 
@@ -355,30 +371,33 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list, map_file_lis
 
     # The next four lines get the hapibd file and the ilash file for the specific chromosome
 
-    ilash_file: str = get_file(
-        ilash_file_list, "".join(["_", chr_num, "."]))
+    ilash_file: str = get_file(ilash_file_list,
+                               chr_num="".join(["_", chr_num, "."]))
 
-    hapibd_file: str = get_file(
-        hapibd_file_list, "".join(["_", chr_num, "."]))
+    hapibd_file: str = get_file(hapibd_file_list,
+                                chr_num="".join(["_", chr_num, "."]))
 
     # getting a list of each pair
     ilash_list: list = filter_file(ilash_file, var_pos)
 
-    ilash_carriers_list: list = filter_for_carriers(
-        ilash_list, carriers_list, confirmed_carriers_list)
+    ilash_carriers_list: list = filter_for_carriers(ilash_list, carriers_list,
+                                                    confirmed_carriers_list)
 
     hapibd_list: list = filter_file(hapibd_file, var_pos)
 
-    hapibd_carriers_list: list = filter_for_carriers(
-        hapibd_list, carriers_list, confirmed_carriers_list)
+    hapibd_carriers_list: list = filter_for_carriers(hapibd_list,
+                                                     carriers_list,
+                                                     confirmed_carriers_list)
 
-    create_output_str(hapibd_carriers_list, ilash_carriers_list,
-                      chr_num, full_variant_id, que_object, var_que_object, network_file_path)
+    create_output_str(hapibd_carriers_list, ilash_carriers_list, chr_num,
+                      full_variant_id, que_object, var_que_object,
+                      network_file_path)
 
 
-def parallel_map(workers: int, allpair_file_list: list, variant_list: list, carrier_file_list: list, map_file_list: list,
-                 output: str, ilash_file_list: list, hapibd_file_list: list, network_file_path: str,
-                 confirmed_carrier_file: str):
+def parallel_map(workers: int, allpair_file_list: list, variant_list: list,
+                 carrier_file_list: list, map_file_list: list, output: str,
+                 ilash_file_list: list, hapibd_file_list: list,
+                 network_file_path: str, confirmed_carrier_file: str):
     print("attempting to run in parallel...")
 
     # creating a manager que that can be used to line up how it write to the file
@@ -402,8 +421,9 @@ def parallel_map(workers: int, allpair_file_list: list, variant_list: list, carr
         [output, "failed_haplotype_analysis.txt"]), variant_header))
 
     # creating a partial function so that we can pass the necessary parameters to the get_haplotype function
-    func = partial(get_haplotype, allpair_file_list,
-                   carrier_file_list, map_file_list,  ilash_file_list, hapibd_file_list, que, variant_que, network_file_path, confirmed_carrier_file)
+    func = partial(get_haplotype, allpair_file_list, carrier_file_list,
+                   map_file_list, ilash_file_list, hapibd_file_list, que,
+                   variant_que, network_file_path, confirmed_carrier_file)
 
     pool.map(func, variant_list)
 
@@ -455,22 +475,23 @@ def sort_file(output_file_path: str):
     haplotype_df.to_csv(output_file_path, na_rep="N/A", index=False, sep="\t")
 
 
-def get_segment_lengths(confirmed_carrier_file: str, output_path: str, ilash_dir: str,
-                        hapibd_dir: str, threads: str, map_file_dir: str, reformated_carrier_files: str,
+def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
+                        ilash_dir: str, hapibd_dir: str, threads: int,
+                        map_file_dir: str, reformated_carrier_files: str,
                         network_file: str, allpair_files: str):
     "function to run"
     # removing output files from previous runs
     remove_previous_file("".join([output_path, "haplotype_info.txt"]))
 
-    remove_previous_file(
-        "".join([output_path, "failed_haplotype_analysis.txt"]))
+    remove_previous_file("".join(
+        [output_path, "failed_haplotype_analysis.txt"]))
 
     # getting a list of all the variants that have a confirmed carrier
     variant_list: list = identify_unique_variants(confirmed_carrier_file)
 
     # Getting all the carrier files
-    carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
 
+    carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
     # getting the map_files
     map_file_list: list = get_file_list(map_file_dir, "*.map")
 
@@ -482,7 +503,9 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str, ilash_dir
 
     hapibd_file_list: list = get_file_list(hapibd_dir, "*.ibd.gz")
 
-    parallel_map(int(threads), allpair_file_list, variant_list, carrier_file_list,
-                 map_file_list, output_path, ilash_file_list, hapibd_file_list, network_file, confirmed_carrier_file)
+    parallel_map(int(threads), allpair_file_list, variant_list,
+                 carrier_file_list, map_file_list, output_path,
+                 ilash_file_list, hapibd_file_list, network_file,
+                 confirmed_carrier_file)
 
     sort_file("".join([output_path, "haplotype_info.txt"]))

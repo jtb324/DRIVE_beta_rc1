@@ -1,9 +1,11 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
 import logging
 import argparse
 import os.path
 from os import path
 import sys
+from datetime import datetime
 
 import carrier_analysis_scripts
 import create_network_scripts
@@ -16,225 +18,237 @@ import full_analysis
 
 
 def run(args):
+    # Asking for user input for constants that will be used throughout the program
+    ANALYSIS_TYPE: str = input("Please input an analysis type: ").strip(" ")
 
-    analysis_arguments: list = [
-        "multi",
-        "single",
-        "draw_networks",
-        "maf_determination",
-        "shared_segment_preformat",
-        "get_haplotypes",
-        "split_input_file_by_gene",
-        "split_input_file_by_maf",
-        "combine_segment_output",
-        "get_all_genotypes",
-    ]
-
-    if args.analysis.lower() not in analysis_arguments:
+    if ANALYSIS_TYPE not in ["gene", "maf", ""]:
         print(
-            "The analysis method selected was not recognized. Please use one of the following analysis methods: \
-            *multi\
-            *single\
-            *draw_networks\
-            *plink_splitter\
-            *maf_determination\
-            *shared_segment_preformat\
-            *get_haplotypes\
-            *split_input_file_by_gene\
-            *split_input_file_by_maf\
-            *combine_segment_output\
-            *get_all_genotypes"
-        )
-
-        # This line stops the program if the analysis method is not recognized
+            "Please choose one of the two allowed analysis types ('gene'/'maf', or "
+            ")")
         sys.exit(1)
 
-    if args.analysis == "multi":
+    MIN_CM: int = int(
+        input(
+            "Please input a value for the minimum centimorgan threshold: (Default is 3 cM) "
+        ))
 
-        log_format = "%(asctime)s - %(levelname)s : %(message)s"
+    if not MIN_CM:
+        MIN_CM = 3
 
-        logging.basicConfig(
-            filename="".join([args.output, "/multi_variant_analysis.log"]),
-            level=logging.INFO,
-            format=log_format,
-        )
+    THREADS: int = int(
+        input(
+            "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
+        ))
 
-        logging.info("Generating a list of IIDs who carry multiple variants...")
+    if not THREADS:
+        THREADS = 3
 
-        print("generating list of individuals carrying multiple variants....")
+    if ANALYSIS_TYPE == "maf":
 
-        carrier_analysis_scripts.multiVariantAnalysis(
-            args.input, args.output, args.compatible_format, "multi_variant_list.csv"
-        )
+        MAF_FILTER: int = int(
+            input(
+                "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
+            ))
 
-        logging.info(
-            "Finished creating a list of individuals carrying multiple variants"
-        )
+    ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
-    elif args.analysis == "single":
+    HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
 
-        log_format = "%(asctime)s - %(levelname)s : %(message)s"
+    IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
+    # TO
+    if ANALYSIS_TYPE.lower() == "gene":
 
-        logging.basicConfig(
-            filename="".join([args.output, "/single_variant_analysis.log"]),
-            level=logging.INFO,
-            format=log_format,
-        )
+        # getting the output directory to be to the variants_of_interest
+        # subdirectory
 
-        logging.info("generating list of individuals at each probe id...")
-
-        print("generating list of individuals at each probe id...")
-        print(args.input)
-        print(args.input[0])
-        # The args.input should be a directory indicating where the raw files are located
-        carrier_analysis_scripts.singleVariantAnalysis(
-            args.input,
-            args.output,
-            args.compatible_format,
-            "single_variant_list.csv",
-            args.pop_info,
-            args.pop_code,
-        )
-
-        logging.info("Finished creating a file of individuals for each probe id")
-
-    elif args.analysis == "draw_networks":
-
-        print("generating pdf files of networks of individuals who share segments...")
-
-        # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
-        carrier_in_network_dict = dict()
-
-        output = "".join([args.output, "network_imgs"])
-
-        if not path.exists(output):
-            os.mkdir(output)
-
-        log_format = "%(asctime)s - %(levelname)s : %(message)s"
-
-        logging.basicConfig(
-            filename="".join([output, "/drawing_networks.log"]),
-            level=logging.INFO,
-            format=log_format,
-        )
-
-        logging.info(
-            "Drawing networks for all individuals identified as shared segments..."
-        )
-
-        carrier_in_network_dict = create_network_scripts.create_networks(
-            args.allpair_file, args.var_file, carrier_in_network_dict, output
-        )
-
-        logger = logging.getLogger(args.output + "/carriers_in_network.log")
-
-        # Writing the dictionary to a csv file
-        csv_writer = file_creator_scripts.Csv_Writer_Object(
-            carrier_in_network_dict, output, "carriers_in_networks.csv", logger
-        )
-
-        csv_writer.log_file_path()
-
-        csv_writer.write_to_csv()
-
-    elif args.analysis.lower() == "maf_determination":
-
-        print("determine the minor allele frequency within the provided binary file")
-        allele_frequency_analysis_scripts.determine_maf(
-            args.carrier_file, args.raw_file, args.pop_info, args.pop_code, args.output
-        )
-
-    elif args.analysis.lower() == "shared_segment_preformat":
-        print("converting the ibd output to a human readable version...")
-
-        pre_shared_segments_analysis_scripts.convert_ibd(
-            args.ibd_files,
-            args.carrier_file,
-            args.ibd_programs,
-            args.output,
-            args.map_file,
-            args.ibd_file_suffix,
-            args.min_CM,
-            args.threads,
-            args.var_input_file,
-        )
-
-    elif args.analysis.lower() == "combine_segment_output":
-        print("combining segment output...")
-
-        pre_shared_segments_analysis_scripts.combine_output(
-            args.segment_files, args.ibd_programs, args.output, args.reformat_files
-        )
-
-        pre_shared_segments_analysis_scripts.reformat_files(
-            args.carrier_file,
-            args.plink_dir,
-            args.allpair_file,
-            args.output,
-            args.no_carriers_file,
-        )
-    elif args.analysis.lower() == "split_input_file_by_gene":
-        print(
-            "splitting the inpout excel or csv file and then extracting the variants through PLINK"
-        )
-
-        plink_initial_format_scripts.split_input_and_run_plink(
-            args.input[0],
+        plink_file_path: str = plink_initial_format_scripts.split_input_and_run_plink(
+            args.var_file,
             args.output,
             args.recode_options,
             args.binary_file,
-            args.plink_dir,
+            "".join([args.output, "plink_output_files/"]),
         )
 
-    elif args.analysis.lower() == "split_input_file_by_maf":
+        # TODO: need to return a value for where the plink files should be
+
+    elif ANALYSIS_TYPE.lower() == "maf":
         print(
             f"extracting all variants below a minor allele frequency of {args.maf_filter}"
         )
+        #TODO: adjust this so that it accept a range of variants not a numeric range
+        if args.range:
+            START: int = int(args.range[0])
+            END: int = int(args.range[1])
 
-        plink_runner = plink_initial_format_scripts.PLINK_Runner(
-            args.recode_options, args.output, args.binary_file, args.maf_filter
-        )
+            plink_runner = plink_initial_format_scripts.PLINK_Runner(
+                args.recode_options,
+                args.output,
+                args.binary_file,
+                maf_filter=MAF_FILTER,
+                start=START,
+                end=END,
+            )
+        else:
+            plink_runner = plink_initial_format_scripts.PLINK_Runner(
+                args.recode_options,
+                args.output,
+                args.binary_file,
+                maf_filter=MAF_FILTER,
+            )
 
-        plink_runner.run_PLINK_maf_filter(args.from_plink, args.to_plink)
-
-    elif args.analysis.lower() == "get_haplotypes":
-        print("getting information about the haplotypes for the confirmed carriers")
-
-        haplotype_segments_analysis.get_segment_lengths(
-            args.input[0],
-            args.output,
-            args.ilash_dir,
-            args.hapibd_dir,
-            args.threads,
-            args.plink_dir,
-            args.reformat_files,
-            args.network_files,
-            args.allpair_file,
-        )
-
-    elif args.analysis.lower() == "get_all_genotypes":
+        plink_file_path: str = plink_runner.run_PLINK_maf_filter()
+        # TODO: need to return a string listing the location of the plink
+        # output files
+    else:
+        print("no analysis method was passed to the program.")
         print(
-            "generating a file contain the genotypes for all IIDs in the provided file"
+            "the program will now assume that the user has already gathered raw files for analysis."
         )
+        # Setting the plink_file_path if the top two steps are skipped
+        plink_file_path = "".join([args.output, "plink_output_files/"])
+    # TODO: need to adjust the section so that it takes the proper options. At this moment this feature is not being used so it is commented out, but it is worth keeping in the program
+    # if args.analysis == "multi":
 
-        full_analysis.get_all_genotypes(
-            args.plink_dir, args.input[0], args.pop_info, args.output, args.pop_code
-        )
+    #     print("generating list of individuals carrying multiple variants....")
+
+    #     carrier_analysis_scripts.multiVariantAnalysis(
+    #         args.input, args.output, args.compatible_format, "multi_variant_list.csv"
+    #     )
+
+    #     logging.info(
+    #         "Finished creating a list of individuals carrying multiple variants"
+    #     )
+
+    print("generating list of individuals at each probe id...")
+
+    # The args.input should be a directory indicating where the raw files are located
+    carrier_analysis_scripts.singleVariantAnalysis(
+        plink_file_path,
+        args.output,
+        args.pop_info,
+        args.pop_code,
+    )
+
+    # The above function outputs files to a subdirectory called "carrier_analysis_output"
+
+    print(
+        "determining the minor allele frequency within the provided binary file..."
+    )
+    allele_frequency_analysis_scripts.determine_maf(
+        "".join([args.output, "carrier_analysis_output/"]),
+        "".join([args.output, "plink_output_files/"]), args.pop_info,
+        args.pop_code, args.output)
+
+    print("converting the ibd output to a human readable version...")
+
+    IBD_search_output_files: str = "".join(
+        [args.output, "formated_ibd_output/"])
+
+    if not path.exists(IBD_search_output_files):
+
+        os.mkdir(IBD_search_output_files)
+
+    for program in args.ibd_programs:
+
+        suffix_dict: dict = {
+            "ilash": ".match.gz",
+            "hapibd": ".ibd.gz",
+        }
+
+        file_suffix: str = suffix_dict[program]
+
+        # getting the correct ibd_file_path
+        ibd_file: str = [
+            file for file in IBD_PATHS_LIST if program in file.lower()
+        ][0]
+
+        print(ibd_file)
+
+        pre_shared_segments_analysis_scripts.convert_ibd(
+            ibd_file, "".join([args.output, "carrier_analysis_output/"]),
+            program, IBD_search_output_files,
+            "".join([args.output,
+                     "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
+    print("combining segment output...")
+
+    pre_shared_segments_analysis_scripts.combine_output(
+        IBD_search_output_files, args.ibd_programs, IBD_search_output_files,
+        "".join([args.output, "carrier_analysis_output/reformated/"]))
+
+    pre_shared_segments_analysis_scripts.reformat_files(
+        "".join([args.output, "carrier_analysis_output/"]),
+        "".join([args.output, "plink_output_files/"]),
+        IBD_search_output_files,
+        IBD_search_output_files,
+        "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
+    )
+
+    print(
+        "generating pdf files of networks of individuals who share segments..."
+    )
+
+    # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
+    carrier_in_network_dict = dict()
+
+    if not path.exists("".join([args.output, "networks/"])):
+        os.mkdir("".join([args.output, "networks/"]))
+
+    output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
+
+    if not path.exists(output):
+        os.mkdir(output)
+
+    carrier_in_network_dict = create_network_scripts.create_networks(
+        IBD_search_output_files,
+        "".join([args.output,
+                 "carrier_analysis_output/"]), carrier_in_network_dict, output)
+
+    # Writing the dictionary to a csv file
+    csv_writer = file_creator_scripts.Csv_Writer_Object(
+        carrier_in_network_dict, "".join([args.output, "networks/"]),
+        "carriers_in_networks.csv")
+    
+    csv_writer.write_to_csv()
+
+    print(
+        "getting information about the haplotypes for the confirmed carriers")
+
+    if not path.exists("".join([args.output, "haplotype_analysis/"])):
+
+        os.mkdir("".join([args.output, "haplotype_analysis/"]))
+
+    haplotype_segments_analysis.get_segment_lengths(
+        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
+        "".join([args.output, "haplotype_analysis/"]),
+        ILASH_PATH,
+        HAPIBD_PATH,
+        THREADS,
+        "".join([args.output, "plink_output_files/"]),
+        "".join([args.output, "carrier_analysis_output/", "reformated/"]),
+        "".join([args.output, "networks/", "network_imgs/network_groups.csv"]),
+        IBD_search_output_files,
+    )
+
+    print(
+        "generating a file contain the genotypes for all IIDs in the provided file"
+    )
+
+    full_analysis.get_all_genotypes(
+        "".join([args.output, "plink_output_files/"]),
+        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
+        args.pop_info, "".join([args.output,
+                                "haplotype_analysis/"]), args.pop_code)
+
+    # TODO": Fix the timing issue so that it gives the correct time
+    finishing_time = datetime.utcnow()
+    print(
+        f"The program successfully finished at {finishing_time.strftime('%H:%M:%S')}"
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="This identifies individuals who have a specific variant in a raw file from PLINK"
-    )
-
-    parser.add_argument(
-        "--input",
-        "-i",
-        help="This is the pathway for the PLINK recoded input file. "
-        "If you use the matchPED analysis argument then you should provide two input paths. The first is to the list of all variants. This should be a csv file and will have a list of the variant index and then a list of individuals who carry that variant. The second path is to the Pedigree file.At current development, this should be a .fam file.",
-        dest="input",
-        nargs="+",
-        type=str,
     )
 
     parser.add_argument(
@@ -248,21 +262,13 @@ def main():
     )
 
     parser.add_argument(
-        "--cfile",
-        "-c",
-        help="This argument supplies the path for the carrier files that commonly end in '.single_var_list.csv",
-        dest="carrier_file",
+        "--recode_options",
+        help="This argument list the recode option used to run plink",
+        dest="recode_options",
+        nargs="+",
         type=str,
-        required=False,
-    )
+        required=True,
 
-    parser.add_argument(
-        "--from",
-        help="This argument works the same as the PLINK --from argument and specifies a start rsid for the program to begin with",
-        dest="from_plink",
-        type=str,
-        required=False,
-    )
 
     parser.add_argument(
         "--maf_filter",
@@ -272,71 +278,6 @@ def main():
         required=False,
     )
 
-    parser.add_argument(
-        "--to",
-        help="This argument works the same as the PLINK --to argument and specifies a start rsid for the program to begin with",
-        dest="to_plink",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--recode_options",
-        help="TThis argument list the recode option used to run plink",
-        dest="recode_options",
-        nargs="+",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--ilash_files",
-        help="This argument list the directory for all ilash files ending in .match.gz",
-        dest="ilash_dir",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--hapibd_files",
-        help="This argument list the directory for all the hapibd files ending in .ibd.gz",
-        dest="hapibd_dir",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--nfiles",
-        help="This argument list the path for the 'network_groups.csv file which list what network pairs are a part of'",
-        dest="network_files",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--rfile",
-        "-r",
-        help="This argument supplies the path for the raw output files from PLINK. These files will be found in the directory ./variants_of_interest/ if the split_file was run",
-        dest="raw_file",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--converted_ibd",
-        help="This argument list the directory for all of the ibd files that were converted into a human readbale path. THese files should end in small.txt.gz",
-        dest="segment_files",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--reformated_carriers",
-        help="This argument list the directory for all of the reformated carrier files list. These files should be in a subdirected called reformat",
-        dest="reformat_files",
-        type=str,
-        required=False,
-    )
 
     parser.add_argument(
         "--output",
@@ -360,43 +301,6 @@ def main():
     )
 
     parser.add_argument(
-        "--thread",
-        "-t",
-        help="This argument list how many workers the program can use for multiprocessing",
-        dest="threads",
-        type=str,
-        required=False,
-        default=1,
-    )
-
-    parser.add_argument(
-        "--ifiles",
-        "-ibd",
-        help="This argument list the directory that contains the output from the ibd files",
-        dest="ibd_files",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--plink_dir",
-        "-pd",
-        help="This argument list the directory that contains the plink files for the run. These should be map and ped files.",
-        dest="plink_dir",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--no_carrier_file",
-        "-nc",
-        help="This argument list the file path to the no_carriers.txt file",
-        dest="no_carriers_file",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
         "--ibd_programs",
         help="This argument list which ibd programs were used",
         dest="ibd_programs",
@@ -406,83 +310,12 @@ def main():
     )
 
     parser.add_argument(
-        "--file_suffix",
-        "-fs",
-        help="This argument list the suffix for the different ibd files because it could change",
-        dest="ibd_file_suffix",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--var_input",
-        "-vi",
-        help="This argument list the path to the input file that list all the variants. This should be a csv or xlsx file",
-        dest="var_input_file",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--mfile",
-        "-mf",
-        help="This argument list the directory containing all the map files for each chromosome",
-        dest="map_file",
-        type=str,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--minCM",
-        "-m",
-        help="This argument list the minimum cM threshold",
-        dest="min_CM",
-        type=str,
-        required=False,
-        default=3,
-    )
-
-    parser.add_argument(
-        "--drop_var",
-        help="This functionality is used to drop variants from a file if needed to for some reason. This is passed into the searchPedigree function incase maybe a certain variant is too common and can be removed",
-        dest="drop_var",
-        type=str,
-        nargs="+",
-    )
-
-    parser.add_argument(
-        "--format",
-        help="This argument will enable several additional output files to be created that are easier for non python programs to interact with",
-        dest="compatible_format",
-        type=bool,
-        default=False,
-    )
-
-    parser.add_argument(
-        "--allpair_files",
-        "-a",
-        help="This argument provides a path to the list of shared segments that can be used to form networks",
-        dest="allpair_file",
-        type=str,
-        default=False,
-    )
-
-    parser.add_argument(
         "--variant_file",
-        help="This argument provides a path to a file that list all individuals that "
+        help=
+        "This argument provides a path to a file that list all individuals that "
         "carry a specific variant",
         dest="var_file",
         type=str,
-        default=False,
-    )
-
-    parser.add_argument(
-        "--var_of_interest",
-        help="This argument passes a variant of interest that can filter down "
-        "dataframes when trying to draw networks.",
-        dest="var",
-        type=str,
-        nargs="+",
         default=False,
     )
 
@@ -505,6 +338,16 @@ def main():
         "1000 genomes.",
         dest="pop_code",
         type=str,
+        required=False,
+    )
+
+    parser.add_argument(
+        "--range",
+        help=
+        "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
+        dest="range",
+        nargs="+",
+        type=list,
         required=False,
     )
 
