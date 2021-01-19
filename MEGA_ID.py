@@ -5,6 +5,7 @@ import argparse
 import os.path
 from os import path
 import sys
+from datetime import datetime
 
 import carrier_analysis_scripts
 import create_network_scripts
@@ -105,69 +106,69 @@ def run(args):
     #         "Finished creating a list of individuals carrying multiple variants"
     #     )
 
-    print("generating list of individuals at each probe id...")
+    # print("generating list of individuals at each probe id...")
 
-    # The args.input should be a directory indicating where the raw files are located
-    carrier_analysis_scripts.singleVariantAnalysis(
-        plink_file_path,
-        args.output,
-        args.pop_info,
-        args.pop_code,
-    )
+    # # The args.input should be a directory indicating where the raw files are located
+    # carrier_analysis_scripts.singleVariantAnalysis(
+    #     plink_file_path,
+    #     args.output,
+    #     args.pop_info,
+    #     args.pop_code,
+    # )
 
-    # The above function outputs files to a subdirectory called "carrier_analysis_output"
+    # # The above function outputs files to a subdirectory called "carrier_analysis_output"
 
-    print(
-        "determining the minor allele frequency within the provided binary file..."
-    )
-    allele_frequency_analysis_scripts.determine_maf(
-        "".join([args.output, "carrier_analysis_output/"]),
-        "".join([args.output, "plink_output_files/"]), args.pop_info,
-        args.pop_code, args.output)
+    # print(
+    #     "determining the minor allele frequency within the provided binary file..."
+    # )
+    # allele_frequency_analysis_scripts.determine_maf(
+    #     "".join([args.output, "carrier_analysis_output/"]),
+    #     "".join([args.output, "plink_output_files/"]), args.pop_info,
+    #     args.pop_code, args.output)
 
-    print("converting the ibd output to a human readable version...")
+    # print("converting the ibd output to a human readable version...")
 
     IBD_search_output_files: str = "".join(
         [args.output, "formated_ibd_output/"])
 
-    if not path.exists(IBD_search_output_files):
+    # if not path.exists(IBD_search_output_files):
 
-        os.mkdir(IBD_search_output_files)
+    #     os.mkdir(IBD_search_output_files)
 
-    for program in args.ibd_programs:
+    # for program in args.ibd_programs:
 
-        suffix_dict: dict = {
-            "ilash": ".match.gz",
-            "hapibd": ".ibd.gz",
-        }
+    #     suffix_dict: dict = {
+    #         "ilash": ".match.gz",
+    #         "hapibd": ".ibd.gz",
+    #     }
 
-        file_suffix: str = suffix_dict[program]
+    #     file_suffix: str = suffix_dict[program]
 
-        # getting the correct ibd_file_path
-        ibd_file: str = [
-            file for file in IBD_PATHS_LIST if program in file.lower()
-        ][0]
+    #     # getting the correct ibd_file_path
+    #     ibd_file: str = [
+    #         file for file in IBD_PATHS_LIST if program in file.lower()
+    #     ][0]
 
-        print(ibd_file)
+    #     print(ibd_file)
 
-        pre_shared_segments_analysis_scripts.convert_ibd(
-            ibd_file, "".join([args.output, "carrier_analysis_output/"]),
-            program, IBD_search_output_files,
-            "".join([args.output,
-                     "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
-    print("combining segment output...")
+    #     pre_shared_segments_analysis_scripts.convert_ibd(
+    #         ibd_file, "".join([args.output, "carrier_analysis_output/"]),
+    #         program, IBD_search_output_files,
+    #         "".join([args.output,
+    #                  "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
+    # print("combining segment output...")
 
-    pre_shared_segments_analysis_scripts.combine_output(
-        IBD_search_output_files, args.ibd_programs, IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/reformated/"]))
+    # pre_shared_segments_analysis_scripts.combine_output(
+    #     IBD_search_output_files, args.ibd_programs, IBD_search_output_files,
+    #     "".join([args.output, "carrier_analysis_output/reformated/"]))
 
-    pre_shared_segments_analysis_scripts.reformat_files(
-        "".join([args.output, "carrier_analysis_output/"]),
-        "".join([args.output, "plink_output_files/"]),
-        IBD_search_output_files,
-        IBD_search_output_files,
-        "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
-    )
+    # pre_shared_segments_analysis_scripts.reformat_files(
+    #     "".join([args.output, "carrier_analysis_output/"]),
+    #     "".join([args.output, "plink_output_files/"]),
+    #     IBD_search_output_files,
+    #     IBD_search_output_files,
+    #     "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
+    # )
 
     print(
         "generating pdf files of networks of individuals who share segments..."
@@ -185,8 +186,9 @@ def run(args):
         os.mkdir(output)
 
     carrier_in_network_dict = create_network_scripts.create_networks(
-        IBD_search_output_files, "".join([args.output, "plink_output_files/"]),
-        carrier_in_network_dict, output)
+        IBD_search_output_files,
+        "".join([args.output,
+                 "carrier_analysis_output/"]), carrier_in_network_dict, output)
 
     # Writing the dictionary to a csv file
     csv_writer = file_creator_scripts.Csv_Writer_Object(
@@ -203,12 +205,12 @@ def run(args):
         os.mkdir("".join([args.output, "haplotype_analysis/"]))
 
     haplotype_segments_analysis.get_segment_lengths(
-        "".join([args.output, "network/", "confirmed_carriers.txt"]),
+        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
         "".join([args.output, "haplotype_analysis/"]),
         ILASH_PATH,
         HAPIBD_PATH,
         THREADS,
-        IBD_search_output_files,
+        "".join([args.output, "plink_output_files/"]),
         "".join([args.output, "carrier_analysis_output/", "reformated/"]),
         "".join([args.output, "networks/", "network_imgs/network_groups.csv"]),
         IBD_search_output_files,
@@ -219,10 +221,16 @@ def run(args):
     )
 
     full_analysis.get_all_genotypes(
-        IBD_search_output_files,
-        "".join([args.output, "network/", "confirmed_carriers.txt"]),
+        "".join([args.output, "plink_output_files/"]),
+        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
         args.pop_info, "".join([args.output,
                                 "haplotype_analysis/"]), args.pop_code)
+
+    #TODO": Fix the timing issue so that it gives the correct time
+    finishing_time = datetime.utcnow()
+    print(
+        f"The program successfully finished at {finishing_time.strftime('%H:%M:%S')}"
+    )
 
 
 def main():

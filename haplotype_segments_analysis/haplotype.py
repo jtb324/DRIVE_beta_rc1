@@ -83,15 +83,26 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
-def get_file(file_list: list, identifier: str) -> str:
+def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
     '''This function gets the file that matches a condition from a list of files'''
 
     # generate alternate chr number incase the formatting does not contain a zero
-    alt_chr_num: str = alternate_chr_num_format(identifier)
+    # alt_chr_num: str = alternate_chr_num_format(identifier)
+    print(file_list)
+    # print("This is the identifier")
+    # print(identifier)
+    # print("This is the alternate chromosome")
+    if identifier:
+        file_str: str = [file for file in file_list if identifier in file][0]
 
-    file_str: str = [
-        file for file in file_list if identifier in file or alt_chr_num in file
-    ][0]
+    alt_chr_num = None
+    if chr_num:
+        alt_chr_num: str = alternate_chr_num_format(chr_num)
+
+        file_str: str = [
+            file for file in file_list
+            if chr_num in file or alt_chr_num in file
+        ][0]
 
     return file_str
 
@@ -341,7 +352,7 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list,
     '''This function will contain the main segments of code that will run in the run function.
     It will be used in the parallel_map funcion which is an attempt to parallelize the function.'''
 
-    allpair_file: str = get_file(allpair_file_list, variant)
+    allpair_file: str = get_file(allpair_file_list, identifier=variant)
 
     print(f"using allpair file {allpair_file}")
 
@@ -349,10 +360,12 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list,
 
     full_variant_id: str = get_full_var_name(allpair_file, variant)
 
-    map_file: str = get_file(map_file_list, "".join([".", chr_num, "_"]))
+    map_file: str = get_file(map_file_list,
+                             chr_num="".join([".", chr_num, "_"]))
 
     # getting the specific carrier file for the chromosome
-    carrier_file: str = get_file(carrier_file_list, "".join([chr_num, "_"]))
+    carrier_file: str = get_file(carrier_file_list,
+                                 chr_num="".join([chr_num, "_"]))
 
     carriers_list: list = get_carriers(carrier_file, full_variant_id)
 
@@ -363,9 +376,11 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list,
 
     # The next four lines get the hapibd file and the ilash file for the specific chromosome
 
-    ilash_file: str = get_file(ilash_file_list, "".join(["_", chr_num, "."]))
+    ilash_file: str = get_file(ilash_file_list,
+                               chr_num="".join(["_", chr_num, "."]))
 
-    hapibd_file: str = get_file(hapibd_file_list, "".join(["_", chr_num, "."]))
+    hapibd_file: str = get_file(hapibd_file_list,
+                                chr_num="".join(["_", chr_num, "."]))
 
     # getting a list of each pair
     ilash_list: list = filter_file(ilash_file, var_pos)
@@ -480,8 +495,8 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
     variant_list: list = identify_unique_variants(confirmed_carrier_file)
 
     # Getting all the carrier files
-    carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
 
+    carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
     # getting the map_files
     map_file_list: list = get_file_list(map_file_dir, "*.map")
 

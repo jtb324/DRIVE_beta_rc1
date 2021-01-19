@@ -291,6 +291,7 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
 
                 carrier_str = carrier_str.replace(",", "")
 
+                irint(ibd_file)
                 carrier_str = carrier_str.replace("\n", "")
 
                 carrier_list: list = carrier_str.split(" ")

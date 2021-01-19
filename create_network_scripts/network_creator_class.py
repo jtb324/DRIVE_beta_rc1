@@ -12,14 +12,13 @@ import file_creator_scripts
 
 
 class Network_Img_Maker():
-
-    def __init__(self, segments_file_dir, variant_file_dir: str, output_path: str, logger, ):
+    def __init__(self, segments_file_dir, variant_file_dir: str,
+                 output_path: str):
         # This will be the directory to where all the allpair.new.txt files are
 
         self.file = segments_file_dir
         # This comes from previous singleVariantAnalysis so the file will exist
         self.variant_file_list = variant_file_dir
-        self.log_file = logger
         self.output_path = output_path
         self.network_carriers = None
         self.var_of_interest = None
@@ -76,13 +75,16 @@ class Network_Img_Maker():
         '''This function will load the allpair files into a dataframe'''
 
         # Reading the file into a pandas dataframe
-        allpair_df: pd.DataFrame = pd.read_csv(allpair_file_path, sep="\t", usecols=[
-                                               "pair_1", "pair_2", "carrier_status"])
+        allpair_df: pd.DataFrame = pd.read_csv(
+            allpair_file_path,
+            sep="\t",
+            usecols=["pair_1", "pair_2", "carrier_status"])
 
         return allpair_df
 
     @staticmethod
-    def filter_for_carriers(allpair_df: pd.DataFrame, carrier_list: list) -> pd.DataFrame:
+    def filter_for_carriers(allpair_df: pd.DataFrame,
+                            carrier_list: list) -> pd.DataFrame:
         '''This function will filter out the rows in the allpair dataframe where the 
          pairs are not both carriers'''
 
@@ -96,21 +98,22 @@ class Network_Img_Maker():
 
     ################################################################
 
-    def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame, ind_in_networks_dict: dict, variant: str) -> dict:
+    def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame,
+                            ind_in_networks_dict: dict, variant: str) -> dict:
         '''This function tells the percent of carriers who are in these networks'''
-
+        print(subset_df)
         id1_set: set = set(subset_df.pair_1.values.tolist())
 
         id2_set: set = set(subset_df.pair_2.values.tolist())
 
         total_carriers_set: set = id1_set | id2_set
 
-        carriers_in_network: int = sum(
-            item in total_carriers_set for item in set(iid_list))
+        carriers_in_network: int = sum(item in total_carriers_set
+                                       for item in set(iid_list))
 
         print(f"This is the carriers_in_network, {carriers_in_network}")
 
-        percent_in_networks: float = carriers_in_network/len(iid_list)*100
+        percent_in_networks: float = carriers_in_network / len(iid_list) * 100
 
         ind_in_networks_dict[variant] = percent_in_networks
 
@@ -135,7 +138,8 @@ class Network_Img_Maker():
         # convert dictionary to Dataframe
 
         self.network_carriers = pd.DataFrame(
-            carriers_in_network_dict, columns=["IID", "In Network", "Network ID"])
+            carriers_in_network_dict,
+            columns=["IID", "In Network", "Network ID"])
 
         return ind_in_networks_dict
 
@@ -156,8 +160,8 @@ class Network_Img_Maker():
 
         for iid1, iid2 in zip(id1_list, id2_list):
 
-            bool_int = int(
-                iid1 in total_carriers_set and iid2 in total_carriers_set)
+            bool_int = int(iid1 in total_carriers_set
+                           and iid2 in total_carriers_set)
 
             pairs_dict["pair_1"].append(iid1)
             pairs_dict["pair_2"].append(iid2)
@@ -165,7 +169,8 @@ class Network_Img_Maker():
             pairs_dict["Network ID"].append(NaN)
 
         self.pairs_df = pd.DataFrame(
-            pairs_dict, columns=["pair_1", "pair_2", "In Network", "Network ID"])
+            pairs_dict,
+            columns=["pair_1", "pair_2", "In Network", "Network ID"])
         print(self.pairs_df)
 
     ################################################################
@@ -189,7 +194,8 @@ class Network_Img_Maker():
 
         return chr_digit
 
-    def add_columns(self, dataframe: pd.DataFrame, variant: str, chr_num: str) -> pd.DataFrame:
+    def add_columns(self, dataframe: pd.DataFrame, variant: str,
+                    chr_num: str) -> pd.DataFrame:
         '''This function will take the carrier dataframe and add two columns for the variant id and the chr_num. It will then return the dataframe'''
 
         # getting just the chromosome number
@@ -203,7 +209,8 @@ class Network_Img_Maker():
 
         return dataframe
 
-    def draw_networks(self, reformated_df: pd.DataFrame, variant: str, chr_num: str, allpairs_df: pd.DataFrame) -> tuple:
+    def draw_networks(self, reformated_df: pd.DataFrame, variant: str,
+                      chr_num: str, allpairs_df: pd.DataFrame) -> tuple:
         '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions. It will return the path to the output file'''
 
         ##########################################################
@@ -223,8 +230,9 @@ class Network_Img_Maker():
 
             if id1 not in nodes_visited_set:
 
-                segments_file_subset = reformated_df[(reformated_df['pair_1']
-                                                      == id1) | (reformated_df['pair_2'] == id1)][["pair_1", "pair_2"]]
+                segments_file_subset = reformated_df[
+                    (reformated_df['pair_1'] == id1) |
+                    (reformated_df['pair_2'] == id1)][["pair_1", "pair_2"]]
 
                 ids1_set = set(segments_file_subset.pair_1.values.tolist())
 
@@ -233,12 +241,14 @@ class Network_Img_Maker():
                 ids_list = ids1_set | ids2_set
 
                 # insert recursive function here
-                self.generate_pair_list(
-                    ids_list, reformated_df, id1)
+                self.generate_pair_list(ids_list, reformated_df, id1)
 
                 # Subsetting the original dataframe for this full list
-                full_subset_df = reformated_df[(reformated_df.pair_1.isin(self.id_list)) | (
-                    reformated_df.pair_2.isin(self.id_list))][["pair_1", "pair_2"]]
+                full_subset_df = reformated_df[
+                    (reformated_df.pair_1.isin(self.id_list)) |
+                    (reformated_df.pair_2.isin(self.id_list))][[
+                        "pair_1", "pair_2"
+                    ]]
 
                 # iterating through each row
                 for row in full_subset_df.itertuples():
@@ -278,27 +288,29 @@ class Network_Img_Maker():
                     #     edges_drawn.append((Pair_id2, Pair_id1))
 
                 ###########################################################################
-                    # Next section is responsible for updating which IID is in which network
-                    # Updating the self.network_carriers dataframe so that the Network id gets set to a number
+                # Next section is responsible for updating which IID is in which network
+                # Updating the self.network_carriers dataframe so that the Network id gets set to a number
 
-                    idx = self.network_carriers.index[self.network_carriers["IID"] == Pair_id1]
+                    idx = self.network_carriers.index[
+                        self.network_carriers["IID"] == Pair_id1]
 
-                    self.network_carriers.loc[idx, [
-                        "Network ID"]] = str(network_number)
+                    self.network_carriers.loc[idx, ["Network ID"]] = str(
+                        network_number)
 
-                    idx = self.network_carriers.index[self.network_carriers["IID"] == Pair_id2]
+                    idx = self.network_carriers.index[
+                        self.network_carriers["IID"] == Pair_id2]
 
-                    self.network_carriers.loc[idx, [
-                        "Network ID"]] = str(network_number)
+                    self.network_carriers.loc[idx, ["Network ID"]] = str(
+                        network_number)
 
                 ###########################################################################
-                    # adding the network id to he above dataframe
+                # adding the network id to he above dataframe
 
-                    # pair_idx1 = self.pairs_df.index[(self.pairs_df["pair_1"] == Pair_id1) & (
-                    #     self.pairs_df["pair_2"] == Pair_id2)]
+                # pair_idx1 = self.pairs_df.index[(self.pairs_df["pair_1"] == Pair_id1) & (
+                #     self.pairs_df["pair_2"] == Pair_id2)]
 
-                    # self.pairs_df.loc[pair_idx1, [
-                    #     "Network ID"]] = str(network_number)
+                # self.pairs_df.loc[pair_idx1, [
+                #     "Network ID"]] = str(network_number)
 
                 # This updates which network is being created
                 network_number += 1
@@ -308,27 +320,32 @@ class Network_Img_Maker():
                 # allpairs_df = pd.concat([allpairs_df, self.pairs_df])
 
         # Adding a column for the variant number and the chr number so that we can output just one file
-        self.network_carriers = self.add_columns(
-            self.network_carriers, variant, chr_num)
+        self.network_carriers = self.add_columns(self.network_carriers,
+                                                 variant, chr_num)
 
         # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
-        self.network_carriers.to_csv(
-            "".join([self.output_path, "/network_groups", ".csv"]), index=False, mode="a")
+        self.network_carriers.to_csv("".join(
+            [self.output_path, "/network_groups", ".csv"]),
+                                     index=False,
+                                     mode="a")
 
         # allpairs_df.to_csv(
         #     "".join([self.output_path, "/pairs_in_networks", ".csv"]), index=False, mode="a")
 
         # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
-        return "".join([self.output_path, "/network_groups", ".csv"]), allpairs_df
+        return "".join([self.output_path, "/network_groups",
+                        ".csv"]), allpairs_df
 
-    def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame, current_id1: str) -> set:
+    def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame,
+                           current_id1: str) -> set:
         '''This function identifies all the potential pair ids for '''
 
         # First subset the dataframe for all the current ids
-        new_df_subset = segment_df[(segment_df['pair_1'].isin(current_id_set)) | (
-            segment_df['pair_2'].isin(current_id_set))][["pair_1", "pair_2"]]
+        new_df_subset = segment_df[
+            (segment_df['pair_1'].isin(current_id_set)) |
+            (segment_df['pair_2'].isin(current_id_set))][["pair_1", "pair_2"]]
 
         # These next three lines use sets to avoid duplicate values
         # This gets all ids from the pair one column

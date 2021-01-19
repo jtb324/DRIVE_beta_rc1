@@ -130,6 +130,7 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
                     ind_in_network_dict: dict, output_path: str) -> dict:
     print(segments_file_dir)
     print(variant_file_dir)
+    print("printing the output path")
     print(output_path)
     check_file_exist("".join([output_path, "/network_groups", ".csv"]))
 
@@ -144,18 +145,18 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
 
     network_drawer: object = create_network_scripts.Network_Img_Maker(
         segments_file_dir, variant_file_dir, output_path)
-
+    print(segments_file_dir)
     # Getting all of the allpair files into a list
     allpair_file_list: list = network_drawer.gather_files(
         segments_file_dir, "*.allpair.txt")
-
+    print(variant_file_dir)
     # Getting a list of all the carrier files
     carrier_file_list: list = network_drawer.gather_files(
-        variant_file_dir, "*.single_var_list_reformat.csv")
+        "".join([variant_file_dir, "reformated/"]),
+        "*.single_var_list_reformat.csv")
 
     # iterating through the carrier_file list for each file
     for file in carrier_file_list:
-        print(file)
 
         # This function will get the chromosome number of the file
         chr_num: str = get_chr_num(file)

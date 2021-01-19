@@ -71,7 +71,6 @@ def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
         for ibd_program in program_list:
 
             if ibd_program in ibd_file:
-                print(ibd_file)
                 underscore_indx = ibd_file.find("".join([ibd_program, "_"]))
 
                 shorten_ibd_file_string: str = ibd_file[underscore_indx +
@@ -190,7 +189,6 @@ def get_carrier_file_list(carrier_files_dir: str) -> list:
 
 def get_carrier_list(file: str, variant_id: str) -> list:
     '''Getting the list of characters'''
-    print(file)
     carrier_df = pd.read_csv(file, sep=",")
 
     # filter dataframe for those individuals carrying the variant
