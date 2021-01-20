@@ -9,19 +9,11 @@ import create_network_scripts
 def get_chr_num(file: str) -> str:
     '''This function will get the chr_num from the file name'''
 
-    match = re.search(r'chr\d\d_', file)
+    match = re.search(r'chr\d\d.', file)
 
     # find chromosome number
-    if match:
-
-        chr_num = match.group(0)
-
-    else:
-        match = re.search(r'chr\d_', file)
-
-        chr_num = match.group(0)
-
-    chr_num = chr_num.strip(".").strip("_")
+    chr_num: str = match.group(0)
+    chr_num = chr_num.strip(".")
 
     return chr_num
 
@@ -51,7 +43,6 @@ def create_carrier_dict(file) -> dict:
 
         carrier_dict[variant] = carrier_list
 
-    print(f"The dictionary size is {str(carrier_dict.__sizeof__())}")
 
     return carrier_dict
 
@@ -128,10 +119,6 @@ def write_missing_variants(variant: str, output_path: str):
 
 def create_networks(segments_file_dir: str, variant_file_dir: str,
                     ind_in_network_dict: dict, output_path: str) -> dict:
-    print(segments_file_dir)
-    print(variant_file_dir)
-    print("printing the output path")
-    print(output_path)
     check_file_exist("".join([output_path, "/network_groups", ".csv"]))
 
     check_file_exist("".join([output_path, "/pairs_in_networks", ".csv"]))
@@ -145,11 +132,9 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
 
     network_drawer: object = create_network_scripts.Network_Img_Maker(
         segments_file_dir, variant_file_dir, output_path)
-    print(segments_file_dir)
     # Getting all of the allpair files into a list
     allpair_file_list: list = network_drawer.gather_files(
         segments_file_dir, "*.allpair.txt")
-    print(variant_file_dir)
     # Getting a list of all the carrier files
     carrier_file_list: list = network_drawer.gather_files(
         "".join([variant_file_dir, "reformated/"]),
@@ -187,7 +172,6 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
                 # TODO: add a function to write these variants to a file so that you can identify them
 
                 continue
-            print(allpair_file_path)
             # Loading the dataframe
             allpair_df: pd.DataFrame = network_drawer.load_allpair_file(
                 allpair_file_path)
@@ -222,7 +206,6 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
             output_path, pairs_df = network_drawer.draw_networks(
                 filtered_allpair_df, variant_id, chr_num, pairs_df)
 
-            print(output_path)
             # add_header_row(output_path)
 
             get_size(output_path)

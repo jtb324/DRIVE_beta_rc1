@@ -78,7 +78,6 @@ class Pre_Shared_Segment_Converter:
     # returns a dataframe and a string
     def create_variant_lists(self, chromo_var_file: str, map_file_path: str):
         '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
-        print(self.output)
         # this makes the directory name to output the files to
         var_list_dir = "".join([self.output, "variant_lists/"])
 
@@ -122,10 +121,6 @@ class Pre_Shared_Segment_Converter:
                 len(variant_id) - 2)]].chr.values[0]
 
             if carrier_df_size == 1:
-
-                print(
-                    f"There was only {carrier_df_size} row found within the provided list of carriers per variant"
-                )
 
                 # If this single variant has no carriers than the function returns empty strings for the
                 #var_info_file_path, variant_directory
@@ -231,11 +226,11 @@ class Shared_Segment_Convert(newPOS):
         self.variant_name = variant_id
 
         # Printing the initialized
-        print('Input: {}'.format(self.segment_file))
-        print('Phenotype file: {}'.format(self.iid_file))
-        print('Output: {}'.format(self.output))
-        print('Input file format: {}'.format(self.format))
-        print('Min output IBD length: {}'.format(self.min_cM))
+        #print('Input: {}'.format(self.segment_file))
+        #print('Phenotype file: {}'.format(self.iid_file))
+        #print('Output: {}'.format(self.output))
+        #print('Input file format: {}'.format(self.format))
+        #print('Min output IBD length: {}'.format(self.min_cM))
 
     def generate_parameters(self) -> dict:
         '''This will get some of the parameters used later'''
@@ -440,6 +435,8 @@ class Shared_Segment_Convert(newPOS):
                 self.output, '_', self.variant_name, '.chr',
                 str(CHR), '.small.txt.gz'
             ])
+
+            print(write_path)
 
             out = gzip.open(write_path, 'wt')
 

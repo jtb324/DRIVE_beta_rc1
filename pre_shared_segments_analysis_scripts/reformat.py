@@ -264,10 +264,9 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
         genotype_df: pd.DataFrame = form_genotype_df(map_file, file)
 
         # getting the correct carrier file based off of the chromosome
-
         car_file: str = [
             carrier_file for carrier_file in carrier_files
-            if "".join([chr_num, "_"]) in carrier_file
+            if chr_num in carrier_file
         ][0]
 
         # load the car_file into a dataframe

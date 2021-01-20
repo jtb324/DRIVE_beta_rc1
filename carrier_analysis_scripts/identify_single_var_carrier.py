@@ -23,10 +23,6 @@ import population_filter_scripts
 def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
     """this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row."""
 
-    print(
-        "The total number of individual carrier of at least one desired variant is: {}"
-        .format(len(iid_list)))
-
     file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
 
     writeDirectory = file_creator_scripts.writePath(writeLocation, file_name)
@@ -87,9 +83,7 @@ def singleVariantAnalysis(
         pass
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
-    print(recodeFile)
     recode_file_list = find_all_files(recodeFile)
-    print(recode_file_list)
     for file_tuple in recode_file_list:
         match = re.search(r".chr\d\d_", file_tuple[1])
 
@@ -113,7 +107,6 @@ def singleVariantAnalysis(
         output_fileName = "".join(
             [file_prefix, ".", "single_variant_carrier.csv"])
 
-        print(output_fileName)
         recodeFile = file_tuple[0]
 
         file_checker = file_creator_scripts.Check_File_Exist(recodeFile)
@@ -123,8 +116,6 @@ def singleVariantAnalysis(
         # subsetting the raw_file for a specific population if the population code, pop_code, is provided
 
         if pop_code:
-
-            print(f"this is the population code being used: {pop_info}")
 
             dataset_filter = population_filter_scripts.Pop_Filter(
                 pop_info, raw_file)

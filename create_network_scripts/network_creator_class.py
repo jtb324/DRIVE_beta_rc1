@@ -101,7 +101,6 @@ class Network_Img_Maker():
     def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame,
                             ind_in_networks_dict: dict, variant: str) -> dict:
         '''This function tells the percent of carriers who are in these networks'''
-        print(subset_df)
         id1_set: set = set(subset_df.pair_1.values.tolist())
 
         id2_set: set = set(subset_df.pair_2.values.tolist())
@@ -171,7 +170,6 @@ class Network_Img_Maker():
         self.pairs_df = pd.DataFrame(
             pairs_dict,
             columns=["pair_1", "pair_2", "In Network", "Network ID"])
-        print(self.pairs_df)
 
     ################################################################
     @staticmethod
@@ -256,8 +254,6 @@ class Network_Img_Maker():
                     # breaking up the tuple into each pair
                     Pair_id1 = row[1]
                     Pair_id2 = row[2]
-                    print(f"Pair_id1: {Pair_id1}")
-                    print(f"Pair_id2: {Pair_id2}")
                     # This if statements only makes Pair_id1 a node if it is not already constructed
                     if Pair_id1 not in nodes_constructed:
 

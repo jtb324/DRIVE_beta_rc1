@@ -28,14 +28,3 @@ def get_alt_chr_num(chr_num: str) -> str:
     running'''
 
     return "".join(chr_num.split("0"))
-
-
-def add_zero_to_chr_num(chr_num: str) -> str:
-    '''This function will take the chromsome number format of chr1 and convert to 
-    chr01 for all single digit numbers'''
-
-    chr_str: str = chr_num[0:3]
-
-    chr_number: str = chr_num[-1:]
-
-    return "".join([chr_str, "0", chr_number])

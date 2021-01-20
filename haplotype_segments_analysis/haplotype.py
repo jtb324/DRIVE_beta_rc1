@@ -93,7 +93,6 @@ def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
     alt_chr_num = None
     if chr_num:
         alt_chr_num: str = alternate_chr_num_format(chr_num)
-
         file_str: str = [
             file for file in file_list
             if chr_num in file or alt_chr_num in file
@@ -349,7 +348,7 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list,
 
     allpair_file: str = get_file(allpair_file_list, identifier=variant)
 
-    print(f"using allpair file {allpair_file}")
+    # print(f"using allpair file {allpair_file}")
 
     chr_num: str = get_chr_id(allpair_file)
 
@@ -360,7 +359,7 @@ def get_haplotype(allpair_file_list: list, carrier_file_list: list,
 
     # getting the specific carrier file for the chromosome
     carrier_file: str = get_file(carrier_file_list,
-                                 chr_num="".join([chr_num, "_"]))
+                                 chr_num="".join([chr_num, "."]))
 
     carriers_list: list = get_carriers(carrier_file, full_variant_id)
 

@@ -70,7 +70,7 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
 
-    #creating a directory
+    # creating a directory
     preformater = pre_shared_segments_analysis_scripts.Pre_Shared_Segment_Converter(
         ibd_files, carrier_file, ibd_program, output, map_file_dir)
 
@@ -81,43 +81,34 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
 
     # getting the list of map files
     map_file_list = preformater.get_map_files()
-
     # Need to make sure that the proper segment file is passed with the proper chromosome file
     for chromo_file in chr_var_file_list:
+        match = re.search(r'chr\d\d\.', chromo_file)
 
-        match = re.search(r'chr\d_', chromo_file)
+        chr_num = match.group(0)
+        if (chr_num.find("0") < len(chr_num) - 2) and chr_num.find("0") != -1:
 
-        if match:
+            zero_indx: str = chr_num.find("0")
 
-            chr_num = match.group(0)
+            alt_chr_num: str = "".join(
+                [chr_num[:zero_indx], chr_num[zero_indx + 1:]])
 
-            # removing the _ in the file name
-            chr_num = chr_num[:len(chr_num) - 1]
-
-            # adding a .
-            chr_num = "".join([chr_num, "."])
-
-        else:
-
-            match = re.search(r'chr\d\d_', chromo_file)
-
-            chr_num = match.group(0)
-
-            # removing the _ in the file name
-            chr_num = chr_num[:len(chr_num) - 1]
-
-            # adding a .
-            chr_num = "".join([chr_num, "."])
-
-        alt_chr_num: str = alternate_chr_num_format(chr_num)
+        hypen_chr_num: str = "".join([chr_num.strip("."), "_"])
 
         # Creating a tuple that gets the proper segment_file and the proper map file that corresponds to that chr
         segment_map_tuple = [
             (segment_file, map_file) for segment_file in segment_file_list
             for map_file in map_file_list
-            if (chr_num in segment_file or alt_chr_num in segment_file)
-            and "".join([".", match.group(0)]) in map_file
+            if chr_num in segment_file and hypen_chr_num in map_file
         ]
+
+        if not segment_map_tuple:
+            segment_map_tuple = [
+                (segment_file, map_file) for segment_file in segment_file_list
+                for map_file in map_file_list
+                if (chr_num in segment_file or alt_chr_num in segment_file)
+                and hypen_chr_num in map_file
+            ]
 
         # This checks to see if the tuple is empty or not
         if segment_map_tuple:
@@ -125,7 +116,6 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
             # This gets the values out of the tuple
             # The first element is the segment file
             segment_file = segment_map_tuple[0][0]
-
             # The second element is the map file
             map_file = segment_map_tuple[0][1]
 
@@ -197,7 +187,6 @@ def run_main(segment_file: str, output_path: str, ibd_format: list,
 
     pheno_file = iid_file
 
-    print(pheno_file)
     ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
         segment_file, pheno_file, output_path, ibd_format, min_CM, 1,
         variant_position, variant_id)

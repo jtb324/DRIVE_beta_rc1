@@ -249,11 +249,10 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
 
     # use list comprehension to find the file with that chr_num
     alt_chr_num: str = alternate_chr_num_format(chr_num)
-
     carrier_file = [
         file for file in carrier_list
-        if "".join([chr_num.strip("."), "_"]) in file
-        or "".join([alt_chr_num.strip("."), "_"]) in file
+        if chr_num.strip(".") in file
+        or alt_chr_num.strip(".") in file
     ][0]
 
     # getting the list of carriers' iids for the specific variant
@@ -365,8 +364,8 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str,
 
             files[f.split(':', 1)[0]] = f.split(':', 1)[1]
 
-        print('input {0} files: {1}'.format(len(files),
-                                            ' '.join(files.keys())))
+        # print('input {0} files: {1}'.format(len(files),
+          #                                  ' '.join(files.keys())))
 
         curr_pair = {}
         curr_pos = {}

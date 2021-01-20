@@ -36,7 +36,7 @@ def get_chr_num(carrier_file: str) -> str:
         chr_num = chr_num[:len(chr_num) - 1]
 
     else:
-        match = re.search(r'chr\d\d_', carrier_file)
+        match = re.search(r'chr\d\d.', carrier_file)
 
         chr_num = match.group(0)
 
@@ -56,12 +56,14 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list,
         for file in carrier_file_list:
 
             chr_num = get_chr_num(file)
+             
+            alt_chr: str = "".join([chr_num, "."])
             chr_num = "".join([chr_num, "_"])
 
             car_raw_file_tuple = [
                 (carrier_file, raw_file) for carrier_file in carrier_file_list
                 for raw_file in raw_file_list
-                if chr_num in carrier_file and chr_num in raw_file
+                if alt_chr in carrier_file and chr_num in raw_file
             ]
 
             carrier_file = car_raw_file_tuple[0][0]
