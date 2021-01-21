@@ -22,7 +22,7 @@ def identify_unique_variants(confirmed_carrier_file: str) -> list:
 
     # gets a list of all the unique variants in the file
     unique_var_list: list = confirmed_carrier_df.variant_id.unique().tolist()
-    print(f"{len(unique_var_list)} unique variants identified")
+    # print(f"{len(unique_var_list)} unique variants identified")
 
     return unique_var_list
 

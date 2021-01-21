@@ -19,7 +19,7 @@ import full_analysis
 
 
 def run(args):
-    ## Next few lines give settings for the logger
+    # Next few lines give settings for the logger
 
     # Setting the format for a logger
     log_format = ('[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
@@ -115,8 +115,8 @@ def run(args):
             "".join([args.output, "plink_output_files/"]),
         )
 
-        # TODO: need to return a value for where the plink files should be
-
+    # This next section runs the first level of the program using the maf analysis type
+    # this means that the
     elif ANALYSIS_TYPE.lower() == "maf":
         print(
             f"extracting all variants below a minor allele frequency of {MAF_FILTER}"
@@ -200,7 +200,7 @@ def run(args):
     print("converting the ibd output to a human readable version...")
 
     IBD_search_output_files: str = "".join(
-        [args.output, "formated_ibd_output/"])
+        [args.output, "formatted_ibd_output/"])
 
     if not path.exists(IBD_search_output_files):
 

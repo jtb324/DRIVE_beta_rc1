@@ -110,7 +110,7 @@ class Network_Img_Maker():
         carriers_in_network: int = sum(item in total_carriers_set
                                        for item in set(iid_list))
 
-        print(f"This is the carriers_in_network, {carriers_in_network}")
+        # print(f"This is the carriers_in_network, {carriers_in_network}")
 
         percent_in_networks: float = carriers_in_network / len(iid_list) * 100
 
@@ -177,18 +177,10 @@ class Network_Img_Maker():
         '''This function takes the chr_num string, which has a format
         chr**, where the ** are digits and returns just the digit'''
 
-        if len(chr_num) == 5:
+        match = re.search(r'\d\d', chr_num)
 
-            match = re.search(r'\d\d', chr_num)
-
-            # getting the chromosome digit
-            chr_digit: str = match.group(0)
-
-        elif len(chr_num) == 4:
-
-            match = re.search(r'\d', chr_num)
-
-            chr_digit: str = match.group(0)
+        # getting the chromosome digit
+        chr_digit: str = match.group(0)
 
         return chr_digit
 
@@ -353,7 +345,7 @@ class Network_Img_Maker():
 
         # If the total_id_set equals the current_id_set then the function stops
         if total_id_set == current_id_set:
-            print(f"found all ids connected to the grid {current_id1}")
+            # print(f"found all ids connected to the grid {current_id1}")
             # returns the set of ids
             self.id_list = total_id_set
             return

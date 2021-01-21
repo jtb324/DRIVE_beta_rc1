@@ -1,6 +1,7 @@
 import pandas as pd
 import glob
 import os
+from os import path
 import re
 import population_filter_scripts
 # need to gather all of the single var list
@@ -48,15 +49,26 @@ def get_chr_num(carrier_file: str) -> str:
 
 def get_allele_frq(carrier_file_list: list, raw_file_list: list,
                    pop_info_filepath: str, pop_code: str, output_path: str):
-    with open(
-            "".join([
-                output_path, "carrier_analysis_output/allele_frequencies.txt"
-            ]), "a+") as myFile:
+    '''This is the function that determines the minor allele frequency of the 
+    variants and then writes it to a file'''
+
+    frequency_file_path: str = "".join(
+        [output_path, "carrier_analysis_output/allele_frequencies.txt"])
+
+    # deleting the previous file so that it does not write repeating values
+    if path.exists(frequency_file_path):
+
+        os.remove(frequency_file_path)
+
+    # opening the file to write to it
+    with open(frequency_file_path, "a+") as myFile:
+
         myFile.write("chr\tvariant_id\tallele_freq\n")
+
         for file in carrier_file_list:
 
             chr_num = get_chr_num(file)
-             
+
             alt_chr: str = "".join([chr_num, "."])
             chr_num = "".join([chr_num, "_"])
 

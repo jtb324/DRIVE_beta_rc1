@@ -297,7 +297,7 @@ class Shared_Segment_Convert(newPOS):
                 uniqID[line] = IDnum
                 IDnum = IDnum + 1
 
-        print('identified ' + str(len(uniqID)) + ' unique IDs')
+        # print('identified ' + str(len(uniqID)) + ' unique IDs')
 
         # Closing the file
         pheno_file.close()
@@ -426,8 +426,8 @@ class Shared_Segment_Convert(newPOS):
                         IBDdata[CHR][str(end)].rem.append(str(pair))
         try:
 
-            print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
-                  ' breakpoints on chr' + str(CHR))
+            # print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
+            #       ' breakpoints on chr' + str(CHR))
 
             # Opening the file .small/txt/gz file to write to
             # NEED TO FIX THIS LINE HERE
@@ -435,8 +435,6 @@ class Shared_Segment_Convert(newPOS):
                 self.output, '_', self.variant_name, '.chr',
                 str(CHR), '.small.txt.gz'
             ])
-
-            print(write_path)
 
             out = gzip.open(write_path, 'wt')
 
