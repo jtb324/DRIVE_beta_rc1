@@ -16,9 +16,23 @@ import pre_shared_segments_analysis_scripts
 import plink_initial_format_scripts
 import haplotype_segments_analysis
 import full_analysis
+import utility_scripts
 
 
 def run(args):
+    # creating the README for the main parent directory
+    readme = utility_scripts.Readme("_README.md", args.output)
+
+    readme.rm_previous_file()
+
+    readme.write_header(args.output)
+
+    readme.create_date_info()
+
+    readme.add_line(utility_scripts.main_parameter_text)
+    readme.add_line(utility_scripts.main_directory_header)
+    readme.add_line(utility_scripts.main_directory_text)
+
     # Next few lines give settings for the logger
 
     # Setting the format for a logger
@@ -220,8 +234,6 @@ def run(args):
             file for file in IBD_PATHS_LIST if program in file.lower()
         ][0]
 
-        print(ibd_file)
-
         pre_shared_segments_analysis_scripts.convert_ibd(
             ibd_file, "".join([args.output, "carrier_analysis_output/"]),
             program, IBD_search_output_files,
@@ -256,13 +268,14 @@ def run(args):
 
     output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
 
+    network_dir: str = "".join([args.output, "networks/"])
     if not path.exists(output):
         os.mkdir(output)
 
     carrier_in_network_dict = create_network_scripts.create_networks(
         IBD_search_output_files,
-        "".join([args.output,
-                 "carrier_analysis_output/"]), carrier_in_network_dict, output)
+        "".join([args.output, "carrier_analysis_output/"]),
+        carrier_in_network_dict, output, network_dir)
 
     # Writing the dictionary to a csv file
     csv_writer = file_creator_scripts.Csv_Writer_Object(

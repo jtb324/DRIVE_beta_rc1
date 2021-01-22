@@ -6,6 +6,8 @@ from os import path
 import sys
 import glob
 
+import utility_scripts
+
 
 class PLINK_Runner:
     def __init__(
@@ -18,6 +20,7 @@ class PLINK_Runner:
         self.binary_file = binary_file
         self.output = output
         self.current_dir = os.getcwd()
+
         if "var_list_dir" in name:
             self.var_list_dir = name["var_list_dir"]
         self.recode = recode_flag
@@ -33,6 +36,17 @@ class PLINK_Runner:
         if "chr_num" in name:
 
             self.chr_num = name["chr_num"]
+
+        self.generate_readme()
+
+    def generate_readme(self):
+        '''This function will generate a readme for when this class is called'''
+        readme = utility_scripts.Readme(
+            "_README.md", "".join([self.output, "plink_output_files/"]))
+        readme.rm_previous_file()
+        readme.write_header("".join(["plink_output_files/"]))
+        readme.create_date_info()
+        readme.add_line(utility_scripts.plink_readme_body_text)
 
     def generate_file_list(self) -> list:
         """This function will return a list of all the variant files that can be fed to PLINK"""

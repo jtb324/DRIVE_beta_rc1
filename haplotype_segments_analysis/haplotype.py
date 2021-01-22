@@ -10,6 +10,7 @@ from functools import partial
 import multiprocessing as mp
 
 from haplotype_segments_analysis.network_ids import filter_df, filter_for_pairs
+import utility_scripts
 
 
 def identify_unique_variants(confirmed_carrier_file: str) -> list:
@@ -474,11 +475,22 @@ def sort_file(output_file_path: str):
     haplotype_df.to_csv(output_file_path, na_rep="N/A", index=False, sep="\t")
 
 
+def create_readme(output_path: str):
+    '''This function creates a readme for the specified output path'''
+    readme = utility_scripts.Readme("_README.md", output_path)
+    readme.rm_previous_file()
+    readme.write_header("haplotype_analysis/")
+    readme.create_date_info()
+    readme.add_line(utility_scripts.haplotype_analysis_body_text)
+
+
 def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
                         ilash_dir: str, hapibd_dir: str, threads: int,
                         map_file_dir: str, reformated_carrier_files: str,
                         network_file: str, allpair_files: str):
     "function to run"
+
+    create_readme(output_path)
     # removing output files from previous runs
     remove_previous_file("".join([output_path, "haplotype_info.txt"]))
 

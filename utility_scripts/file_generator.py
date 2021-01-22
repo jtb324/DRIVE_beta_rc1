@@ -32,7 +32,7 @@ class Documentation:
 
             # Writing header information to the file
             file.write(f"run started on {self.day} at {self.time}\n")
-            file.write(f"run started by user: {self.user}\n")
+            file.write(f"run started by user: {self.user}\n\n")
 
 
 class Readme(Documentation):
@@ -41,19 +41,19 @@ class Readme(Documentation):
 
         super().__init__(file_name, output_path)
 
-        def write_header(self, header_str: str, directory_name: str):
-            '''This function will write a fairly genetic header for the file'''
+    def write_header(self, directory_name: str):
+        '''This function will write a fairly genetic header for the file'''
 
-            with open(self.file_name, "a+") as readme_file:
+        with open(self.file_name, "a+") as readme_file:
 
-                readme_file.write(
-                    f"# README for the {directory_name} directory:\n")
+            readme_file.write(
+                f"# README for the {directory_name} directory:\n\n")
 
-        def add_line(self, info_str: str):
-            '''This function will the info_str to a new line in the document'''
+    def add_line(self, info_str: str):
+        '''This function will the info_str to a new line in the document'''
 
-            with open(
-                    self.file_name,
-                    "a+",
-            ) as readme_file:
-                readme_file.write(info_str + "\n")
+        with open(
+                self.file_name,
+                "a+",
+        ) as readme_file:
+            readme_file.write(info_str + "\n")

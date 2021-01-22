@@ -12,6 +12,7 @@ import multiprocessing as mp
 from functools import partial
 
 import pre_shared_segments_analysis_scripts
+import utility_scripts
 
 ####################################################################################################
 
@@ -63,13 +64,23 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
+def create_readme(output: str):
+    '''This function creates a readme file in the specified directory'''
+    readme = utility_scripts.Readme("_README.md", output)
+    readme.rm_previous_file()
+    readme.write_header("formatted_ibd_output/")
+    readme.create_date_info()
+    readme.add_line(utility_scripts.formatted_ibd_dir_body_text_1)
+    readme.add_line(utility_scripts.formatted_ibd_dir_body_text_2)
+
+
 def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
                 output: str, map_file_dir: str, file_suffix: str, min_CM: str,
                 threads: str):
 
     ###########################################################
     # This first section will be used to get the shared segment files for each chromosome
-
+    create_readme(output)
     # creating a directory
     preformater = pre_shared_segments_analysis_scripts.Pre_Shared_Segment_Converter(
         ibd_files, carrier_file, ibd_program, output, map_file_dir)

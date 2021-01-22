@@ -13,6 +13,7 @@ import re
 
 import file_creator_scripts
 import population_filter_scripts
+import utility_scripts
 
 ###################################################################################
 # Function to find the total number of variants
@@ -60,6 +61,16 @@ def find_all_files(input_file_path: str):
     return recode_file_list
 
 
+def create_readme(output_path):
+    '''This function creates a readme object for the singleVariantAnalysis function'''
+
+    readme = utility_scripts.Readme("_README.md", output_path)
+    readme.rm_previous_file()
+    readme.write_header(output_path)
+    readme.create_date_info()
+    readme.add_line(utility_scripts.carrier_analysis_body_text)
+
+
 ###########################################################################################
 # This function determines all the individuals who have a specific variant
 
@@ -83,6 +94,10 @@ def singleVariantAnalysis(
         pass
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
+
+    # creating the readme
+    create_readme(output_path)
+
     recode_file_list = find_all_files(recodeFile)
     for file_tuple in recode_file_list:
         match = re.search(r".chr\d\d_", file_tuple[1])

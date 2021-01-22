@@ -4,6 +4,7 @@ import os
 import pandas as pd
 
 import create_network_scripts
+import utility_scripts
 
 
 def get_chr_num(file: str) -> str:
@@ -42,7 +43,6 @@ def create_carrier_dict(file) -> dict:
         carrier_list: list = carrier_df_subset["IID"].values.tolist()
 
         carrier_dict[variant] = carrier_list
-
 
     return carrier_dict
 
@@ -117,8 +117,21 @@ def write_missing_variants(variant: str, output_path: str):
             missing_files.write("\n")
 
 
+def create_readme(output_path: str):
+    '''This function will create a readme file for the specified directory'''
+    readme = utility_scripts.Readme("_README.md", output_path)
+    readme.rm_previous_file()
+    readme.write_header("networks/")
+    readme.create_date_info()
+    readme.add_line(utility_scripts.networks_body_text)
+
+
 def create_networks(segments_file_dir: str, variant_file_dir: str,
-                    ind_in_network_dict: dict, output_path: str) -> dict:
+                    ind_in_network_dict: dict, output_path: str,
+                    networks_dir: str) -> dict:
+
+    create_readme(networks_dir)
+
     check_file_exist("".join([output_path, "/network_groups", ".csv"]))
 
     check_file_exist("".join([output_path, "/pairs_in_networks", ".csv"]))
