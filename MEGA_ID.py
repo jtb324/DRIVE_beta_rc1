@@ -35,33 +35,36 @@ def run(args):
 
     # Next few lines give settings for the logger
 
-    # Setting the format for a logger
-    log_format = ('[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
+    # Creating a logfile
 
-    file_name: str = "".join([args.output, "mega_run.log"])
+    file_name: str = "".join([args.output, "run.log"])
 
     if path.exists(file_name):
         os.remove(file_name)
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format=log_format,
-        filename=(file_name),
-    )
-    logging.info("Starting the run...")
+
+    logfile = utility_scripts.LogFile("run.log", args.output)
+    logfile.write_header()
+    logfile.create_date_info()
+
+    logfile.add_newline("INFO", "Starting the run...\n")
+
     # Logging some of the info about the users input
-    logging.info(f"Binary File: {args.binary_file}")
-    logging.info(f"Recode options: {args.recode_options}")
-    logging.info(f"Writing the output to: {args.output}")
-    logging.info(f"The ibd programs being used are: {args.ibd_programs}")
-    logging.info(
-        f"The population information file describing the demographics is found at: {args.pop_info}"
+    logfile.add_newline("INFO", f"Binary File: {args.binary_file}\n")
+    logfile.add_newline("INFO", f"Recode options: {args.recode_options}\n")
+    logfile.add_newline("INFO", f"Writing the output to: {args.output}\n")
+    logfile.add_newline(
+        "INFO", f"The ibd programs being used are: {args.ibd_programs}\n")
+    logfile.add_newline(
+        "INFO",
+        f"The population information file describing the demographics is found at: {args.pop_info}\n"
     )
-    logging.info(f"The population code being used is: {args.pop_code}")
+    logfile.add_newline(
+        "INFO", f"The population code being used is: {args.pop_code}\n")
 
     # Asking for user input for constants that will be used throughout the program
     ANALYSIS_TYPE: str = input("Please input an analysis type: ").strip(" ")
 
-    logging.info(f"Using the analysis type: {ANALYSIS_TYPE}")
+    logfile.add_newline("INFO", f"Using the analysis type: {ANALYSIS_TYPE}\n")
 
     if ANALYSIS_TYPE not in ["gene", "maf", ""]:
         print(
@@ -77,7 +80,8 @@ def run(args):
     if not MIN_CM:
         MIN_CM = 3
 
-    logging.info(f"using a minimum centimorgan threshold of {MIN_CM}")
+    logfile.add_newline(
+        "INFO", f"using a minimum centimorgan threshold of {MIN_CM}\n")
 
     THREADS: int = int(
         input(
@@ -87,7 +91,7 @@ def run(args):
     if not THREADS:
         THREADS = 3
 
-    logging.info(f"setting the thread count to be {THREADS}")
+    logfile.add_newline("INFO", f"setting the thread count to be {THREADS}\n")
 
     if ANALYSIS_TYPE == "maf":
 
@@ -96,23 +100,28 @@ def run(args):
             "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
         )
 
-        logging.info(
-            f"Using a minor allele frequency threshold of {MAF_FILTER}")
+        logfile.add_newline(
+            "INFO",
+            f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
 
         CHR: str = input(
             "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
         )
 
-        logging.info(
-            f"Setting the chromosome of interest to be chromosome {CHR}")
+        logfile.add_newline(
+            "INFO",
+            f"Setting the chromosome of interest to be chromosome {CHR}\n")
 
     ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
     HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
 
-    logging.info(f"The specified path to the iLASH files are {ILASH_PATH}")
+    logfile.add_newline(
+        "INFO", f"The specified path to the iLASH files are {ILASH_PATH}\n")
 
-    logging.info(f"The specified path to the hapibd files are {HAPIBD_PATH}")
+    logfile.add_newline(
+        "INFO",
+        f"The specified path to the hapibd files are {HAPIBD_PATH}\n\n")
 
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
     # TO
@@ -141,8 +150,9 @@ def run(args):
             START_RS: str = args.range[0]
             END_RS: str = args.range[1]
 
-            logging.info(
-                f"beginning analysis for the range starting with the variant {START_RS} and ending at {END_RS}"
+            logfile.add_newline(
+                "INFO",
+                f"beginning analysis for the range starting with the variant {START_RS} and ending at {END_RS}\n"
             )
 
             plink_runner = plink_initial_format_scripts.PLINK_Runner(
@@ -164,7 +174,8 @@ def run(args):
 
         plink_file_path: str = plink_runner.run_PLINK_maf_filter()
 
-        logging.info(f"PLINK output files written to: {plink_file_path}")
+        logfile.add_newline(
+            "INFO", f"PLINK output files written to: {plink_file_path}\n")
 
         # TODO: need to return a string listing the location of the plink
         # output files
@@ -184,7 +195,7 @@ def run(args):
     #         args.input, args.output, args.compatible_format, "multi_variant_list.csv"
     #     )
 
-    #     logging.info(
+    #     logfile.add_newline(
     #         "Finished creating a list of individuals carrying multiple variants"
     #     )
 
@@ -198,8 +209,9 @@ def run(args):
         args.pop_code,
     )
 
-    logging.info(
-        f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
+    logfile.add_newline(
+        "INFO",
+        f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}\n"
     )
     # The above function outputs files to a subdirectory called "carrier_analysis_output"
 
@@ -252,8 +264,9 @@ def run(args):
         IBD_search_output_files,
         "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
     )
-    logging.info(
-        f"Writing the results from the IBD conversion files to: {IBD_search_output_files}"
+    logfile.add_newline(
+        "INFO",
+        f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
     )
 
     print(
@@ -284,8 +297,9 @@ def run(args):
 
     csv_writer.write_to_csv()
 
-    logging.info(
-        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
+    logfile.add_newline(
+        "INFO",
+        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}\n"
     )
 
     print(
@@ -307,8 +321,9 @@ def run(args):
         IBD_search_output_files,
     )
 
-    logging.info(
-        f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}"
+    logfile.add_newline(
+        "INFO",
+        f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}\n"
     )
     print(
         "generating a file contain the genotypes for all IIDs in the provided file"
@@ -320,11 +335,12 @@ def run(args):
         args.pop_info, "".join([args.output,
                                 "haplotype_analysis/"]), args.pop_code)
 
-    logging.info(
-        f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}"
+    logfile.add_newline(
+        "INFO",
+        f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}\n"
     )
 
-    logging.info('Analysis finished...')
+    logfile.add_newline("INFO", 'Analysis finished...\n')
 
     # TODO": Fix the timing issue so that it gives the correct time
     finishing_time = datetime.utcnow()

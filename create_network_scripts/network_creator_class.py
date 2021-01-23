@@ -112,7 +112,8 @@ class Network_Img_Maker():
 
         # print(f"This is the carriers_in_network, {carriers_in_network}")
 
-        percent_in_networks: float = carriers_in_network / len(iid_list) * 100
+        percent_in_networks: float = round(carriers_in_network / len(iid_list),
+                                           3)
 
         ind_in_networks_dict[variant] = percent_in_networks
 

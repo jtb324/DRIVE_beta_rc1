@@ -31,8 +31,14 @@ class Documentation:
         with open(self.file_name, "a+") as file:
 
             # Writing header information to the file
+            file.write(
+                "################################################################\n\n"
+            )
             file.write(f"run started on {self.day} at {self.time}\n")
             file.write(f"run started by user: {self.user}\n\n")
+            file.write(
+                "################################################################\n\n"
+            )
 
 
 class Readme(Documentation):
@@ -57,3 +63,43 @@ class Readme(Documentation):
                 "a+",
         ) as readme_file:
             readme_file.write(info_str + "\n")
+
+
+class LogFile(Documentation):
+    '''This class is used to create log files and is extended the
+    parent documentation class'''
+    def __init__(self, file_name: str, output_path: str):
+
+        super().__init__(file_name, output_path)
+
+    def write_header(self):
+        '''This function creates the header line for the log file'''
+
+        with open(self.file_name, "a+") as readme_file:
+
+            readme_file.write("Log file for the MEGA project:\n")
+
+    @staticmethod
+    def create_format_string(log_tag: str, text: str, time: str) -> str:
+        '''This function is responsible for '''
+
+        return f"{time} -- {log_tag}:   {text}\n"
+
+    def write_to_file(self, log_str: str):
+        '''This function will actually write the log string to a file'''
+
+        with open(self.file_name, "a+") as log_file:
+
+            log_file.write(log_str)
+
+    def add_newline(self, log_tag: str, text: str):
+        '''This will be the main function that is used to add a new line to the
+        log file'''
+
+        # Getting the time when the line will be added to the logfile
+        datetime_obj = datetime.now()
+        time = datetime_obj.strftime("%H:%M:%S")
+
+        log_str: str = self.create_format_string(log_tag, text, time)
+
+        self.write_to_file(log_str)
