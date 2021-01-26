@@ -55,7 +55,7 @@ class PLINK_Runner:
 
         file_list = []
 
-        for file in glob.glob("*.txt"):
+        for file in glob.glob("*list.txt"):
 
             if len(file) == 0:
                 print(

@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import logging
 import argparse
 import os.path
 from os import path
-import logging
 import sys
 from datetime import datetime
 
@@ -133,6 +131,13 @@ def run(args):
             args.var_file, args.output, args.recode_options, args.binary_file,
             "".join([args.output, "plink_output_files/"]), MAF_FILTER)
 
+        missing_var_count: int = plink_initial_format_scripts.check_for_missing_var(
+            plink_file_path, args.var_file)
+
+        logfile.add_newline(
+            "INFO",
+            f"There were {missing_var_count} missing variants between the provided input file at {args.var_file} and the plink output in the directory {plink_file_path}\n"
+        )
     # This next section runs the first level of the program using the maf analysis type
     # this means that the
     elif ANALYSIS_TYPE.lower() == "maf":
