@@ -107,6 +107,7 @@ def split_input_and_run_plink(
     recode_options: list,
     binary_file: str,
     plink_files_dir: str,
+    minor_allele_threshold: str,
 ) -> str:
     print(
         "splitting the single file of multiple chromosomes into multiple files of a single chromosome"
@@ -117,7 +118,11 @@ def split_input_and_run_plink(
     print("running PLINK...")
 
     plink_runner = plink_initial_format_scripts.PLINK_Runner(
-        recode_options, output, binary_file, var_list_dir=plink_files_dir)
+        recode_options,
+        output,
+        binary_file,
+        var_list_dir=plink_files_dir,
+        maf_filter=minor_allele_threshold)
 
     variant_file_list: list = plink_runner.generate_file_list()
 

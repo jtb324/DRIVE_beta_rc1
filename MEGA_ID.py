@@ -88,21 +88,20 @@ def run(args):
             "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
         ))
 
+    MAF_FILTER: str = '0.05'
+    MAF_FILTER: str = input(
+        "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
+    )
+
+    logfile.add_newline(
+        "INFO", f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
+
     if not THREADS:
         THREADS = 3
 
     logfile.add_newline("INFO", f"setting the thread count to be {THREADS}\n")
 
     if ANALYSIS_TYPE == "maf":
-
-        MAF_FILTER: str = '0.05'
-        MAF_FILTER: str = input(
-            "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
-        )
-
-        logfile.add_newline(
-            "INFO",
-            f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
 
         CHR: str = input(
             "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
@@ -131,12 +130,8 @@ def run(args):
         # subdirectory
 
         plink_file_path: str = plink_initial_format_scripts.split_input_and_run_plink(
-            args.var_file,
-            args.output,
-            args.recode_options,
-            args.binary_file,
-            "".join([args.output, "plink_output_files/"]),
-        )
+            args.var_file, args.output, args.recode_options, args.binary_file,
+            "".join([args.output, "plink_output_files/"]), MAF_FILTER)
 
     # This next section runs the first level of the program using the maf analysis type
     # this means that the
@@ -279,16 +274,14 @@ def run(args):
     if not path.exists("".join([args.output, "networks/"])):
         os.mkdir("".join([args.output, "networks/"]))
 
-    output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
+    # output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
 
     network_dir: str = "".join([args.output, "networks/"])
-    if not path.exists(output):
-        os.mkdir(output)
 
     carrier_in_network_dict = create_network_scripts.create_networks(
         IBD_search_output_files,
         "".join([args.output, "carrier_analysis_output/"]),
-        carrier_in_network_dict, output, network_dir)
+        carrier_in_network_dict, network_dir, network_dir)
 
     # Writing the dictionary to a csv file
     csv_writer = file_creator_scripts.Csv_Writer_Object(
@@ -317,7 +310,7 @@ def run(args):
         THREADS,
         "".join([args.output, "plink_output_files/"]),
         "".join([args.output, "carrier_analysis_output/", "reformated/"]),
-        "".join([args.output, "networks/", "network_imgs/network_groups.csv"]),
+        "".join([args.output, "networks/", "network_groups.csv"]),
         IBD_search_output_files,
     )
 

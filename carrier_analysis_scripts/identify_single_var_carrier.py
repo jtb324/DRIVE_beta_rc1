@@ -204,7 +204,6 @@ def singleVariantAnalysis(
                 ]),
                 index=False,
             )
-
         elif not bool(var_dict_reformat):
 
             print(

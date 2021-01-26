@@ -78,7 +78,6 @@ class PLINK_Runner:
         for var_file in file_list:
 
             for option in self.recode:
-                print(option)
                 output_file_name = var_file[:-4]
 
                 subprocess.run(
@@ -86,6 +85,8 @@ class PLINK_Runner:
                         "plink",
                         "--bfile",
                         self.binary_file,
+                        "--max-maf",
+                        self.maf,
                         "--extract",
                         var_file,
                         "--out",
@@ -99,9 +100,6 @@ class PLINK_Runner:
 
     def run_PLINK_maf_filter(self) -> str:
         """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
-        print(self.start)
-        print(self.end)
-        print(self.output)
         full_output_path: str = "".join([
             self.output, "plink_output_files/", self.start, "_", self.end,
             ".chr", self.chr_num, "_list"
