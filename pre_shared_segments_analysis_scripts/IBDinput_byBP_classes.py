@@ -11,9 +11,6 @@ import shutil
 
 import file_creator_scripts
 
-min_cM = 3
-cpu = 1
-
 ####################################################################################################
 
 
@@ -217,7 +214,16 @@ class Shared_Segment_Convert(newPOS):
         self.iid_file = str(pheno_file)
         # This will be the output directory. Need to add the ibd software to the end of it
         self.output_dir = output_path
-        self.output = "".join([output_path, ibd_program_used])
+
+        if not os.path.exists("".join([output_path, "reformated_ibd_output/"
+                                       ])):
+            try:
+                os.mkdir("".join([output_path, "reformated_ibd_output/"]))
+            except FileExistsError:
+                pass
+
+        self.output = "".join(
+            [output_path, "reformated_ibd_output/", ibd_program_used])
         self.format = str(ibd_program_used)
         self.min_cM = int(min_cM_threshold)
         self.thread = int(thread)

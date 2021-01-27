@@ -13,7 +13,6 @@ def gather_ibd_files(segment_dir: str) -> list:
     '''This function will get all of the files for a specific chromosome'''
     cur_dir = os.getcwd()
     os.chdir(segment_dir)
-
     ibd_file_list = []
 
     for file in glob.glob("*.small.txt.gz"):
@@ -23,7 +22,6 @@ def gather_ibd_files(segment_dir: str) -> list:
         ibd_file_list.append(full_file_path)
 
     os.chdir(cur_dir)
-
     return ibd_file_list
 
 
