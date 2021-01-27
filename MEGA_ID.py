@@ -86,10 +86,11 @@ def run(args):
             "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
         ))
 
-    MAF_FILTER: str = '0.05'
     MAF_FILTER: str = input(
         "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
     )
+    if not MAF_FILTER:
+        MAF_FILTER: str = '0.05'
 
     logfile.add_newline(
         "INFO", f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
@@ -145,7 +146,6 @@ def run(args):
             f"extracting all variants below a minor allele frequency of {MAF_FILTER}"
         )
 
-        # TODO: adjust this so that it accept a range of variants not a numeric range
         if args.range:
             START_RS: str = args.range[0]
             END_RS: str = args.range[1]
@@ -177,7 +177,6 @@ def run(args):
         logfile.add_newline(
             "INFO", f"PLINK output files written to: {plink_file_path}\n")
 
-        # TODO: need to return a string listing the location of the plink
         # output files
     else:
         print("no analysis method was passed to the program.")
@@ -275,7 +274,6 @@ def run(args):
     )
 
     # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
-    carrier_in_network_dict = dict()
 
     if not path.exists("".join([args.output, "networks/"])):
         os.mkdir("".join([args.output, "networks/"]))
@@ -284,17 +282,17 @@ def run(args):
 
     network_dir: str = "".join([args.output, "networks/"])
 
-    carrier_in_network_dict = create_network_scripts.create_networks(
+    create_network_scripts.create_networks(
         IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/"]),
-        carrier_in_network_dict, network_dir, network_dir)
+        "".join([args.output,
+                 "carrier_analysis_output/"]), network_dir, network_dir)
 
     # Writing the dictionary to a csv file
-    csv_writer = file_creator_scripts.Csv_Writer_Object(
-        carrier_in_network_dict, "".join([args.output, "networks/"]),
-        "carriers_in_networks.csv")
+    # csv_writer = file_creator_scripts.Csv_Writer_Object(
+    #     carrier_in_network_dict, "".join([args.output, "networks/"]),
+    #     "carriers_in_networks.csv")
 
-    csv_writer.write_to_csv()
+    # csv_writer.write_to_csv()
 
     logfile.add_newline(
         "INFO",
