@@ -4,7 +4,6 @@ import pandas as pd
 import re
 import os.path
 from os import path
-from graphviz import Digraph
 import glob
 import gzip
 
@@ -42,24 +41,6 @@ class Network_Img_Maker():
         os.chdir(self.curr_dir)
 
         return file_list
-
-    # def isolate_variant_list(self, variant_of_interest: str):
-    #     '''This function will create a list of IIDs who carry a specific variant.'''
-
-    #     self.var_of_interest = variant_of_interest
-
-    #     # This uses the reformated variant file
-    #     variant_df = pd.read_csv(self.variant_file_list, sep=",")
-
-    #     # Isolating the variant_df for the variant of interest
-    #     variant_df_subset = variant_df[variant_df["Variant ID"]
-    #                                    == variant_of_interest]
-
-    #     iid_list = variant_df_subset["IID"].values.tolist()
-
-    #     print(f"The number of carriers identified are {len(iid_list)}")
-
-    #     return iid_list
 
     def drop_empty_rows(self, loaded_df):
         '''This function just drops empty rows in the dataframe'''
@@ -99,8 +80,9 @@ class Network_Img_Maker():
     ################################################################
 
     def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame,
-                            ind_in_networks_dict: dict, variant: str) -> dict:
+                            variant: str, ind_in_networks_dict: dict) -> dict:
         '''This function tells the percent of carriers who are in these networks'''
+
         id1_set: set = set(subset_df.pair_1.values.tolist())
 
         id2_set: set = set(subset_df.pair_2.values.tolist())
@@ -115,7 +97,12 @@ class Network_Img_Maker():
         percent_in_networks: float = round(carriers_in_network / len(iid_list),
                                            3)
 
-        ind_in_networks_dict[variant] = percent_in_networks
+        # adding values into the above dictionary
+        ind_in_networks_dict["variant_id"].append(variant)
+        ind_in_networks_dict["percent_in_network"].append(percent_in_networks)
+        ind_in_networks_dict["genotyped_carriers_count"].append(len(iid_list))
+        ind_in_networks_dict["confirmed_carrier_count"].append(
+            carriers_in_network)
 
         # Need to make it so that there is a dataframe with the IID and then a 1 or 0 if it is in a network or not
         # figure out which carriers from the iid_list are in networks

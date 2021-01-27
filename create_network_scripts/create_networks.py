@@ -126,9 +126,21 @@ def create_readme(output_path: str):
     readme.add_line(utility_scripts.networks_body_text)
 
 
+def add_nopair_variants(ind_in_networks_dict: dict, iid_list: list,
+                        variant: str) -> dict:
+    '''This function will add the variants that have no pairs of confirmed 
+    carriers to the list'''
+
+    ind_in_networks_dict["variant_id"].append(variant)
+    ind_in_networks_dict["percent_in_network"].append(0.00)
+    ind_in_networks_dict["genotyped_carriers_count"].append(len(iid_list))
+    ind_in_networks_dict["confirmed_carrier_count"].append(0)
+
+    return ind_in_networks_dict
+
+
 def create_networks(segments_file_dir: str, variant_file_dir: str,
-                    ind_in_network_dict: dict, output_path: str,
-                    networks_dir: str) -> dict:
+                    output_path: str, networks_dir: str):
 
     create_readme(networks_dir)
 
@@ -152,6 +164,17 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
     carrier_file_list: list = network_drawer.gather_files(
         "".join([variant_file_dir, "reformated/"]),
         "*.single_var_list_reformat.csv")
+
+    # Creating a dictionary that will be used to record useful information
+    ind_in_networks_dict = {
+        "variant_id": [],
+        "percent_in_network": [],
+        "genotyped_carriers_count": [],
+        "confirmed_carrier_count": []
+    }
+
+    # creating a list that will be used to keep track of which variants have no variants
+    no_pair_carry_var_list: list = []
 
     # iterating through the carrier_file list for each file
     for file in carrier_file_list:
@@ -199,6 +222,10 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
                     f"There were no pairs found where both individuals were carriers for the variant {variant_id}"
                 )
 
+                no_pair_carry_var_list.append(variant_id)
+
+                ind_in_networks_dict = add_nopair_variants(
+                    ind_in_networks_dict, carrier_list, variant_id)
                 # prints the message and then moves onto the next iteration
                 continue
 
@@ -212,15 +239,21 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
             # network_drawer.making_pairs_df(filtered_allpair_df)
 
             # This class method will determine the percentage of carriers in each network for each variant
-            carrier_in_network_dict = network_drawer.carriers_in_network(
-                carrier_list, filtered_allpair_df, ind_in_network_dict,
-                variant_id)
+            ind_in_networks_dict = network_drawer.carriers_in_network(
+                carrier_list, filtered_allpair_df, variant_id,
+                ind_in_networks_dict)
 
-            output_path, pairs_df = network_drawer.draw_networks(
+            groups_output_path, pairs_df = network_drawer.draw_networks(
                 filtered_allpair_df, variant_id, chr_num, pairs_df)
 
             # add_header_row(output_path)
 
-            get_size(output_path)
+            get_size(groups_output_path)
 
-    return carrier_in_network_dict
+    ind_in_network_df: pd.DataFrame = pd.DataFrame.from_dict(
+        ind_in_networks_dict)
+
+    ind_in_network_df.to_csv("".join(
+        [output_path, "percent_confirmed_carriers.csv"]),
+                             sep=",",
+                             index=False)
