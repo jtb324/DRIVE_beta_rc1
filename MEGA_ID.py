@@ -70,21 +70,23 @@ def run(args):
             ")")
         sys.exit(1)
 
-    MIN_CM: int = int(
-        input(
-            "Please input a value for the minimum centimorgan threshold: (Default is 3 cM) "
-        ))
+    MIN_CM: str =
+    input(
+        "Please input a value for the minimum centimorgan threshold: (Default is 3 cM) "
+    )
 
     if not MIN_CM:
         MIN_CM = 3
+    else:
+        MIN_CM = int(MIN_CM)
 
     logfile.add_newline(
         "INFO", f"using a minimum centimorgan threshold of {MIN_CM}\n")
 
-    THREADS: int = int(
-        input(
-            "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
-        ))
+    THREADS: str =
+    input(
+        "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
+    )
 
     MAF_FILTER: str = input(
         "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
@@ -97,6 +99,8 @@ def run(args):
 
     if not THREADS:
         THREADS = 3
+    else:
+        THREADS = int(THREADS)
 
     logfile.add_newline("INFO", f"setting the thread count to be {THREADS}\n")
 
@@ -348,15 +352,13 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description=
-        "This identifies individuals who have a specific variant in a raw file from PLINK"
+        description="This identifies individuals who have a specific variant in a raw file from PLINK"
     )
 
     parser.add_argument(
         "--bfile",
         "-b",
-        help=
-        "This argument will list the directory to the bim file which give them"
+        help="This argument will list the directory to the bim file which give them"
         "genotype information that PLINK uses",
         dest="binary_file",
         type=str,
@@ -375,8 +377,7 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        help=
-        "This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
+        help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
         dest="output",
         type=str,
         required=True,
@@ -384,8 +385,7 @@ def main():
 
     parser.add_argument(
         "--analysis",
-        help=
-        "This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
+        help="This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
         dest="analysis",
         type=str,
     )
@@ -401,8 +401,7 @@ def main():
 
     parser.add_argument(
         "--variant_file",
-        help=
-        "This argument provides a path to a file that list all individuals that "
+        help="This argument provides a path to a file that list all individuals that "
         "carry a specific variant",
         dest="var_file",
         type=str,
@@ -411,8 +410,7 @@ def main():
 
     parser.add_argument(
         "--pop_info",
-        help=
-        "This argument provides the file path to a file containing the population "
+        help="This argument provides the file path to a file containing the population "
         "distribution of a dataset for each grid. This file should be a text file "
         "and at least contain two columns, where one column is 'Pop', the "
         "population code for each grid based on 1000 genomes, and then the second "
@@ -424,8 +422,7 @@ def main():
 
     parser.add_argument(
         "--pop_code",
-        help=
-        "This argument can be a single population code or a list of population "
+        help="This argument can be a single population code or a list of population "
         "codes that someone is looking for. Population codes have to match the "
         "1000 genomes.",
         dest="pop_code",
@@ -435,8 +432,7 @@ def main():
 
     parser.add_argument(
         "--range",
-        help=
-        "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
+        help="This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
         dest="range",
         nargs="+",
         type=str,

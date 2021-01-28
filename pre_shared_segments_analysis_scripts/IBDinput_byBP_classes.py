@@ -489,12 +489,10 @@ class Shared_Segment_Convert(newPOS):
         except UnboundLocalError:
 
             print(
-                f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'failed_IBDinput_byBP.txt'])}"
+                f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'nopairs_identified.txt'])}"
             )
 
-            que_object.put(
-                f"No pairs were identified for {self.variant_name} when converting the output from the ibd files to more human readable files"
-            )
+            que_object.put(f"{self.variant_name}")
 
     def run(self, IBDdata, IBDindex, parameter_dict, uniqID, que_object):
 
