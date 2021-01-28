@@ -235,6 +235,12 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
         # removing the file if it exist
         os.remove(output_path)
 
+    # checking if the file exist
+    if os.path.isfile("".join([output, "failed_variants.txt"])):
+
+        # removing the file if it exist
+        os.remove("".join([output, "failed_variants.txt"]))
+
     # writing the header line to the output text file
     with open(output_path, "w") as output_file:
 
@@ -320,13 +326,6 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
                     elif carrier_int == 0:
 
                         print(f"The variant, {variant}, failed")
-
-                        # checking if the file exist
-                        if os.path.isfile("".join(
-                            [output, "failed_variants.txt"])):
-
-                            # removing the file if it exist
-                            os.remove("".join([output, "failed_variants.txt"]))
 
                         # writing the variant that failed to a file
                         with open("".join([output, "failed_variants.txt"]),

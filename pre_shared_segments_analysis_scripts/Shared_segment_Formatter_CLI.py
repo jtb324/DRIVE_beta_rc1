@@ -164,13 +164,13 @@ def run_parallel(segment_file: str, output_path: str, ibd_format: str,
 
     que = manager.Queue()
 
-    header: str = "This file displays the name of each variant that failed the analysis when the IBD_input_by_BP.py script was run. This likely indicates that there were no pairs identified for that variant"
+    header: str = "variant_id"
 
     pool = mp.Pool(int(threads))
 
     watcher = pool.apply_async(
         listener,
-        (que, "".join([output_path, "failed_IBDinput_byBP.txt"]), header))
+        (que, "".join([output_path, "nopairs_identified.txt"]), header))
 
     func = partial(run_main, segment_file, output_path, ibd_format, min_CM,
                    iid_file_list, que)

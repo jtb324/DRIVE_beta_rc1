@@ -27,7 +27,10 @@ class Network_Img_Maker():
         self.pairs_df = None  # Creating an attribute for the pair df
 
     def gather_files(self, file_directory: str, file_tag: str) -> list:
-        '''This function will gather all of the allpair.new.txt files which contain information about pairs. It will also be used to get the 'chr#_list.single_variant.csv' files.'''
+        '''This function will gather all of the allpair.new.txt files which 
+        contain information about pairs. It will also be used to get the 
+        'chr#_list.single_variant.csv' files.'''
+
         os.chdir(file_directory)
 
         file_list = []
