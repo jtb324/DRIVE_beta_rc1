@@ -414,11 +414,11 @@ def parallel_map(workers: int, allpair_file_list: list, variant_list: list,
     header: str = f"pair_1\tpair_2\tchr\tvariant_id\tnetwork_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
     # activate the listener function so that it can write from the que as it is going
     watcher = pool.apply_async(
-        listener, (que, "".join([output, "haplotype_info.txt"]), header))
+        listener, (que, "".join([output, "haplotype_lengths.txt"]), header))
 
     variant_header: str = f"variant\tchr\n"
     var_watcher = pool.apply_async(listener, (variant_que, "".join(
-        [output, "failed_haplotype_analysis.txt"]), variant_header))
+        [output, "nopairs_haplotype_analysis.txt"]), variant_header))
 
     # creating a partial function so that we can pass the necessary parameters to the get_haplotype function
     func = partial(get_haplotype, allpair_file_list, carrier_file_list,
@@ -492,10 +492,10 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
 
     create_readme(output_path)
     # removing output files from previous runs
-    remove_previous_file("".join([output_path, "haplotype_info.txt"]))
+    remove_previous_file("".join([output_path, "haplotype_lengths.txt"]))
 
     remove_previous_file("".join(
-        [output_path, "failed_haplotype_analysis.txt"]))
+        [output_path, "nopairs_haplotype_analysis.txt"]))
 
     # getting a list of all the variants that have a confirmed carrier
     variant_list: list = identify_unique_variants(confirmed_carrier_file)
@@ -519,4 +519,4 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
                  ilash_file_list, hapibd_file_list, network_file,
                  confirmed_carrier_file)
 
-    sort_file("".join([output_path, "haplotype_info.txt"]))
+    sort_file("".join([output_path, "haplotype_lengths.txt"]))

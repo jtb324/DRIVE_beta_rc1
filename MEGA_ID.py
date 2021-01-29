@@ -291,13 +291,6 @@ def run(args):
         "".join([args.output,
                  "carrier_analysis_output/"]), network_dir, network_dir)
 
-    # Writing the dictionary to a csv file
-    # csv_writer = file_creator_scripts.Csv_Writer_Object(
-    #     carrier_in_network_dict, "".join([args.output, "networks/"]),
-    #     "carriers_in_networks.csv")
-
-    # csv_writer.write_to_csv()
-
     logfile.add_newline(
         "INFO",
         f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}\n"
