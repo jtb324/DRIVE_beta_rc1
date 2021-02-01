@@ -131,7 +131,7 @@ def merge_df(confirmed_carrier_subset: pd.DataFrame,
              genotype_df: str) -> pd.DataFrame:
     '''This function merges the two dataframes to get all the iids for each variant'''
 
-    return pd.concat([confirmed_carrier_subset, genotype_df])
+    return pd.concat([confirmed_carrier_subset, genotype_df], sort=False)
 
 
 def reformat_chr_num(chr_num) -> str:

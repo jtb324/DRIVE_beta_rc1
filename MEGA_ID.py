@@ -43,7 +43,6 @@ def run(args):
     logfile = utility_scripts.LogFile("run.log", args.output)
     logfile.write_header()
     logfile.create_date_info()
-
     logfile.add_newline("INFO", "Starting the run...\n")
 
     # Logging some of the info about the users input
@@ -70,8 +69,7 @@ def run(args):
             ")")
         sys.exit(1)
 
-    MIN_CM: str =
-    input(
+    MIN_CM: str = input(
         "Please input a value for the minimum centimorgan threshold: (Default is 3 cM) "
     )
 
@@ -83,8 +81,7 @@ def run(args):
     logfile.add_newline(
         "INFO", f"using a minimum centimorgan threshold of {MIN_CM}\n")
 
-    THREADS: str =
-    input(
+    THREADS: str = input(
         "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
     )
 
@@ -104,16 +101,6 @@ def run(args):
 
     logfile.add_newline("INFO", f"setting the thread count to be {THREADS}\n")
 
-    if ANALYSIS_TYPE == "maf":
-
-        CHR: str = input(
-            "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
-        )
-
-        logfile.add_newline(
-            "INFO",
-            f"Setting the chromosome of interest to be chromosome {CHR}\n")
-
     ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
     HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
@@ -127,10 +114,20 @@ def run(args):
 
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
     # TO
+    # Next line checks to see if a plink output file already exist and delets it if it does
+    if os.path.exists("".join(
+        [args.output, "plink_output_files/", "plink_log.log"])):
+
+        os.remove("".join(
+            [args.output, "plink_output_files/", "plink_log.log"]))
+
     if ANALYSIS_TYPE.lower() == "gene":
 
         # getting the output directory to be to the variants_of_interest
         # subdirectory
+        logfile.add_newline(
+            "INFO",
+            f"generating a list of snps from the file {args.var_file}\n")
 
         plink_file_path: str = plink_initial_format_scripts.split_input_and_run_plink(
             args.var_file, args.output, args.recode_options, args.binary_file,
@@ -146,6 +143,14 @@ def run(args):
     # This next section runs the first level of the program using the maf analysis type
     # this means that the
     elif ANALYSIS_TYPE.lower() == "maf":
+
+        CHR: str = input(
+            "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
+        )
+
+        logfile.add_newline(
+            "INFO",
+            f"Setting the chromosome of interest to be chromosome {CHR}\n")
         print(
             f"extracting all variants below a minor allele frequency of {MAF_FILTER}"
         )
@@ -225,6 +230,45 @@ def run(args):
         "".join([args.output, "carrier_analysis_output/"]),
         "".join([args.output, "plink_output_files/"]), args.pop_info,
         args.pop_code, args.output)
+
+    THRESHOLD: float = 0.10
+
+    print(
+        f"checking the variant minor allele frequencies against an arbitrary threshold of {THRESHOLD}"
+    )
+    # This next function will check to see if variants are above a specified threshold
+    # If they are then the user has an option to end the program and remove the variants
+    # or just continue on with the program.
+    # The function will return a tuple where the first value is a list containing variants
+    # that are above a specified threshold and the second value is either 0 or 1
+    # where 0 quits the program and 1 continues
+
+    variants_above_threshold_tuple: tuple = allele_frequency_analysis_scripts.check_mafs(
+        "".join([
+            args.output, "carrier_analysis_output/", "allele_frequencies.txt"
+        ]), THRESHOLD)
+    variants_above_threshold: list = variants_above_threshold_tuple[0]
+
+    program_end_code: int = variants_above_threshold_tuple[1]
+
+    if program_end_code == 0:
+
+        logfile.add_newline(
+            "WARNING",
+            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}\n"
+        )
+
+        logfile.add_newline(
+            "INFO",
+            "ending program so that user can remove the above variants\n")
+        sys.exit(1)
+
+    elif program_end_code == 1 and variants_above_threshold:
+
+        logfile.add_newline(
+            "WARNING",
+            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}\n"
+        )
 
     print("converting the ibd output to a human readable version...")
 
@@ -345,13 +389,15 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="This identifies individuals who have a specific variant in a raw file from PLINK"
+        description=
+        "This identifies individuals who have a specific variant in a raw file from PLINK"
     )
 
     parser.add_argument(
         "--bfile",
         "-b",
-        help="This argument will list the directory to the bim file which give them"
+        help=
+        "This argument will list the directory to the bim file which give them"
         "genotype information that PLINK uses",
         dest="binary_file",
         type=str,
@@ -370,7 +416,8 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
+        help=
+        "This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
         dest="output",
         type=str,
         required=True,
@@ -378,7 +425,8 @@ def main():
 
     parser.add_argument(
         "--analysis",
-        help="This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
+        help=
+        "This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
         dest="analysis",
         type=str,
     )
@@ -394,7 +442,8 @@ def main():
 
     parser.add_argument(
         "--variant_file",
-        help="This argument provides a path to a file that list all individuals that "
+        help=
+        "This argument provides a path to a file that list all individuals that "
         "carry a specific variant",
         dest="var_file",
         type=str,
@@ -403,7 +452,8 @@ def main():
 
     parser.add_argument(
         "--pop_info",
-        help="This argument provides the file path to a file containing the population "
+        help=
+        "This argument provides the file path to a file containing the population "
         "distribution of a dataset for each grid. This file should be a text file "
         "and at least contain two columns, where one column is 'Pop', the "
         "population code for each grid based on 1000 genomes, and then the second "
@@ -415,7 +465,8 @@ def main():
 
     parser.add_argument(
         "--pop_code",
-        help="This argument can be a single population code or a list of population "
+        help=
+        "This argument can be a single population code or a list of population "
         "codes that someone is looking for. Population codes have to match the "
         "1000 genomes.",
         dest="pop_code",
@@ -425,7 +476,8 @@ def main():
 
     parser.add_argument(
         "--range",
-        help="This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
+        help=
+        "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
         dest="range",
         nargs="+",
         type=str,

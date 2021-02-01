@@ -20,10 +20,11 @@ class PLINK_Runner:
         self.binary_file = binary_file
         self.output = output
         self.current_dir = os.getcwd()
+        self.recode = recode_flag
 
         if "var_list_dir" in name:
             self.var_list_dir = name["var_list_dir"]
-        self.recode = recode_flag
+
         if "maf_filter" in name:
 
             self.maf = name["maf_filter"]
@@ -74,14 +75,16 @@ class PLINK_Runner:
 
     def run_PLINK_snps(self, file_list: list):
         """This function will use the subprocess module to run PLINK and extract snps from a specified list"""
+        with open(
+                "".join([self.output, "plink_output_files/", "plink_log.log"]),
+                "a+") as plink_log:
 
-        for var_file in file_list:
+            for var_file in file_list:
 
-            for option in self.recode:
-                output_file_name = var_file[:-4]
+                for option in self.recode:
+                    output_file_name = var_file[:-4]
 
-                subprocess.run(
-                    [
+                    subprocess.run([
                         "plink",
                         "--bfile",
                         self.binary_file,
@@ -93,8 +96,11 @@ class PLINK_Runner:
                         output_file_name,
                         "".join(["--", option]),
                     ],
-                    check=False,
-                )
+                                   check=False,
+                                   stdout=plink_log,
+                                   stderr=plink_log)
+
+            plink_log.close()
 
         return "".join([self.output, "plink_output_files/"])
 
@@ -108,11 +114,13 @@ class PLINK_Runner:
         if not path.exists("".join([self.output, "plink_output_files/"])):
 
             os.mkdir("".join([self.output, "plink_output_files/"]))
+        with open(
+                "".join([self.output, "plink_output_files/", "plink_log.log"]),
+                "a+") as plink_log:
 
-        for options in self.recode:
-            if self.start and self.end:
-                subprocess.run(
-                    [
+            for options in self.recode:
+                if self.start and self.end:
+                    subprocess.run([
                         "plink",
                         "--bfile",
                         self.binary_file,
@@ -126,11 +134,11 @@ class PLINK_Runner:
                         self.end,
                         "".join(["--", options]),
                     ],
-                    check=False,
-                )
-            else:
-                subprocess.run(
-                    [
+                                   check=False,
+                                   stdout=plink_log,
+                                   stderr=plink_log)
+                else:
+                    subprocess.run([
                         "plink",
                         "--bfile",
                         self.binary_file,
@@ -140,6 +148,9 @@ class PLINK_Runner:
                         self.output,
                         "".join(["--", options]),
                     ],
-                    check=False,
-                )
+                                   check=False,
+                                   stdout=plink_log,
+                                   stderr=plink_log)
+            plink_log.close()
+
         return "".join([self.output, "plink_output_files/"])
