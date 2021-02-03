@@ -85,5 +85,4 @@ def ask_for_maf_filter(logfile) -> str:
 
     logfile.add_newline(
         "INFO", f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
-
     return MAF_FILTER
