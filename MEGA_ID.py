@@ -59,47 +59,13 @@ def run(args):
         "INFO", f"The population code being used is: {args.pop_code}\n")
 
     # Asking for user input for constants that will be used throughout the program
-    ANALYSIS_TYPE: str = input("Please input an analysis type: ").strip(" ")
+    ANALYSIS_TYPE: str = utility_scripts.ask_for_analysis_type(logfile)
 
-    logfile.add_newline("INFO", f"Using the analysis type: {ANALYSIS_TYPE}\n")
+    MIN_CM: str = utility_scripts.ask_for_min_cm(logfile)
 
-    if ANALYSIS_TYPE not in ["gene", "maf", ""]:
-        print(
-            "Please choose one of the two allowed analysis types ('gene'/'maf', or "
-            ")")
-        sys.exit(1)
+    THREADS: str = utility_scripts.ask_for_thread_count(logfile)
 
-    MIN_CM: str = input(
-        "Please input a value for the minimum centimorgan threshold: (Default is 3 cM) "
-    )
-
-    if not MIN_CM:
-        MIN_CM = 3
-    else:
-        MIN_CM = int(MIN_CM)
-
-    logfile.add_newline(
-        "INFO", f"using a minimum centimorgan threshold of {MIN_CM}\n")
-
-    THREADS: str = input(
-        "Please enter the number of threads you wish to use during this process. The default value is 3. (Bear in mind that this number will be used for all parallelized steps): "
-    )
-
-    MAF_FILTER: str = input(
-        "Please input a minor allele frequency threshold to be used. (The default is 0.05): "
-    )
-    if not MAF_FILTER:
-        MAF_FILTER: str = '0.05'
-
-    logfile.add_newline(
-        "INFO", f"Using a minor allele frequency threshold of {MAF_FILTER}\n")
-
-    if not THREADS:
-        THREADS = 3
-    else:
-        THREADS = int(THREADS)
-
-    logfile.add_newline("INFO", f"setting the thread count to be {THREADS}\n")
+    MAF_FILTER: str = utility_scripts.ask_for_maf_filter(logfile)
 
     ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
