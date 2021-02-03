@@ -42,10 +42,40 @@ def write_ids_to_file(pair1_id: str, pair2_id: str, output_path: str) -> str:
     return full_output_path
 
 
+def read_in_lines(file_path: str) -> tuple:
+    '''This function will read in the first and second line of the file to 
+    memory from the plink output ped file'''
+
+    with open(file_path, "r") as plink_file:
+
+        line_1: str = plink_file.readline()
+        line_2: str = plink_file.readline()
+
+    return (line_1, line_2)
+
+
+def remove_plink_files(ped_file_path: str):
+    """
+    This function will delete the plink output files. This includes the ped,
+    the map, and the log files.
+    """
+
+    suffix_indx: int = ped_file_path.index(".ped")
+
+    file_path: str = ped_file_path[:suffix_indx]
+
+    # generating a suffix list of all the file outputs from running plink
+    suffix_list: list = [".ped", ".map", ".log"]
+
+    # removing the files iteratively
+    for file_path in ["".join([file_path, suffix]) for suffix in suffix_list]:
+
+        os.remove(file_path)
+
+
 def run_plink(binary_file: str, output_path: str, haplotype_row_tuple: tuple):
     '''This function will be responsible for actually running plink'''
-    print("running plink")
-    print(haplotype_row_tuple)
+    print("This is a thread")
     # pulling relevant values out of the haplotype tuple
     pair_1_id: str = haplotype_row_tuple[1]
     pair_2_id: str = haplotype_row_tuple[2]
@@ -70,6 +100,31 @@ def run_plink(binary_file: str, output_path: str, haplotype_row_tuple: tuple):
             binary_file, keep_file_str, str(ilash_start_bp), str(ilash_end_bp),
             output_path, "ilash", str(chr_num), pair_1_id, pair_2_id)
 
+    # remove the keep file since it is only used by plink
+    os.remove(keep_file_str)
+
+    # Next section reads in lines from the two plink files if each file was made
+    if hapibd_path:
+
+        hapibd_tuple: tuple = read_in_lines(hapibd_path)
+
+        analysis_haplotypes.check_tuple_size(hapibd_tuple)
+
+        remove_plink_files(hapibd_path)
+
+    if ilash_path:
+
+        ilash_tuple: tuple = read_in_lines(ilash_path)
+
+        analysis_haplotypes.check_tuple_size(ilash_tuple)
+
+        remove_plink_files(ilash_path)
+
+    # getting the differences in the strings for hapibd
+    string_diff: int = analysis_haplotypes.compare_haplotype_str(hapibd_tuple)
+
+    sys.exit(1)
+
 
 def parallelize(variant_list: list, workers: int, haplotype_df: pd.DataFrame,
                 binary_file: str, output_dir: str):
@@ -85,7 +140,8 @@ def parallelize(variant_list: list, workers: int, haplotype_df: pd.DataFrame,
         pass
     pool = mp.Pool(int(workers))
 
-    # This next line allows me to pass multiple arguments into the map function below
+    # This next line allows me to pass multiple arguments into the map function
+    # below
     func = partial(run_plink, binary_file, output_dir)
     # This next line will iterate through the variant list so that the program
     # can subset the haplotype dataframe
@@ -93,7 +149,7 @@ def parallelize(variant_list: list, workers: int, haplotype_df: pd.DataFrame,
 
         haplotype_df_subset: pd.DataFrame = subset_df_for_variant(
             haplotype_df, variant)
-        print(haplotype_df_subset)
+
         pool.map(func, haplotype_df_subset.itertuples(name=None))
 
     pool.close()
