@@ -18,3 +18,5 @@ clinical_mega_gnomAD_freq/
 .idea/
 gnomad_analysis/
 
+# Don't ignore these files
+!requirements.txt
