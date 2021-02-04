@@ -235,9 +235,6 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
                 filtered_allpair_df = network_drawer.drop_empty_rows(
                     filtered_allpair_df)
 
-            # This makes a dataframe that will list the pairs
-            # network_drawer.making_pairs_df(filtered_allpair_df)
-
             # This class method will determine the percentage of carriers in each network for each variant
             ind_in_networks_dict = network_drawer.carriers_in_network(
                 carrier_list, filtered_allpair_df, variant_id,
@@ -245,8 +242,6 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
 
             groups_output_path, pairs_df = network_drawer.draw_networks(
                 filtered_allpair_df, variant_id, chr_num, pairs_df)
-
-            # add_header_row(output_path)
 
             get_size(groups_output_path)
 

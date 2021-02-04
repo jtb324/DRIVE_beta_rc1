@@ -305,16 +305,23 @@ class Network_Img_Maker():
         # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
-        self.network_carriers.to_csv("".join(
-            [self.output_path, "/network_groups", ".csv"]),
-                                     index=False,
-                                     mode="a")
+        if os.path.exists("".join(
+            [self.output_path, "network_groups", ".csv"])) and os.stat("".join(
+                [self.output_path, "network_groups", ".csv"])) != 0:
 
-        # allpairs_df.to_csv(
-        #     "".join([self.output_path, "/pairs_in_networks", ".csv"]), index=False, mode="a")
+            self.network_carriers.to_csv("".join(
+                [self.output_path, "network_groups", ".csv"]),
+                                         index=False,
+                                         mode="a",
+                                         header=None)
+        else:
 
+            self.network_carriers.to_csv("".join(
+                [self.output_path, "network_groups", ".csv"]),
+                                         index=False,
+                                         mode="a")
         # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
-        return "".join([self.output_path, "/network_groups",
+        return "".join([self.output_path, "network_groups",
                         ".csv"]), allpairs_df
 
     def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame,
