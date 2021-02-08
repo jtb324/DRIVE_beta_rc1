@@ -193,7 +193,7 @@ def singleVariantAnalysis(
                                            columns=["IID", "Variant ID"])
 
             reformat_directory = file_creator_scripts.check_dir(
-                output_path, "reformated")
+                output_path, "reformatted")
 
             var_reformat_df.to_csv(
                 "".join([

@@ -267,9 +267,9 @@ def run(args):
     print("combining segment output...")
 
     pre_shared_segments_analysis_scripts.combine_output(
-        "".join([IBD_search_output_files, "reformated_ibd_output/"]),
+        "".join([IBD_search_output_files, "reformatted_ibd_output/"]),
         args.ibd_programs, IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/reformated/"]))
+        "".join([args.output, "carrier_analysis_output/reformatted/"]))
 
     pre_shared_segments_analysis_scripts.reformat_files(
         "".join([args.output, "carrier_analysis_output/"]),
