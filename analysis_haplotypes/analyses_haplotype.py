@@ -10,167 +10,251 @@ from functools import partial
 import analysis_haplotypes
 
 
-def get_variant_list(haplotype_df: pd.DataFrame) -> list:
-    '''This function will return a list of all variants that can be written to a file'''
-
-    variant_list: list = list(set(haplotype_df.variant_id.values.tolist()))
-
-    return variant_list
-
-
-def subset_df_for_variant(haplotype_df: pd.DataFrame, variant_id: str):
-    '''This function will subset the haplotype just for a specific variant'''
-
-    haplotype_subset: pd.DataFrame = haplotype_df[haplotype_df.variant_id ==
-                                                  variant_id]
-
-    return haplotype_subset
-
-
-def write_ids_to_file(pair1_id: str, pair2_id: str, output_path: str) -> str:
-    '''This function will write the pair ids to a file that has to be passed
-    to the plink subprocess "keep" flag'''
-
-    full_output_path: str = "".join(
-        [output_path, pair1_id, "_", pair2_id, "_keep.txt"])
-
-    with open(full_output_path, "w") as keep_file:
-
-        keep_file.write("".join([pair1_id, " ", pair1_id, "\n"]))
-        keep_file.write("".join([pair2_id, " ", pair2_id, "\n"]))
-
-    return full_output_path
-
-
-def read_in_lines(file_path: str) -> tuple:
-    '''This function will read in the first and second line of the file to 
-    memory from the plink output ped file'''
-
-    with open(file_path, "r") as plink_file:
-
-        line_1: str = plink_file.readline()
-        line_2: str = plink_file.readline()
-
-    return (line_1, line_2)
-
-
-def remove_plink_files(ped_file_path: str):
+def get_variant_list(haplotype_len_df: pd.DataFrame) -> list:
     """
-    This function will delete the plink output files. This includes the ped,
-    the map, and the log files.
+    Parameters
+    __________
+    haplotype_len_df : pd.DataFrame
+        This parameter is a dataframe that contains information about the
+        start and endpoints of each haplotype as well as the total length
+        of the segment for both ilash and  hapibd
+
+    Returns
+    _______
+    List
+        Returns a list containing the different variant id within the
+        dataframe
     """
 
-    suffix_indx: int = ped_file_path.index(".ped")
-
-    file_path: str = ped_file_path[:suffix_indx]
-
-    # generating a suffix list of all the file outputs from running plink
-    suffix_list: list = [".ped", ".map", ".log"]
-
-    # removing the files iteratively
-    for file_path in ["".join([file_path, suffix]) for suffix in suffix_list]:
-
-        os.remove(file_path)
+    return list(set(haplotype_len_df.variant_id.values.tolist()))
 
 
-def run_plink(binary_file: str, output_path: str, haplotype_row_tuple: tuple):
-    '''This function will be responsible for actually running plink'''
-    print("This is a thread")
-    # pulling relevant values out of the haplotype tuple
-    pair_1_id: str = haplotype_row_tuple[1]
-    pair_2_id: str = haplotype_row_tuple[2]
-    chr_num: int = int(haplotype_row_tuple[3])
-    hapibd_start_bp: str = haplotype_row_tuple[6]
-    hapibd_end_bp: str = haplotype_row_tuple[7]
-    ilash_start_bp: str = haplotype_row_tuple[9]
-    ilash_end_bp: str = haplotype_row_tuple[10]
+def get_network_ids(haplotype_subset_df: pd.DataFrame,
+                    variants_id: str) -> list:
+    """
+    Parameters
+    __________
+    haplotype_subset_df : pd.DataFrame
+        pandas dataframe containing information about the start and endpoints
+        of each haplotype for a specific variant as well as the toal length of 
+        the segment for both ilash and hapibd and
 
-    # writing the pairs to a keep file that can then be passed to plink
-    keep_file_str: str = write_ids_to_file(
-        pair_1_id, pair_2_id, "".join([output_path, "keep_id_files/"]))
+    variant_id : str
+        string containing the variant id
 
-    if not np.isnan(hapibd_start_bp) or not np.isnan(hapibd_end_bp):
-        hapibd_path: str = analysis_haplotypes.get_plink_haplotype_str(
-            binary_file, keep_file_str,
-            str(hapibd_start_bp), str(hapibd_end_bp), output_path, "hapibd",
-            str(chr_num), pair_1_id, pair_2_id)
+    Returns
+    _______
+    list
+        returns a list of network ids. This list should only contains integers
 
-    if not np.isnan(ilash_start_bp) or not np.isnan(ilash_end_bp):
-        ilash_path: str = analysis_haplotypes.get_plink_haplotype_str(
-            binary_file, keep_file_str, str(ilash_start_bp), str(ilash_end_bp),
-            output_path, "ilash", str(chr_num), pair_1_id, pair_2_id)
+    """
 
-    # remove the keep file since it is only used by plink
-    os.remove(keep_file_str)
-
-    # Next section reads in lines from the two plink files if each file was made
-    if hapibd_path:
-
-        hapibd_tuple: tuple = read_in_lines(hapibd_path)
-
-        analysis_haplotypes.check_tuple_size(hapibd_tuple)
-
-        remove_plink_files(hapibd_path)
-
-    if ilash_path:
-
-        ilash_tuple: tuple = read_in_lines(ilash_path)
-
-        analysis_haplotypes.check_tuple_size(ilash_tuple)
-
-        remove_plink_files(ilash_path)
-
-    # getting the differences in the strings for hapibd
-    string_diff: int = analysis_haplotypes.compare_haplotype_str(hapibd_tuple)
-
-    sys.exit(1)
+    return list(set(haplotype_subset_df.network_id.values.tolist()))
 
 
-def parallelize(variant_list: list, workers: int, haplotype_df: pd.DataFrame,
-                binary_file: str, output_dir: str):
-    '''This function will run the script in parallel'''
+def get_chr_num(haplotype_info_df: pd.DataFrame) -> str:
+    """
+    Parameters
+    __________
+    haplotype_info_df : pd.DataFrame
+        dataframe containing information about the start and endpoints
+        for each pair's haplotype as well as the total length of the
+        shared segment for both hapibd and ilash
+
+    Returns
+    _______
+    str
+        returns a string giving the chromosome number
+    """
+    chr_str: str = haplotype_info_df.chr.values.tolist()[0]
+
+    return chr_str
+
+
+def get_start_and_end(df_subset: pd.DataFrame, start_column_name: str,
+                      end_column_name: str) -> tuple:
+    """
+    Parameters
+    __________
+    df_subset : pd.DataFrame
+        Dataframe containing haplotype start and endpoint information for pairs
+        in a specific network for a specific variant for both
+
+    start_column_name : str
+        String that gives the column name for the the column containing start
+        positions of each haplotype. This value will be either hapibd_start or
+        ilash start
+
+    end_column_name : str
+        String that gives the column name for the the column containing end
+        positions of each haplotype. This value will be either hapibd_end or
+        ilash end
+
+    Returns
+    _______
+    tuple
+        tuple containing two lists where one contains the start positions and
+        another contains the end positions
+    """
+    start_positions_list: list = df_subset[start_column_name].values.tolist()
+
+    end_positions_list: list = df_subset[end_column_name].values.tolist()
+
+    return start_positions_list, end_positions_list
+
+
+def get_median_value(positions_list: list) -> int:
+    """
+    Parameters
+    __________
+    positions_list : list
+        List contain either the start or end positions of the shared segments
+        for each pair in an network
+
+    Returns
+    int
+        returns an integer of the median value of the list
+    """
+    positions_list.sort()
+
+    midpoint: int = len(positions_list) // 2
+
+    median = (positions_list[midpoint] + positions_list[~midpoint]) / 2
+
+    return median
+
+
+def determine_haplotype_start_and_end(haplotype_len_df: pd.DataFrame,
+                                      positions_dict: dict, variant_id: str,
+                                      network_id: str):
+    """
+    Parameters
+    __________
+    haplotype_len_df : pd.DataFrame
+        pandas dataframe containing information about the start and endpoints
+        of each haplotype as well as the toal length of the segment for both
+        ilash and hapibd and
+
+    positions_dict : dict
+        Dictionary that will be filled with the start and end positions for 
+        each variant
+
+    variant_id : str
+        The id of the variant of interest
+
+    network_id : str
+        The id for the specific network
+    """
+    # subsetting the dataframe down to just the specific network
+    haplotype_network_subset_df: pd.DataFrame = haplotype_len_df[
+        haplotype_len_df.network_id == network_id]
+
+    hapibd_start_list, hapibd_end_list = get_start_and_end(
+        haplotype_network_subset_df, "hapibd_start", "hapibd_end")
+
+    ilash_start_list, ilash_end_list = get_start_and_end(
+        haplotype_network_subset_df, "ilash_start", "ilash_end")
+
+    # getting the median value for hapibd and ilash start and end lists
+    hapibd_start_median: int = get_median_value(hapibd_start_list)
+    hapibd_end_median: int = get_median_value(hapibd_end_list)
+    ilash_start_median: int = get_median_value(ilash_start_list)
+    ilash_end_median: int = get_median_value(ilash_end_list)
+
+    # adding values for the hapibd and ilash start and endpoints into the
+    # positions_dict
+    positions_dict[variant_id][network_id]["hapibd"] = {
+        "start": hapibd_start_median,
+        "end": hapibd_end_median
+    }
+
+    positions_dict[variant_id][network_id]["ilash"] = {
+        "start": ilash_start_median,
+        "end": ilash_end_median
+    }
+
+
+def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
+                          threads: int):
+    """
+    Parameters
+    __________
+    variant_list : list
+        list containing the id of every variant in the haplotype info files
+
+    haplotype_len_df : pd.DataFrame
+        pandas dataframe containing information about the start and endpoints
+        of each haplotype as well as the toal length of the segment for both
+        ilash and hapibd and
+
+    threads : int
+        number of cores to use during the analysis
+    """
     # manager = mp.Manager()
 
-    keep_file_output_path: str = "".join([output_dir, "keep_id_files/"])
+    # que = manager.Queue()
 
-    try:
-        os.mkdir(keep_file_output_path)
+    pool = mp.Pool(int(threads))
 
-    except FileExistsError:
-        pass
-    pool = mp.Pool(int(workers))
+    positions_dict: dict = dict()
 
-    # This next line allows me to pass multiple arguments into the map function
-    # below
-    func = partial(run_plink, binary_file, output_dir)
-    # This next line will iterate through the variant list so that the program
-    # can subset the haplotype dataframe
+    # TODO: Need to create a listener function that watches the cue and writes to
+    # file when something is added to it
+    # iterate through each variant
     for variant in variant_list:
 
-        haplotype_df_subset: pd.DataFrame = subset_df_for_variant(
-            haplotype_df, variant)
+        # subsetting the haplotype_len_df for a specific variant
+        haplotype_subset_df: pd.DataFrame = haplotype_len_df[
+            haplotype_len_df.variant_id == variant]
 
-        pool.map(func, haplotype_df_subset.itertuples(name=None))
+        # get the different networks within the dataframe
+        networks_list: list = get_network_ids(haplotype_subset_df, variant)
 
-    pool.close()
+        chr_num: str = get_chr_num(haplotype_subset_df)
 
-    pool.join()
+        positions_dict[variant] = {
+            id: {
+                "chr": chr_num,
+                "hapibd": None,
+                "ilash": None
+            }
+            for id in networks_list
+        }
 
-    # TODO: work on finishing parallelizing this script
+        func = partial(determine_haplotype_start_and_end, haplotype_subset_df,
+                       positions_dict, variant)
+
+        pool.map(func, networks_list)
+
+        pool.close()
+
+        pool.join()
+
+    print(positions_dict)
 
 
-def main_run(binary_file: str, output_path: str, haplotype_info_file: str,
-             workers: int):
-    '''This is the main function responsible for running all the functions
-    associated with analysing the haplotypes. It will accept arguments from the
-    MEGA_ID.py file'''
+def compare_haplotypes(haplotype_len_filepath: str, threads: int) -> str:
+    """
+    Parameters
+    ----------
+    haplotype_len_filepath : str
+        This parameter list the filepath to the file that contains the lengths 
+        of each haplotype for each pair
 
-    # making the output directory that forms files containing a list of ids to keep
-    # reading in the haplotype file into a dataframe
-    haplotype_df: pd.DataFrame = pd.read_csv(haplotype_info_file, sep="\t")
+    threads : int
+        number of threads to be used during the computation
 
-    variant_list: list = get_variant_list(haplotype_df)
+    Returns 
+    -------
+    str
+        Returns a string containing the probable haplotype
 
-    print(output_path)
+    """
 
-    parallelize(variant_list, workers, haplotype_df, binary_file, output_path)
+    # Loading the file containing haplotype lengths into a pandas dataframe
+    haplotype_len_df: pd.DataFrame = pd.read_csv(haplotype_len_filepath, "\t")
+
+    # generating a list of all the variants within the dataframe
+    variants_list: list = get_variant_list(haplotype_len_df)
+
+    parallelize_form_dict(variants_list, haplotype_len_df, threads)
