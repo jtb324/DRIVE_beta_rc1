@@ -414,11 +414,13 @@ def parallel_map(workers: int, allpair_file_list: list, variant_list: list,
     header: str = f"pair_1\tpair_2\tchr\tvariant_id\tnetwork_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
     # activate the listener function so that it can write from the que as it is going
     watcher = pool.apply_async(
-        utility_scripts.listener, (que, "".join([output, "haplotype_lengths.txt"]), header))
+        utility_scripts.listener,
+        (que, "".join([output, "haplotype_lengths.txt"]), header))
 
     variant_header: str = f"variant\tchr\n"
-    var_watcher = pool.apply_async(utility_scripts.listener, (variant_que, "".join(
-        [output, "nopairs_haplotype_analysis.txt"]), variant_header))
+    var_watcher = pool.apply_async(
+        utility_scripts.listener, (variant_que, "".join(
+            [output, "nopairs_haplotype_analysis.txt"]), variant_header))
 
     # creating a partial function so that we can pass the necessary parameters to the get_haplotype function
     func = partial(get_haplotype, allpair_file_list, carrier_file_list,
@@ -476,7 +478,6 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
 
     # getting a list of all the variants that have a confirmed carrier
     variant_list: list = identify_unique_variants(confirmed_carrier_file)
-
     # Getting all the carrier files
 
     carrier_file_list: list = get_file_list(reformated_carrier_files, "*.csv")
@@ -491,9 +492,28 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
 
     hapibd_file_list: list = get_file_list(hapibd_dir, "*.ibd.gz")
 
-    parallel_map(int(threads), allpair_file_list, variant_list,
-                 carrier_file_list, map_file_list, output_path,
-                 ilash_file_list, hapibd_file_list, network_file,
-                 confirmed_carrier_file)
+    file_handler_dict: dict = {
+        "allpair_files": allpair_file_list,
+        "map_files": map_file_list,
+        "carrier_files": carrier_file_list,
+        "ilash_files": ilash_file_list,
+        "hapibd_files": hapibd_file_list
+    }
+
+    parallel_runner: object = utility_scripts.Haplotype_Parallel_Runner(
+        int(threads), output_path, file_handler_dict, network_file,
+        variant_list, confirmed_carrier_file)
+
+    file_name: str = "haplotype_lengths.txt"
+
+    header_str: str = "pair_1\tpair_2\tchr\tvariant_id\tnetwork_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
+
+    parallel_runner.run_haplotypes_parallel(file_name, get_haplotype,
+                                            header_str)
+
+    # parallel_map(int(threads), allpair_file_list, variant_list,
+    #              carrier_file_list, map_file_list, output_path,
+    #              ilash_file_list, hapibd_file_list, network_file,
+    #              confirmed_carrier_file)
 
     sort_file("".join([output_path, "haplotype_lengths.txt"]))

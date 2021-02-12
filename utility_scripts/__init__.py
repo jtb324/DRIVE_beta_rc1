@@ -4,4 +4,4 @@ from .readme_text.readme_body_text import main_parameter_text, main_directory_te
 from .file_generator import Readme, LogFile
 from .user_input.initial_parameters import ask_for_analysis_type, ask_for_min_cm, ask_for_thread_count, ask_for_maf_filter
 from .parallelize.listener import listener
-from .parallelize.run_parallel import Segment_Parallel_Runner
+from .parallelize.run_parallel import Segment_Parallel_Runner, Haplotype_Parallel_Runner
