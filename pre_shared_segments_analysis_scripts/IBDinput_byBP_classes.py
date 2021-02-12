@@ -16,6 +16,7 @@ import file_creator_scripts
 
 class Pre_Shared_Segment_Converter:
     '''This class will prepare the input for all of the shared segment converter'''
+
     def __init__(self, ibd_output_directory: str, chromosome_files_dir: str,
                  ibd_software: str, output_dir: str, map_file_dir: str):
         self.segment_dir = ibd_output_directory
@@ -215,15 +216,15 @@ class Shared_Segment_Convert(newPOS):
         # This will be the output directory. Need to add the ibd software to the end of it
         self.output_dir = output_path
 
-        if not os.path.exists("".join([output_path, "reformated_ibd_output/"
+        if not os.path.exists("".join([output_path, "reformatted_ibd_output/"
                                        ])):
             try:
-                os.mkdir("".join([output_path, "reformated_ibd_output/"]))
+                os.mkdir("".join([output_path, "reformatted_ibd_output/"]))
             except FileExistsError:
                 pass
 
         self.output = "".join(
-            [output_path, "reformated_ibd_output/", ibd_program_used])
+            [output_path, "reformatted_ibd_output/", ibd_program_used])
         self.format = str(ibd_program_used)
         self.min_cM = int(min_cM_threshold)
         self.thread = int(thread)

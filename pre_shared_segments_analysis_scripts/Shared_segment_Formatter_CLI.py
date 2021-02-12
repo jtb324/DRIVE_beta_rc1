@@ -19,29 +19,6 @@ import utility_scripts
 # Initializing the parser
 
 
-def listener(que_object, output: str, header: str):
-    '''This function will listen to the que and then write the element of the que to a file'''
-
-    # opening the output file to write to
-    with open(output, "a+") as output_file:
-
-        # checking if the file size is zero
-        if os.path.getsize(output) == 0:
-
-            output_file.write(header)
-
-        while 1:
-
-            m = que_object.get()
-
-            if m == "kill":
-
-                break
-
-            output_file.write(m)
-            output_file.flush()
-
-
 def remove_previous_file(file_path: str):
     '''This function will remove previous output files from previous runs'''
     # This section will check if the output file exist from a previous run and if it does then it will delete it
@@ -151,37 +128,52 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
                 for var_bp, var_id in zip(variant_bp_list, variant_id_list)
             ]
 
-            run_parallel(segment_file, output, ibd_program, min_CM,
-                         iid_file_list, var_info_list, threads)
+            # creating a dictionary to couple the iid_file_list and the var_info_list
+            # into a single data structure
+            file_list_dict: dict = {
+                "iid_files": iid_file_list,
+                "var_info_files": var_info_list
+            }
+            parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
+                int(threads), output, ibd_program, min_CM, file_list_dict,
+                segment_file)
+
+            error_filename: str = "nopairs-identified.txt"
+            header_str: str = "variant_id"
+
+            parallel_runner.run_segments_parallel(error_filename, run_main,
+                                                  header_str)
+            # run_parallel(segment_file, output, ibd_program, min_CM,
+            #              iid_file_list, var_info_list, threads)
 
 
-def run_parallel(segment_file: str, output_path: str, ibd_format: str,
-                 min_CM: str, iid_file_list: list, variant_info_list: list,
-                 threads: int):
+# def run_parallel(segment_file: str, output_path: str, ibd_format: str,
+#                  min_CM: str, iid_file_list: list, variant_info_list: list,
+#                  threads: int):
 
-    # starting a que to create a file that keeps track of errors
-    manager = mp.Manager()
+#     # starting a que to create a file that keeps track of errors
+#     manager = mp.Manager()
 
-    que = manager.Queue()
+#     que = manager.Queue()
 
-    header: str = "variant_id"
+#     header: str = "variant_id"
 
-    pool = mp.Pool(int(threads))
+#     pool = mp.Pool(int(threads))
 
-    watcher = pool.apply_async(
-        listener,
-        (que, "".join([output_path, "nopairs_identified.txt"]), header))
+#     watcher = pool.apply_async(
+#         utility_scripts.listener,
+#         (que, "".join([output_path, "nopairs_identified.txt"]), header))
 
-    func = partial(run_main, segment_file, output_path, ibd_format, min_CM,
-                   iid_file_list, que)
+#     func = partial(run_main, segment_file, output_path, ibd_format, min_CM,
+#                    iid_file_list, que)
 
-    pool.map(func, variant_info_list)
+#     pool.map(func, variant_info_list)
 
-    que.put("kill")
+#     que.put("kill")
 
-    pool.close()
+#     pool.close()
 
-    pool.join()
+#     pool.join()
 
 
 def run_main(segment_file: str, output_path: str, ibd_format: list,

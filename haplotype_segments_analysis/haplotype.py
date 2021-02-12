@@ -414,10 +414,10 @@ def parallel_map(workers: int, allpair_file_list: list, variant_list: list,
     header: str = f"pair_1\tpair_2\tchr\tvariant_id\tnetwork_id\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
     # activate the listener function so that it can write from the que as it is going
     watcher = pool.apply_async(
-        listener, (que, "".join([output, "haplotype_lengths.txt"]), header))
+        utility_scripts.listener, (que, "".join([output, "haplotype_lengths.txt"]), header))
 
     variant_header: str = f"variant\tchr\n"
-    var_watcher = pool.apply_async(listener, (variant_que, "".join(
+    var_watcher = pool.apply_async(utility_scripts.listener, (variant_que, "".join(
         [output, "nopairs_haplotype_analysis.txt"]), variant_header))
 
     # creating a partial function so that we can pass the necessary parameters to the get_haplotype function
@@ -432,29 +432,6 @@ def parallel_map(workers: int, allpair_file_list: list, variant_list: list,
     pool.close()
 
     pool.join()
-
-
-def listener(que_object, output: str, header: str):
-    '''This function will listen to the que and then write the element of the que to a file'''
-
-    # opening the output file to write to
-    with open(output, "a+") as output_file:
-
-        # checking if the file size is zero
-        if os.path.getsize(output) == 0:
-
-            output_file.write(header)
-
-        while 1:
-
-            m = que_object.get()
-
-            if m == "kill":
-
-                break
-
-            output_file.write(m)
-            output_file.flush()
 
 
 def remove_previous_file(file_path: str):

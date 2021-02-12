@@ -187,7 +187,8 @@ def run(args):
         "INFO",
         f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}\n"
     )
-    # The above function outputs files to a subdirectory called "carrier_analysis_output"
+    # The above function outputs files to a subdirectory called
+    # "carrier_analysis_output"
 
     print(
         "determining the minor allele frequency within the provided binary file..."
