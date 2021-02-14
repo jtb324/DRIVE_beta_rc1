@@ -5,6 +5,14 @@ import utility_scripts
 
 
 def parallelize_decorator(func):
+    """decorator function that will be used to wrap the two methods for parallelization in the classes below.
+    Parameter
+    _________
+    func : object
+        function that the decorator will wrap around. This function should be a class method used 
+        to parallelize the computation
+    """
+
     def inner_func(self, *args):
 
         file_name: str = args[0]
