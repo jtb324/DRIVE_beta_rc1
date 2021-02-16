@@ -119,15 +119,11 @@ def get_median_value(positions_list: list) -> int:
         returns an integer of the median value of the list
     """
     positions_list.sort()
-    print("sorted list")
-    print(positions_list)
 
     midpoint: int = len(positions_list) // 2
-    print(f"The midpoint is : {midpoint}")
 
     median = (positions_list[midpoint] + positions_list[~midpoint]) / 2
 
-    print(f"this is the median {median}")
     return int(median)
 
 
@@ -269,31 +265,39 @@ def compare_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
 
     # creating a directory to put the plink files into
     try:
-        os.mkdir("".join([output, "temp_plink_files"]))
+        os.mkdir("".join([output, "temp_plink_files/"]))
     except FileExistsError:
         pass
 
-    plink_output_path: str = "".join([output, "temp_plink_files"])
+    plink_output_path: str = "".join([output, "temp_plink_files/"])
 
     for variant, inner_dict in start_end_dist.items():
+        print(inner_dict)
 
         for network_id, segment_dicts in inner_dict.items():
 
             # getting the hapibd/ilash start and endpoints from the dictionary
-            hapibd_start: int = segment_dicts["hapibd"]["start"]
-            hapibd_end: int = segment_dicts["hapibd"]["end"]
-            ilash_start: int = segment_dicts["ilash"]["start"]
-            ilash_end: int = segment_dicts["ilash"]["end"]
+            if segment_dicts.get("hapibd"):
+                print("hapibd is present")
+                hapibd_start: int = segment_dicts["hapibd"].get("start")
+                hapibd_end: int = segment_dicts["hapibd"].get("end")
+            if segment_dicts.get("ilash"):
+                ilash_start: int = segment_dicts["ilash"].get("start")
+                ilash_end: int = segment_dicts["ilash"].get("end")
 
             # getting the chromosome number out of the segments_dicts
-            chr_num: int = segment_dicts["chr"]
+            chr_num: str = str(segment_dicts["chr"])
 
-            hapibd_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
-                binary_file, hapibd_start, hapibd_end, plink_output_path,
-                "hapibd", chr_num, variant, str(network_id))
+            if hapibd_start and hapibd_end:
+                hapibd_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                    binary_file, str(hapibd_start), str(hapibd_end),
+                    plink_output_path, "hapibd", chr_num, variant,
+                    str(network_id))
 
-            ilash_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
-                binary_file, ilash_start, ilash_end, plink_output_path,
-                "ilash", chr_num, variant, str(network_id))
+            if ilash_start and ilash_end:
+                ilash_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                    binary_file, str(ilash_start), str(ilash_end),
+                    plink_output_path, "ilash", chr_num, variant,
+                    str(network_id))
 
             # TODO: Add a program that will compare the frequency of each position in the haplotype string

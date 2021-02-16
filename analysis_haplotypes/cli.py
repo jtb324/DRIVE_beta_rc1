@@ -5,7 +5,7 @@ import analysis_haplotypes
 def run(args):
     '''This is the main run function'''
     analysis_haplotypes.compare_haplotypes(args.hfile, args.threads,
-                                           args.output)
+                                           args.output, args.bfile)
 
 
 def main():
@@ -17,6 +17,13 @@ def main():
                         dest="output",
                         type=str,
                         required=True)
+
+    parser.add_argument(
+        "-bfile",
+        help="This argument list the path to the binary file used by plink",
+        dest="bfile",
+        type=str,
+        required=True)
 
     parser.add_argument(
         "-hfile",
