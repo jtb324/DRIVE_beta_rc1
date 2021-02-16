@@ -96,10 +96,13 @@ def get_start_and_end(df_subset: pd.DataFrame, start_column_name: str,
         tuple containing two lists where one contains the start positions and
         another contains the end positions
     """
-    start_positions_list: list = df_subset[start_column_name].values.tolist()
+    start_positions_list: list = df_subset[start_column_name]
 
-    end_positions_list: list = df_subset[end_column_name].values.tolist()
+    start_positions_list = start_positions_list.dropna().values.tolist()
 
+    end_positions_list: list = df_subset[end_column_name]
+
+    end_positions_list = end_positions_list.dropna().values.tolist()
     return start_positions_list, end_positions_list
 
 
@@ -116,12 +119,16 @@ def get_median_value(positions_list: list) -> int:
         returns an integer of the median value of the list
     """
     positions_list.sort()
+    print("sorted list")
+    print(positions_list)
 
     midpoint: int = len(positions_list) // 2
+    print(f"The midpoint is : {midpoint}")
 
     median = (positions_list[midpoint] + positions_list[~midpoint]) / 2
 
-    return median
+    print(f"this is the median {median}")
+    return int(median)
 
 
 def determine_haplotype_start_and_end(haplotype_len_df: pd.DataFrame,
@@ -156,26 +163,29 @@ def determine_haplotype_start_and_end(haplotype_len_df: pd.DataFrame,
         haplotype_network_subset_df, "ilash_start", "ilash_end")
 
     # getting the median value for hapibd and ilash start and end lists
-    hapibd_start_median: int = get_median_value(hapibd_start_list)
-    hapibd_end_median: int = get_median_value(hapibd_end_list)
-    ilash_start_median: int = get_median_value(ilash_start_list)
-    ilash_end_median: int = get_median_value(ilash_end_list)
+    if hapibd_start_list and hapibd_end_list:
+        hapibd_start_median: int = get_median_value(hapibd_start_list)
+        hapibd_end_median: int = get_median_value(hapibd_end_list)
 
+        positions_dict[variant_id][network_id]["hapibd"] = {
+            "start": hapibd_start_median,
+            "end": hapibd_end_median
+        }
+
+    if ilash_start_list and ilash_end_list:
+        ilash_start_median: int = get_median_value(ilash_start_list)
+        ilash_end_median: int = get_median_value(ilash_end_list)
+
+        positions_dict[variant_id][network_id]["ilash"] = {
+            "start": ilash_start_median,
+            "end": ilash_end_median
+        }
     # adding values for the hapibd and ilash start and endpoints into the
     # positions_dict
-    positions_dict[variant_id][network_id]["hapibd"] = {
-        "start": hapibd_start_median,
-        "end": hapibd_end_median
-    }
-
-    positions_dict[variant_id][network_id]["ilash"] = {
-        "start": ilash_start_median,
-        "end": ilash_end_median
-    }
 
 
 def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
-                          threads: int):
+                          threads: int) -> dict:
     """
     Parameters
     __________
@@ -189,12 +199,13 @@ def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
 
     threads : int
         number of cores to use during the analysis
+
+    Returns
+    _______
+    dict
+        returns a nested dictionary that contains the median start and 
+        endpoints for each network in each variant 
     """
-    # manager = mp.Manager()
-
-    # que = manager.Queue()
-
-    pool = mp.Pool(int(threads))
 
     positions_dict: dict = dict()
 
@@ -220,20 +231,16 @@ def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
             }
             for id in networks_list
         }
+        for network_id in networks_list:
+            determine_haplotype_start_and_end(haplotype_subset_df,
+                                              positions_dict, variant,
+                                              network_id)
 
-        func = partial(determine_haplotype_start_and_end, haplotype_subset_df,
-                       positions_dict, variant)
-
-        pool.map(func, networks_list)
-
-        pool.close()
-
-        pool.join()
-
-    print(positions_dict)
+    return positions_dict
 
 
-def compare_haplotypes(haplotype_len_filepath: str, threads: int) -> str:
+def compare_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
+                       binary_file: str) -> str:
     """
     Parameters
     ----------
@@ -257,4 +264,36 @@ def compare_haplotypes(haplotype_len_filepath: str, threads: int) -> str:
     # generating a list of all the variants within the dataframe
     variants_list: list = get_variant_list(haplotype_len_df)
 
-    parallelize_form_dict(variants_list, haplotype_len_df, threads)
+    start_end_dist: dict = parallelize_form_dict(variants_list,
+                                                 haplotype_len_df, threads)
+
+    # creating a directory to put the plink files into
+    try:
+        os.mkdir("".join([output, "temp_plink_files"]))
+    except FileExistsError:
+        pass
+
+    plink_output_path: str = "".join([output, "temp_plink_files"])
+
+    for variant, inner_dict in start_end_dist.items():
+
+        for network_id, segment_dicts in inner_dict.items():
+
+            # getting the hapibd/ilash start and endpoints from the dictionary
+            hapibd_start: int = segment_dicts["hapibd"]["start"]
+            hapibd_end: int = segment_dicts["hapibd"]["end"]
+            ilash_start: int = segment_dicts["ilash"]["start"]
+            ilash_end: int = segment_dicts["ilash"]["end"]
+
+            # getting the chromosome number out of the segments_dicts
+            chr_num: int = segment_dicts["chr"]
+
+            hapibd_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                binary_file, hapibd_start, hapibd_end, plink_output_path,
+                "hapibd", chr_num, variant, str(network_id))
+
+            ilash_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                binary_file, ilash_start, ilash_end, plink_output_path,
+                "ilash", chr_num, variant, str(network_id))
+
+            # TODO: Add a program that will compare the frequency of each position in the haplotype string

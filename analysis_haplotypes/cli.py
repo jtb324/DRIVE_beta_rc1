@@ -4,18 +4,13 @@ import analysis_haplotypes
 
 def run(args):
     '''This is the main run function'''
-    analysis_haplotypes.main_run(args.bfile, args.output, args.hfile,
-                                 args.threads)
+    analysis_haplotypes.compare_haplotypes(args.hfile, args.threads,
+                                           args.output)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="This cli is used to run the full haplotype analysis")
-    parser.add_argument("--bfile",
-                        help="This argument list the path to the binary file",
-                        dest="bfile",
-                        type=str,
-                        required=True)
 
     parser.add_argument("-o",
                         help="This argument list the path to output files in",
