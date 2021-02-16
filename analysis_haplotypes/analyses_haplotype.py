@@ -8,6 +8,7 @@ from functools import partial
 
 # importing module from another file
 import analysis_haplotypes
+import utility_scripts
 
 
 def get_variant_list(haplotype_len_df: pd.DataFrame) -> list:
@@ -227,6 +228,7 @@ def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
             }
             for id in networks_list
         }
+
         for network_id in networks_list:
             determine_haplotype_start_and_end(haplotype_subset_df,
                                               positions_dict, variant,
@@ -235,8 +237,19 @@ def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
     return positions_dict
 
 
-def compare_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
-                       binary_file: str) -> str:
+def rm_files(file_path: str):
+
+    # get rid of the .ped ending first
+    general_file_path: str = file_path[:-4]
+
+    # removing the files iteratively
+    for ending in [".ped", ".log", ".map"]:
+
+        os.remove("".join([general_file_path, ending]))
+
+
+def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
+                      binary_file: str, pop_info: str, pop_code: str) -> str:
     """
     Parameters
     ----------
@@ -272,32 +285,36 @@ def compare_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
     plink_output_path: str = "".join([output, "temp_plink_files/"])
 
     for variant, inner_dict in start_end_dist.items():
-        print(inner_dict)
 
         for network_id, segment_dicts in inner_dict.items():
 
+            chr_num: str = str(segment_dicts["chr"])
             # getting the hapibd/ilash start and endpoints from the dictionary
             if segment_dicts.get("hapibd"):
-                print("hapibd is present")
                 hapibd_start: int = segment_dicts["hapibd"].get("start")
                 hapibd_end: int = segment_dicts["hapibd"].get("end")
-            if segment_dicts.get("ilash"):
-                ilash_start: int = segment_dicts["ilash"].get("start")
-                ilash_end: int = segment_dicts["ilash"].get("end")
 
-            # getting the chromosome number out of the segments_dicts
-            chr_num: str = str(segment_dicts["chr"])
-
-            if hapibd_start and hapibd_end:
                 hapibd_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
                     binary_file, str(hapibd_start), str(hapibd_end),
                     plink_output_path, "hapibd", chr_num, variant,
                     str(network_id))
 
-            if ilash_start and ilash_end:
+            if segment_dicts.get("ilash"):
+                ilash_start: int = segment_dicts["ilash"].get("start")
+                ilash_end: int = segment_dicts["ilash"].get("end")
+
                 ilash_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
                     binary_file, str(ilash_start), str(ilash_end),
                     plink_output_path, "ilash", chr_num, variant,
                     str(network_id))
+            # getting the chromosome number out of the segments_dicts
 
             # TODO: Add a program that will compare the frequency of each position in the haplotype string
+            print(hapibd_ped_file_path)
+            print(pop_info)
+            print(pop_code)
+            analysis_haplotypes.compare_haplotypes(hapibd_ped_file_path,
+                                                   pop_info, pop_code)
+            rm_files(hapibd_ped_file_path)
+            rm_files(ilash_ped_file_path)
+            sys.exit(1)
