@@ -248,6 +248,42 @@ def rm_files(file_path: str):
         os.remove("".join([general_file_path, ending]))
 
 
+def write_to_file(haplotype_str: str, output_path: str, variant: str,
+                  chr_num: str, network_id: str, ibd_program: str,
+                  position_list: list):
+    """Function to write the haplotype string to a file 
+    Parameters
+    __________
+    haplotype_str : str 
+        string contain the most probable allele at each position
+
+    output_path : str 
+        filepath to write the output to 
+
+    variant : str 
+        The variant id that the haplotype is associated with 
+
+    chr_num : str
+        chromsome number that the haplotype is located on 
+
+    network_id : str 
+        The id of the specific network 
+
+    position_list : list
+        list of the start and end position of the haplotype
+
+    """
+    with open(output_path, "a+") as output_file:
+        if os.path.getsize(output_path) == 0:
+            output_file.write(
+                "variant_id\tchr\tnetwork\tprogram\tstart_pos\tend_pos\thaplotype\n"
+            )
+
+        output_file.write(
+            f"{variant}\t{chr_num}\t{network_id}\t{ibd_program}\t{position_list[0]}\t{position_list[1]}\t{haplotype_str}\n"
+        )
+
+
 def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
                       binary_file: str, pop_info: str, pop_code: str) -> str:
     """
@@ -284,6 +320,15 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
 
     plink_output_path: str = "".join([output, "temp_plink_files/"])
 
+    output_path: str = "".join([plink_output_path, "haplotypes/"])
+
+    try:
+        os.mkdir(output_path)
+    except FileExistsError:
+        pass
+
+    output_file_path: str = "".join([output_path, "network_haplotypes.txt"])
+
     for variant, inner_dict in start_end_dist.items():
 
         for network_id, segment_dicts in inner_dict.items():
@@ -299,6 +344,13 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
                     plink_output_path, "hapibd", chr_num, variant,
                     str(network_id))
 
+                hapibd_haplotype_str: str = analysis_haplotypes.compare_haplotypes(
+                    hapibd_ped_file_path, pop_info, pop_code)
+
+                write_to_file(hapibd_haplotype_str, output_file_path, variant,
+                              chr_num, network_id, "hapibd",
+                              [hapibd_start, hapibd_end])
+
             if segment_dicts.get("ilash"):
                 ilash_start: int = segment_dicts["ilash"].get("start")
                 ilash_end: int = segment_dicts["ilash"].get("end")
@@ -307,14 +359,18 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
                     binary_file, str(ilash_start), str(ilash_end),
                     plink_output_path, "ilash", chr_num, variant,
                     str(network_id))
-            # getting the chromosome number out of the segments_dicts
 
-            # TODO: Add a program that will compare the frequency of each position in the haplotype string
-            print(hapibd_ped_file_path)
-            print(pop_info)
-            print(pop_code)
-            analysis_haplotypes.compare_haplotypes(hapibd_ped_file_path,
-                                                   pop_info, pop_code)
-            rm_files(hapibd_ped_file_path)
-            rm_files(ilash_ped_file_path)
-            sys.exit(1)
+                ilash_haplotype_str: str = analysis_haplotypes.compare_haplotypes(
+                    ilash_ped_file_path, pop_info, pop_code)
+
+                write_to_file(ilash_haplotype_str, output_file_path, variant,
+                              chr_num, network_id, "ilash",
+                              [ilash_start, ilash_end])
+                # TODO: Add a program that will compare the frequency of each position in the haplotype string
+
+            if hapibd_ped_file_path:
+                rm_files(hapibd_ped_file_path)
+                hapibd_ped_file_path = None
+            if ilash_ped_file_path:
+                rm_files(ilash_ped_file_path)
+                ilash_ped_file_path = None

@@ -53,7 +53,7 @@ def pop_filter_decorator(func):
     """
     def inner_func(*args):
         ped_file: str = args[0]
-        print(ped_file)
+
         pop_file_path: str = args[1]
 
         # load the pop_file into a pandas dataframe
