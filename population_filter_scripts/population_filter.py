@@ -6,7 +6,6 @@ import sys
 
 
 class Pop_Filter:
-
     def __init__(self, pop_info_file: str, recoded_file):
 
         self.info_file = pop_info_file
@@ -38,7 +37,7 @@ class Pop_Filter:
 
         return pop_info_subset_df
 
-    def filter_recode_df(self, pop_info_subset_df, recode_df):
+    def filter_recode_df(self, pop_info_subset_df, recode_df) -> pd.DataFrame:
         '''This function will filter the recoded file for only those where the IID is in the grid column.'''
 
         grid_list = pop_info_subset_df.grid.values.tolist()
@@ -46,3 +45,54 @@ class Pop_Filter:
         recode_df_filtered = recode_df[recode_df.IID.isin(grid_list)]
 
         return recode_df_filtered
+
+
+def pop_filter_decorator(func):
+    """decorator that will apply a population filter to the function
+
+    """
+    def inner_func(*args):
+        ped_file: str = args[0]
+
+        pop_file_path: str = args[1]
+
+        # load the pop_file into a pandas dataframe
+        pop_df: pd.DataFrame = pd.read_csv(pop_file_path, sep="\t")
+
+        pop_code: str = args[2]
+
+        pop_subset_grids: pd.DataFrame = pop_df[pop_df.Pop == pop_code]["grid"]
+
+        ped_recode_file = open(ped_file, "w+")
+
+        haplotype_allele_freq_dict: dict = {}
+
+        for line in ped_recode_file:
+
+            print(line)
+            split_line: list = line.split(line, 6)
+
+            print(split_line)
+            fid: str = split_line[0]
+
+            haplotype_str: str = split_line[5]
+
+            haplotype_len: int = len(haplotype_str)
+
+            if not haplotype_allele_freq_dict:
+
+                haplotype_allele_freq_dict = {
+                    i: {}
+                    for i in range(0, haplotype_len)
+                }
+
+            # check to see if the file is in the specified ancestry
+            if not pop_subset_grids.isin([fid]).empty:
+
+                func(*args,
+                     haplotype=haplotype_str,
+                     allele_freq_dict=haplotype_allele_freq_dict)
+
+        ped_recode_file.close()
+
+    return inner_func

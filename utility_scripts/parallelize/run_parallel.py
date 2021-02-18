@@ -12,7 +12,6 @@ def parallelize_decorator(func):
         function that the decorator will wrap around. This function should be a class method used 
         to parallelize the computation
     """
-
     def inner_func(self, *args):
 
         file_name: str = args[0]

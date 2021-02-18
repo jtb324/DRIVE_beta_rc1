@@ -4,8 +4,8 @@ import analysis_haplotypes
 
 def run(args):
     '''This is the main run function'''
-    analysis_haplotypes.compare_haplotypes(args.hfile, args.threads,
-                                           args.output)
+    analysis_haplotypes.gather_haplotypes(args.hfile, args.output, args.bfile,
+                                          args.pop_file, args.pop_code)
 
 
 def main():
@@ -19,6 +19,13 @@ def main():
                         required=True)
 
     parser.add_argument(
+        "-bfile",
+        help="This argument list the path to the binary file used by plink",
+        dest="bfile",
+        type=str,
+        required=True)
+
+    parser.add_argument(
         "-hfile",
         help="This argument list the path to the haplotype_info__file",
         dest="hfile",
@@ -26,11 +33,17 @@ def main():
         required=True)
 
     parser.add_argument(
-        "-t",
-        help=
-        "This argument list the number of threads to be used by the program",
-        dest="threads",
-        type=int,
+        "-pop_info",
+        help="This argument list the file path to the population info file",
+        dest="pop_file",
+        type=str,
+        required=True)
+
+    parser.add_argument(
+        "--pop_code",
+        help="This argument list the population code to be used",
+        dest="pop_code",
+        type=str,
         required=True)
 
     parser.set_defaults(func=run)
