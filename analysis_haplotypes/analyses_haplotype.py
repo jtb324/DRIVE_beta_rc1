@@ -181,8 +181,7 @@ def determine_haplotype_start_and_end(haplotype_len_df: pd.DataFrame,
     # positions_dict
 
 
-def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
-                          threads: int) -> dict:
+def form_dict(variant_list: list, haplotype_len_df: pd.DataFrame) -> dict:
     """
     Parameters
     __________
@@ -193,9 +192,6 @@ def parallelize_form_dict(variant_list: list, haplotype_len_df: pd.DataFrame,
         pandas dataframe containing information about the start and endpoints
         of each haplotype as well as the toal length of the segment for both
         ilash and hapibd and
-
-    threads : int
-        number of cores to use during the analysis
 
     Returns
     _______
@@ -284,7 +280,7 @@ def write_to_file(haplotype_str: str, output_path: str, variant: str,
         )
 
 
-def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
+def gather_haplotypes(haplotype_len_filepath: str, output: str,
                       binary_file: str, pop_info: str, pop_code: str) -> str:
     """
     Parameters
@@ -292,9 +288,6 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
     haplotype_len_filepath : str
         This parameter list the filepath to the file that contains the lengths 
         of each haplotype for each pair
-
-    threads : int
-        number of threads to be used during the computation
 
     Returns 
     -------
@@ -309,8 +302,7 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
     # generating a list of all the variants within the dataframe
     variants_list: list = get_variant_list(haplotype_len_df)
 
-    start_end_dist: dict = parallelize_form_dict(variants_list,
-                                                 haplotype_len_df, threads)
+    start_end_dict: dict = form_dict(variants_list, haplotype_len_df)
 
     # creating a directory to put the plink files into
     try:
@@ -320,7 +312,7 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
 
     plink_output_path: str = "".join([output, "temp_plink_files/"])
 
-    output_path: str = "".join([plink_output_path, "haplotypes/"])
+    output_path: str = "".join([output, "haplotypes/"])
 
     try:
         os.mkdir(output_path)
@@ -329,7 +321,7 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
 
     output_file_path: str = "".join([output_path, "network_haplotypes.txt"])
 
-    for variant, inner_dict in start_end_dist.items():
+    for variant, inner_dict in start_end_dict.items():
 
         for network_id, segment_dicts in inner_dict.items():
 
@@ -351,6 +343,9 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
                               chr_num, network_id, "hapibd",
                               [hapibd_start, hapibd_end])
 
+                rm_files(hapibd_ped_file_path)
+                hapibd_ped_file_path = None
+
             if segment_dicts.get("ilash"):
                 ilash_start: int = segment_dicts["ilash"].get("start")
                 ilash_end: int = segment_dicts["ilash"].get("end")
@@ -366,11 +361,7 @@ def gather_haplotypes(haplotype_len_filepath: str, threads: int, output: str,
                 write_to_file(ilash_haplotype_str, output_file_path, variant,
                               chr_num, network_id, "ilash",
                               [ilash_start, ilash_end])
-                # TODO: Add a program that will compare the frequency of each position in the haplotype string
 
-            if hapibd_ped_file_path:
-                rm_files(hapibd_ped_file_path)
-                hapibd_ped_file_path = None
-            if ilash_ped_file_path:
                 rm_files(ilash_ped_file_path)
                 ilash_ped_file_path = None
+            # TODO: need to add a file that catches if the haplotype string is not created for ilash or hapibd

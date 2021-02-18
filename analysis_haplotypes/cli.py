@@ -4,8 +4,7 @@ import analysis_haplotypes
 
 def run(args):
     '''This is the main run function'''
-    analysis_haplotypes.gather_haplotypes(args.hfile, args.threads,
-                                          args.output, args.bfile,
+    analysis_haplotypes.gather_haplotypes(args.hfile, args.output, args.bfile,
                                           args.pop_file, args.pop_code)
 
 
@@ -45,14 +44,6 @@ def main():
         help="This argument list the population code to be used",
         dest="pop_code",
         type=str,
-        required=True)
-
-    parser.add_argument(
-        "-t",
-        help=
-        "This argument list the number of threads to be used by the program",
-        dest="threads",
-        type=int,
         required=True)
 
     parser.set_defaults(func=run)

@@ -511,9 +511,4 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
     parallel_runner.run_haplotypes_parallel(file_name, get_haplotype,
                                             header_str)
 
-    # parallel_map(int(threads), allpair_file_list, variant_list,
-    #              carrier_file_list, map_file_list, output_path,
-    #              ilash_file_list, hapibd_file_list, network_file,
-    #              confirmed_carrier_file)
-
     sort_file("".join([output_path, "haplotype_lengths.txt"]))
