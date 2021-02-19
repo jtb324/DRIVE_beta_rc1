@@ -5,9 +5,10 @@ import multiprocessing as mp
 import os
 import sys
 from functools import partial
+import shutil
 
 # importing module from another file
-import analysis_haplotypes
+import haplotype_segments_analysis
 import utility_scripts
 
 
@@ -289,6 +290,20 @@ def gather_haplotypes(haplotype_len_filepath: str, output: str,
         This parameter list the filepath to the file that contains the lengths 
         of each haplotype for each pair
 
+    output : str 
+        string listing the filepath to the output directory for the function
+
+    binary_file : str
+        string listing the directory to the bed and bim files used by PLINK
+
+    pop_info : str
+        string to the directory containing a file that list the population
+        demographic for grids IIDs. This demographic codes should be based on 
+        1000 genomes definition
+
+    pop_code : str
+        string listing the demographic code that the user wants to filter for
+
     Returns 
     -------
     str
@@ -331,12 +346,12 @@ def gather_haplotypes(haplotype_len_filepath: str, output: str,
                 hapibd_start: int = segment_dicts["hapibd"].get("start")
                 hapibd_end: int = segment_dicts["hapibd"].get("end")
 
-                hapibd_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                hapibd_ped_file_path: str = haplotype_segments_analysis.get_plink_haplotype_str(
                     binary_file, str(hapibd_start), str(hapibd_end),
                     plink_output_path, "hapibd", chr_num, variant,
                     str(network_id))
 
-                hapibd_haplotype_str: str = analysis_haplotypes.compare_haplotypes(
+                hapibd_haplotype_str: str = haplotype_segments_analysis.compare_haplotypes(
                     hapibd_ped_file_path, pop_info, pop_code)
 
                 write_to_file(hapibd_haplotype_str, output_file_path, variant,
@@ -350,12 +365,12 @@ def gather_haplotypes(haplotype_len_filepath: str, output: str,
                 ilash_start: int = segment_dicts["ilash"].get("start")
                 ilash_end: int = segment_dicts["ilash"].get("end")
 
-                ilash_ped_file_path: str = analysis_haplotypes.get_plink_haplotype_str(
+                ilash_ped_file_path: str = haplotype_segments_analysis.get_plink_haplotype_str(
                     binary_file, str(ilash_start), str(ilash_end),
                     plink_output_path, "ilash", chr_num, variant,
                     str(network_id))
 
-                ilash_haplotype_str: str = analysis_haplotypes.compare_haplotypes(
+                ilash_haplotype_str: str = haplotype_segments_analysis.compare_haplotypes(
                     ilash_ped_file_path, pop_info, pop_code)
 
                 write_to_file(ilash_haplotype_str, output_file_path, variant,
@@ -364,4 +379,6 @@ def gather_haplotypes(haplotype_len_filepath: str, output: str,
 
                 rm_files(ilash_ped_file_path)
                 ilash_ped_file_path = None
-            # TODO: need to add a file that catches if the haplotype string is not created for ilash or hapibd
+                # TODO: need to add a file that catches if the haplotype string is not created for ilash or hapibd
+
+                shutil.rmtree()

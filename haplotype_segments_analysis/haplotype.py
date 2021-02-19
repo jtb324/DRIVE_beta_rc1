@@ -466,7 +466,7 @@ def create_readme(output_path: str):
 def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
                         ilash_dir: str, hapibd_dir: str, threads: int,
                         map_file_dir: str, reformated_carrier_files: str,
-                        network_file: str, allpair_files: str):
+                        network_file: str, allpair_files: str) -> str:
     "function to run"
 
     create_readme(output_path)
@@ -512,3 +512,5 @@ def get_segment_lengths(confirmed_carrier_file: str, output_path: str,
                                             header_str)
 
     sort_file("".join([output_path, "haplotype_lengths.txt"]))
+
+    return "".join([output_path, "haplotype_lengths.txt"])

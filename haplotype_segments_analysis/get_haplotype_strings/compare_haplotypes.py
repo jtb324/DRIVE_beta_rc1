@@ -22,8 +22,6 @@ def get_haplotype_str(frequency_dict: dict, total_allele_count: int) -> str:
     str 
         returns a string containing the most probably haplotype
     """
-    print("getting the haplotype string")
-
     probable_haplotype_list: list = []
 
     haplotype_positions_list: list = list(frequency_dict.keys())
@@ -97,8 +95,6 @@ def compare_haplotypes(*args,
     str 
         returns a string of the correct haplotype at each site
     """
-
-    print("comparing haplotypes")
 
     ped_file: str = args[0]
 
