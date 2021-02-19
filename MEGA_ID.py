@@ -314,14 +314,14 @@ def run(args):
 
         os.mkdir("".join([args.output, "haplotype_analysis/"]))
 
-    haplotype_segments_analysis.get_segment_lengths(
+    haplotype_info_path: str = haplotype_segments_analysis.get_segment_lengths(
         "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
         "".join([args.output, "haplotype_analysis/"]),
         ILASH_PATH,
         HAPIBD_PATH,
         THREADS,
         "".join([args.output, "plink_output_files/"]),
-        "".join([args.output, "carrier_analysis_output/", "reformated/"]),
+        "".join([args.output, "carrier_analysis_output/", "reformatted/"]),
         "".join([args.output, "networks/", "network_groups.csv"]),
         IBD_search_output_files,
     )
@@ -344,6 +344,17 @@ def run(args):
         "INFO",
         f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}\n"
     )
+
+    # Add the function that gets the haplotype string to this
+    logfile.add_newline(
+        "INFO",
+        f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}\n"
+    )
+    print("Finding the most probable haplotypes")
+
+    haplotype_segments_analysis.gather_haplotypes(
+        haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
+        args.binary_file, args.pop_info, args.pop_code)
 
     logfile.add_newline("INFO", 'Analysis finished...\n')
 

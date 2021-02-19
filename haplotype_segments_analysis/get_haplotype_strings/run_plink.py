@@ -11,11 +11,9 @@ def get_plink_haplotype_str(binary_file: str, start_bp: str, end_bp: str,
 
     # Creating an output path
     output_dir: str = output_dir_path
-    try:
-        os.mkdir(output_dir)
 
-    except FileExistsError:
-        pass
+    log_file: str = "".join([output_dir, "plink_log.log"])
+    print(log_file)
 
     full_output_path: str = "".join([
         output_dir, variant_id, "_", network_id, "_plink_", ibd_program, "_",
@@ -23,8 +21,8 @@ def get_plink_haplotype_str(binary_file: str, start_bp: str, end_bp: str,
         str(end_bp)
     ])
 
-    subprocess.run(
-        [
+    with open(log_file, "a+") as plink_log:
+        subprocess.run([
             "plink",
             "--bfile",
             binary_file,
@@ -38,7 +36,10 @@ def get_plink_haplotype_str(binary_file: str, start_bp: str, end_bp: str,
             "--out",
             full_output_path,
         ],
-        check=False,
-    )
+                       check=False,
+                       stdout=plink_log,
+                       stderr=plink_log)
+
+        plink_log.close()
 
     return "".join([full_output_path, ".ped"])
