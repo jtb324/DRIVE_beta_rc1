@@ -1,4 +1,4 @@
-# MEGA_CLI_project
+# DRIVE: Distant Relatedness for Identification and Variant Evaluation
 
 ## Goal
 
