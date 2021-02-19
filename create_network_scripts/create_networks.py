@@ -162,7 +162,7 @@ def create_networks(segments_file_dir: str, variant_file_dir: str,
         segments_file_dir, "*.allpair.txt")
     # Getting a list of all the carrier files
     carrier_file_list: list = network_drawer.gather_files(
-        "".join([variant_file_dir, "reformated/"]),
+        "".join([variant_file_dir, "reformatted/"]),
         "*.single_var_list_reformat.csv")
 
     # Creating a dictionary that will be used to record useful information
