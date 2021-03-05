@@ -1,3 +1,2 @@
 pandas==1.0.5                                                                   
 numpy==1.18.5                                                                   
-python-levenshtein==0.12.1
