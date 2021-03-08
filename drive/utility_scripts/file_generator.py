@@ -34,6 +34,9 @@ class Documentation:
             file.write(
                 "################################################################\n\n"
             )
+            file.write(
+                "DRIVE: Distant Relatedness for Identification and Variant Evaluation\n"
+            )
             file.write(f"run started on {self.day} at {self.time}\n")
             file.write(f"run started by user: {self.user}\n\n")
             file.write(
@@ -77,7 +80,7 @@ class LogFile(Documentation):
 
         with open(self.file_name, "a+") as readme_file:
 
-            readme_file.write("Log file for the MEGA project:\n")
+            readme_file.write("Log file for the DRIVE program:\n")
 
     @staticmethod
     def create_format_string(log_tag: str, text: str, time: str) -> str:

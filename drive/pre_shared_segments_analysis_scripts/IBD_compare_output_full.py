@@ -7,6 +7,7 @@ import os
 import re
 
 # Getting all the ibd files that end in .small.txt.gz
+import pre_shared_segments_analysis_scripts
 
 
 def gather_ibd_files(segment_dir: str) -> list:
@@ -153,7 +154,8 @@ def all_agree_pair(pair_list: dict) -> list:
 
 
 def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str,
-                  carrier_file_dir: str, chr_num: str):
+                  carrier_file_dir: str, chr_num: str, hapibd_file: str,
+                  ilash_file: str, map_file: str):
     '''This function will find the highest number of pairs and writes it to a file called .allpair.txt'''
 
     # spliting the pair row
@@ -164,7 +166,7 @@ def get_max_pairs(allpair_file_name: str, pairs_row: str, variant_id: str,
     pair_list: list = pair_str.split(" ")
 
     reformat(allpair_file_name, pair_list, variant_id, carrier_file_dir,
-             chr_num)
+             chr_num, hapibd_file, ilash_file, map_file)
 
 
 def get_carrier_file_list(carrier_files_dir: str) -> list:
@@ -231,7 +233,8 @@ def check_for_missed_carriers(pair_2: str, pair_list: list,
 
 
 def reformat(write_path: str, pair_list: list, variant_id: str,
-             carrier_file_dir: str, chr_num: str):
+             carrier_file_dir: str, chr_num: str, hapibd_file: str,
+             ilash_file: str, map_file: str):
     '''this function takes the original allpair.txt file and reformats it to four columns.
     The first columnn is the ibd program that identified the pairs, the second column is the
     first pair, the third column is the second pair, and then the fourth column tells if the
@@ -263,7 +266,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
             if os.path.getsize(write_path) == 0:
 
                 allpair_new_file.write(
-                    "IBD_programs\tpair_1\tpair_2\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n"
+                    "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\thapibd_phase1\thapibd_phase2\tilash_phase1\tilash_phase2\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
                 )
 
             # getting the IBD programs that found the output
@@ -286,11 +289,19 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
                 # the carrier status is a one if the second iid pair is in the list of carriers
                 car_status = 1
 
+                hapibd_segment_dict, ilash_segment_dict = pre_shared_segments_analysis_scripts.get_segment_lens(
+                    pair1, pair2, map_file, variant_id, hapibd_file,
+                    ilash_file)
+
             else:
                 # If the second iid pair is not in the list of carriers then the status is a 0
                 car_status = 0
             # This function will check if the second pair is a potential missed carrierq
             if car_status == 0:
+
+                hapibd_segment_dict, ilash_segment_dict = pre_shared_segments_analysis_scripts.get_segment_lens(
+                    pair1, pair2, map_file, variant_id, hapibd_file,
+                    ilash_file)
 
                 connected_carriers = check_for_missed_carriers(
                     pair2, pair_list, carrier_iid_list)
@@ -307,9 +318,26 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
 
                 potential_missed_carrier = 0
 
-                # writing the pairs to different columns
+                hapibd_segment_dict = {
+                    "start": "N/A",
+                    "end": "N/A",
+                    "length": "N/A",
+                    "phase1": "N/A",
+                    "phase2": "N/A"
+                }
+
+                ilash_segment_dict = {
+                    "start": "N/A",
+                    "end": "N/A",
+                    "length": "N/A",
+                    "phase1": "N/A",
+                    "phase2": "N/A"
+                }
+
+            # Need to call the haplotype function to get the lengths
+            # writing the pairs to different columns
             allpair_new_file.write(
-                f"{programs}\t{pair1}\t{pair2}\t{car_status}\t{str(potential_missed_carrier)}\t{str(connected_carriers)}\n"
+                f"{programs}\t{pair1}\t{pair2}\t{chr_num.strip('.')}\t{variant_id}\t{car_status}\t{str(potential_missed_carrier)}\t{str(connected_carriers)}\t{hapibd_segment_dict['phase1']}\t{hapibd_segment_dict['phase2']}\t{ilash_segment_dict['phase1']}\t{ilash_segment_dict['phase2']}\t{hapibd_segment_dict['start']}\t{hapibd_segment_dict['end']}\t{hapibd_segment_dict['length']}\t{ilash_segment_dict['start']}\t{ilash_segment_dict['end']}\t{ilash_segment_dict['length']}\n"
             )
 
 
@@ -331,8 +359,59 @@ def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
         return 0
 
 
+# TODO: incorporate this function into the main combine_output function
+def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
+    '''This function gets the file that matches a condition from a list of files'''
+
+    # generate alternate chr number incase the formatting does not contain a zero
+    if identifier:
+        file_str: str = [file for file in file_list if identifier in file][0]
+
+    alt_chr_num = None
+    if chr_num:
+        alt_chr_num: str = alternate_chr_num_format(chr_num)
+        file_str: str = [
+            file for file in file_list
+            if chr_num in file or alt_chr_num in file
+        ][0]
+
+    return file_str
+
+
+def get_files(ibd_dir: str, extension: str) -> list:
+
+    cur_dir = os.getcwd()
+    os.chdir(ibd_dir)
+    ibd_file_list = []
+
+    for file in glob.glob(extension):
+
+        full_file_path = "".join([ibd_dir, file])
+
+        ibd_file_list.append(full_file_path)
+
+    os.chdir(cur_dir)
+    return ibd_file_list
+
+
+def find_ibd_file(ibd_dir: list, chr_num: str) -> str:
+    """Function to return the correct ibd file for the chromosome"""
+
+    ibd_file: str = [
+        file for file in ibd_dir if "".join(["_", chr_num[1:]]) in file
+    ][0]
+
+    return ibd_file
+
+
 def combine_output(segment_dir: str, ibd_programs: list, output: str,
-                   car_file: str):
+                   car_file: str, ibd_files: dict, map_file_dir: str):
+    ilash_dir_str: str = ibd_files["ilash"]
+    hapibd_dir_str: str = ibd_files["hapibd"]
+    # using the above two directories to extract files:
+    ilash_file_list: list = get_files(ilash_dir_str, "*match.gz")
+    hapibd_file_list: list = get_files(hapibd_dir_str, "*ibd.gz")
+    map_file_list: list = get_files(map_file_dir, "*.map")
 
     output: str = "".join([output, ""])
     ibd_file_list: list = gather_ibd_files(segment_dir)
@@ -347,6 +426,15 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str,
         file_list: list = file_dict[(chr_num, variant_id)]
 
         alt_chr_num: str = alternate_chr_num_format(chr_num)
+        # getting the hapibd file that corresponds to the correct chromosome number
+        hapibd_file: str = find_ibd_file(hapibd_file_list, alt_chr_num)
+        #getting the ilash file that corresponds to the correct chromsome number
+        ilash_file: str = find_ibd_file(ilash_file_list, alt_chr_num)
+
+        # getting the map file that corresponds to the correct chromosome number
+        map_file: str = [
+            file for file in map_file_list if "".join([alt_chr_num[:-1], "_"])
+        ][0]
 
         if len(file_list) == 0:  # Checking length of system arguments
             sys.exit(f"no files found for this variant {variant_id}")
@@ -486,7 +574,8 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str,
 
                     # Entering into the get_max_pairs function
                     get_max_pairs(allagree_path, max_pairs_str, variant_id,
-                                  car_file, chr_num)
+                                  car_file, chr_num, hapibd_file, ilash_file,
+                                  map_file)
 
                     break
 

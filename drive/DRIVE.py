@@ -19,6 +19,7 @@ import utility_scripts
 
 def run(args):
     # creating the README for the main parent directory
+    #TODO: refactor these readme section
     readme = utility_scripts.Readme("_README.md", args.output)
 
     readme.rm_previous_file()
@@ -34,59 +35,65 @@ def run(args):
     # Next few lines give settings for the logger
 
     # Creating a logfile
+    current_day = datetime.now().strftime("%m_%d_%Y")
 
-    file_name: str = "".join([args.output, "run.log"])
+    file_name: str = "".join([args.output, current_day, "_run.log"])
+    logger: object = utility_scripts.create_logger(__name__, file_name)
 
-    if path.exists(file_name):
-        os.remove(file_name)
+    utility_scripts.record_user_arguments(logger, args)
+    # if path.exists(file_name):
+    #     os.remove(file_name)
 
-    logfile = utility_scripts.LogFile("run.log", args.output)
-    logfile.write_header()
-    logfile.create_date_info()
-    logfile.add_newline("INFO", "Starting the run...\n")
+    # logfile = utility_scripts.LogFile("run.log", args.output)
+    # logfile.write_header()
+    # logfile.create_date_info()
+    # logfile.add_newline("INFO", "Starting the run...\n")
 
-    # Logging some of the info about the users input
-    logfile.add_newline("INFO", f"Binary File: {args.binary_file}\n")
-    logfile.add_newline("INFO", f"Recode options: {args.recode_options}\n")
-    logfile.add_newline("INFO", f"Writing the output to: {args.output}\n")
-    logfile.add_newline(
-        "INFO", f"The ibd programs being used are: {args.ibd_programs}\n")
-    logfile.add_newline(
-        "INFO",
-        f"The population information file describing the demographics is found at: {args.pop_info}\n"
-    )
-    logfile.add_newline(
-        "INFO", f"The population code being used is: {args.pop_code}\n")
+    # # Logging some of the info about the users input
+    # logfile.add_newline("INFO", f"Binary File: {args.binary_file}\n")
+    # logfile.add_newline("INFO", f"Recode options: {args.recode_options}\n")
+    # logfile.add_newline("INFO", f"Writing the output to: {args.output}\n")
+    # logfile.add_newline(
+    #     "INFO", f"The ibd programs being used are: {args.ibd_programs}\n")
+    # logfile.add_newline(
+    #     "INFO",
+    #     f"The population information file describing the demographics is found at: {args.pop_info}\n"
+    # )
+    # logfile.add_newline(
+    #     "INFO", f"The population code being used is: {args.pop_code}\n")
 
-    # Asking for user input for constants that will be used throughout the program
-    ANALYSIS_TYPE: str = utility_scripts.ask_for_analysis_type(logfile)
+    # creating an object that will ask for user input for the Analysis type,
+    # the minimum  centimorgan threshold, the threads to be used and the
+    # minor allele frequency threshold
+    input_gatherer: object = utility_scripts.Input_Gather()
 
-    MIN_CM: str = utility_scripts.ask_for_min_cm(logfile)
+    # Getting the objects attributes
+    object_dict: dict = input_gatherer.get_dict_of_variables()
 
-    THREADS: str = utility_scripts.ask_for_thread_count(logfile)
+    # unpacking the dictionary into the user parameters
+    ANALYSIS_TYPE: str = object_dict["ANALYSIS_TYPE"]
+    MIN_CM: str = object_dict["MIN_CM"]
+    THREADS: str = object_dict["THREADS"]
+    MAF_FILTER: str = object_dict["MAF_THRESHOLD"]
 
-    MAF_FILTER: str = utility_scripts.ask_for_maf_filter(logfile)
-
+    # setting parameters for the ilash file paths and the hapibd file paths
     ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
 
     HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
 
-    logfile.add_newline(
-        "INFO", f"The specified path to the iLASH files are {ILASH_PATH}\n")
-
-    logfile.add_newline(
-        "INFO",
-        f"The specified path to the hapibd files are {HAPIBD_PATH}\n\n")
+    logger.info("iLASH files directory: {ILASH_PATH}")
+    logger.info("Hapibd files directory: {HAPIBD_PATH}")
 
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
-    # TO
+
+    # TODO: create a quick function that can simplify this repetitive need to check if the path already exist
     # Next line checks to see if a plink output file already exist and delets it if it does
     if os.path.exists("".join(
         [args.output, "plink_output_files/", "plink_log.log"])):
 
         os.remove("".join(
             [args.output, "plink_output_files/", "plink_log.log"]))
-
+    # TODO: Refactor this next line from line 93
     if ANALYSIS_TYPE.lower() == "gene":
 
         # getting the output directory to be to the variants_of_interest
@@ -266,11 +273,12 @@ def run(args):
             "".join([args.output,
                      "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
     print("combining segment output...")
-
+    ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
     pre_shared_segments_analysis_scripts.combine_output(
         "".join([IBD_search_output_files, "reformatted_ibd_output/"]),
         args.ibd_programs, IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/reformatted/"]))
+        "".join([args.output, "carrier_analysis_output/reformatted/"]),
+        ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
 
     pre_shared_segments_analysis_scripts.reformat_files(
         "".join([args.output, "carrier_analysis_output/"]),

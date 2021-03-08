@@ -17,6 +17,8 @@ cftr_pathogenic/
 clinical_mega_gnomAD_freq/
 .idea/
 gnomad_analysis/
+.vscode
+docker/
 
 # Don't ignore these files
 !requirements.txt

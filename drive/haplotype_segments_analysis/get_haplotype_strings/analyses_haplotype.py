@@ -381,4 +381,4 @@ def gather_haplotypes(haplotype_len_filepath: str, output: str,
                 ilash_ped_file_path = None
                 # TODO: need to add a file that catches if the haplotype string is not created for ilash or hapibd
 
-                shutil.rmtree()
+    shutil.rmtree(plink_output_path)
