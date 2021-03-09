@@ -1,5 +1,7 @@
 import sys
 import logging
+import os
+from os import path
 
 # This script will ask for the user to input certain initial parameters
 
@@ -38,11 +40,16 @@ class Input_Gather:
 
     @staticmethod
     def get_logger() -> object:
+        """function to get the logger that has the name __main__
+        Returns
+        _______
+        object
+            returns the logger object that has the name __main__
+        """
         logger = logging.getLogger("__main__")
         return logger
 
     # Function for analysis type
-
     def ask_for_analysis_type(self) -> str:
         """
         This function will get the analysis type for the run.
@@ -86,12 +93,15 @@ class Input_Gather:
             try:
                 MIN_CM = int(MIN_CM)
             except ValueError:
-                print("invalid parameter passed for the minimum centimorgan threshold.")
+                print(
+                    "invalid parameter passed for the minimum centimorgan threshold."
+                )
 
                 self.logger.error(
-                    "Invalid parameter passed for the minimum centimorgan threshold. Please input an integer value")
+                    "Invalid parameter passed for the minimum centimorgan threshold. Please input an integer value"
+                )
 
-        self.logger.info("Minimum Centimorgan Threshold:" {MIN_CM})
+        self.logger.info(f"Minimum Centimorgan Threshold: {MIN_CM}")
 
         self.MIN_CM = MIN_CM
 
@@ -115,9 +125,11 @@ class Input_Gather:
                 THREADS = int(THREADS)
             except ValueError:
                 print(
-                    "invalid parameter passed for the number of threads to be used during the analysis")
+                    "invalid parameter passed for the number of threads to be used during the analysis"
+                )
                 self.logger.error(
-                    "invalid parameter passed for the number of threads to be used during the analysis. Please enter an number")
+                    "invalid parameter passed for the number of threads to be used during the analysis. Please enter an number"
+                )
 
         self.logger.info(
             f"Number of Threads used during the computation: {THREADS}")

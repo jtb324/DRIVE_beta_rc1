@@ -19,7 +19,7 @@ import utility_scripts
 
 def run(args):
     # creating the README for the main parent directory
-    #TODO: refactor these readme section
+    # TODO: refactor these readme section
     readme = utility_scripts.Readme("_README.md", args.output)
 
     readme.rm_previous_file()
@@ -34,33 +34,14 @@ def run(args):
 
     # Next few lines give settings for the logger
 
-    # Creating a logfile
+    # Creating a logfile with the current day as part of the log file name
     current_day = datetime.now().strftime("%m_%d_%Y")
 
     file_name: str = "".join([args.output, current_day, "_run.log"])
+
     logger: object = utility_scripts.create_logger(__name__, file_name)
 
     utility_scripts.record_user_arguments(logger, args)
-    # if path.exists(file_name):
-    #     os.remove(file_name)
-
-    # logfile = utility_scripts.LogFile("run.log", args.output)
-    # logfile.write_header()
-    # logfile.create_date_info()
-    # logfile.add_newline("INFO", "Starting the run...\n")
-
-    # # Logging some of the info about the users input
-    # logfile.add_newline("INFO", f"Binary File: {args.binary_file}\n")
-    # logfile.add_newline("INFO", f"Recode options: {args.recode_options}\n")
-    # logfile.add_newline("INFO", f"Writing the output to: {args.output}\n")
-    # logfile.add_newline(
-    #     "INFO", f"The ibd programs being used are: {args.ibd_programs}\n")
-    # logfile.add_newline(
-    #     "INFO",
-    #     f"The population information file describing the demographics is found at: {args.pop_info}\n"
-    # )
-    # logfile.add_newline(
-    #     "INFO", f"The population code being used is: {args.pop_code}\n")
 
     # creating an object that will ask for user input for the Analysis type,
     # the minimum  centimorgan threshold, the threads to be used and the
@@ -68,7 +49,7 @@ def run(args):
     input_gatherer: object = utility_scripts.Input_Gather()
 
     # Getting the objects attributes
-    object_dict: dict = input_gatherer.get_dict_of_variables()
+    object_dict: dict = utility_scripts.get_dict_of_variables(input_gatherer)
 
     # unpacking the dictionary into the user parameters
     ANALYSIS_TYPE: str = object_dict["ANALYSIS_TYPE"]
@@ -81,11 +62,13 @@ def run(args):
 
     HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
 
-    logger.info("iLASH files directory: {ILASH_PATH}")
-    logger.info("Hapibd files directory: {HAPIBD_PATH}")
+    logger.info(f"iLASH files directory: {ILASH_PATH}")
+    logger.info(f"Hapibd files directory: {HAPIBD_PATH}")
 
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
 
+    # output path that all the plink files will output to
+    plink_file_path = "".join([args.output, "plink_output_files/"])
     # TODO: create a quick function that can simplify this repetitive need to check if the path already exist
     # Next line checks to see if a plink output file already exist and delets it if it does
     if os.path.exists("".join(
@@ -94,79 +77,34 @@ def run(args):
         os.remove("".join(
             [args.output, "plink_output_files/", "plink_log.log"]))
     # TODO: Refactor this next line from line 93
-    if ANALYSIS_TYPE.lower() == "gene":
+    if args.var_file:
+        analysis_type_checker: object = plink_initial_format_scripts.Analysis_Checker(
+            ANALYSIS_TYPE,
+            args.recode_options,
+            args.binary_file,
+            args.output,
+            plink_file_path,
+            var_file=args.var_file,
+            maf_filter=MAF_FILTER)
 
-        # getting the output directory to be to the variants_of_interest
-        # subdirectory
-        logfile.add_newline(
-            "INFO",
-            f"generating a list of snps from the file {args.var_file}\n")
+        analysis_type_checker.check_analysis(
+            readme_txt=utility_scripts.plink_readme_body_text)
 
-        plink_file_path: str = plink_initial_format_scripts.split_input_and_run_plink(
-            args.var_file, args.output, args.recode_options, args.binary_file,
-            "".join([args.output, "plink_output_files/"]), MAF_FILTER)
+        analysis_type_checker.check_missing_var_count()
 
-        missing_var_count: int = plink_initial_format_scripts.check_for_missing_var(
-            plink_file_path, args.var_file)
-
-        logfile.add_newline(
-            "INFO",
-            f"There were {missing_var_count} missing variants between the provided input file at {args.var_file} and the plink output in the directory {plink_file_path}\n"
-        )
-    # This next section runs the first level of the program using the maf analysis type
-    # this means that the
-    elif ANALYSIS_TYPE.lower() == "maf":
-
-        CHR: str = input(
-            "Please input the chromosome that the variant of interest is on. Please use a leading 0 for single digit numbers: "
-        )
-
-        logfile.add_newline(
-            "INFO",
-            f"Setting the chromosome of interest to be chromosome {CHR}\n")
-        print(
-            f"extracting all variants below a minor allele frequency of {MAF_FILTER}"
-        )
-
-        if args.range:
-            START_RS: str = args.range[0]
-            END_RS: str = args.range[1]
-
-            logfile.add_newline(
-                "INFO",
-                f"beginning analysis for the range starting with the variant {START_RS} and ending at {END_RS}\n"
-            )
-
-            plink_runner = plink_initial_format_scripts.PLINK_Runner(
-                args.recode_options,
-                args.output,
-                args.binary_file,
-                maf_filter=MAF_FILTER,
-                start_rs=START_RS,
-                end_rs=END_RS,
-                chr_num=CHR,
-            )
-        else:
-            plink_runner = plink_initial_format_scripts.PLINK_Runner(
-                args.recode_options,
-                args.output,
-                args.binary_file,
-                maf_filter=MAF_FILTER,
-            )
-
-        plink_file_path: str = plink_runner.run_PLINK_maf_filter()
-
-        logfile.add_newline(
-            "INFO", f"PLINK output files written to: {plink_file_path}\n")
-
-        # output files
     else:
-        print("no analysis method was passed to the program.")
-        print(
-            "the program will now assume that the user has already gathered raw files for analysis."
-        )
-        # Setting the plink_file_path if the top two steps are skipped
-        plink_file_path = "".join([args.output, "plink_output_files/"])
+        analysis_type_checker: object = plink_initial_format_scripts.Analysis_Checker(
+            ANALYSIS_TYPE,
+            args.recode_options,
+            args.binary_file,
+            args.output,
+            plink_file_path,
+            maf_filter=MAF_FILTER)
+
+        analysis_type_checker.check_analysis(
+            range=args.range,
+            readme_txt=utility_scripts.plink_readme_body_text)
+
     # TODO: need to adjust the section so that it takes the proper options. At this moment this feature is not being used so it is commented out, but it is worth keeping in the program
     # if args.analysis == "multi":
 
@@ -189,11 +127,10 @@ def run(args):
         args.pop_info,
         args.pop_code,
     )
-
-    logfile.add_newline(
-        "INFO",
-        f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}\n"
+    logger.info(
+        f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
     )
+
     # The above function outputs files to a subdirectory called
     # "carrier_analysis_output"
 
@@ -226,22 +163,17 @@ def run(args):
     program_end_code: int = variants_above_threshold_tuple[1]
 
     if program_end_code == 0:
-
-        logfile.add_newline(
-            "WARNING",
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}\n"
+        logger.warning(
+            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
         )
 
-        logfile.add_newline(
-            "INFO",
-            "ending program so that user can remove the above variants\n")
+        logger.warning(
+            "Ending program so that the user can remove the above variants")
         sys.exit(1)
 
     elif program_end_code == 1 and variants_above_threshold:
-
-        logfile.add_newline(
-            "WARNING",
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}\n"
+        logger.warning(
+            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
         )
 
     print("converting the ibd output to a human readable version...")
@@ -287,8 +219,7 @@ def run(args):
         IBD_search_output_files,
         "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
     )
-    logfile.add_newline(
-        "INFO",
+    logger.info(
         f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
     )
 
@@ -310,9 +241,8 @@ def run(args):
         "".join([args.output,
                  "carrier_analysis_output/"]), network_dir, network_dir)
 
-    logfile.add_newline(
-        "INFO",
-        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}\n"
+    logger.info(
+        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
     )
 
     print(
@@ -334,9 +264,8 @@ def run(args):
         IBD_search_output_files,
     )
 
-    logfile.add_newline(
-        "INFO",
-        f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}\n"
+    logger.info(
+        f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}"
     )
     print(
         "generating a file contain the genotypes for all IIDs in the provided file"
@@ -348,15 +277,13 @@ def run(args):
         args.pop_info, "".join([args.output,
                                 "haplotype_analysis/"]), args.pop_code)
 
-    logfile.add_newline(
-        "INFO",
-        f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}\n"
+    logger.info(
+        f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}"
     )
 
     # Add the function that gets the haplotype string to this
-    logfile.add_newline(
-        "INFO",
-        f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}\n"
+    logger.info(
+        f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}"
     )
     print("Finding the most probable haplotypes")
 
@@ -364,7 +291,7 @@ def run(args):
         haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
         args.binary_file, args.pop_info, args.pop_code)
 
-    logfile.add_newline("INFO", 'Analysis finished...\n')
+    logger.info('Analysis finished...')
 
     # TODO": Fix the timing issue so that it gives the correct time
     finishing_time = datetime.utcnow()
