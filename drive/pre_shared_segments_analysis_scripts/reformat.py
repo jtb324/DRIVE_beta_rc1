@@ -276,80 +276,68 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
         ][0]
 
         # load the car_file into a dataframe
-        with open(car_file, "r") as carrier_file:
+        car_df: pd.DataFrame = pd.read_csv(car_file, sep=",")
 
-            for row in carrier_file:
+        # getting a list of all the unique variants in the dataframe
+        variant_list: list = list(set(car_df["Variant ID"].values.tolist()))
 
-                # getting the variant id
-                variant: str = row.split(",", maxsplit=1)[0]
+        print(variant_list)
+        # Iterating through each variant and then getting a list of carriers
+        # for each variant
+        for variant in variant_list:
 
-                # getting the list of carriers
-                carrier_str: str = row.split(",", maxsplit=1)[1]
+            carrier_list: list = car_df["IID"].values.tolist()
 
-                # stripping characters away to get a list of grids that carry the variant
-                carrier_str = carrier_str.replace('"', '')
-                carrier_str = carrier_str.strip("[]")
+            # using list comprehension to get the allpair file for a specific chromosome and variant
 
-                carrier_str = carrier_str.replace("'", "")
-                carrier_str = carrier_str.replace(']', '')
-                # carrier_str = carrier_str.strip("")
+            # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
+            try:
 
-                carrier_str = carrier_str.replace(",", "")
+                allpair_file: str = [
+                    file for file in allpair_files
+                    if "".join([chr_num, "."]) in file and variant in file
+                ][0]
 
-                carrier_str = carrier_str.replace("\n", "")
+            except IndexError:
 
-                carrier_list: list = carrier_str.split(" ")
+                # returns either a 1 or 0 if the variant is in the no_carrier_file.txt list
+                carrier_int: int = check_no_carrier(no_carrier_file, variant)
 
-                # using list comprehension to get the allpair file for a specific chromosome and variant
+                if carrier_int == 1:
 
-                # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
-                try:
+                    # print statement that explains that ther is no variant
+                    print(f"The variant, {variant}, has no carriers")
+                    # skips to the next iteration of the for loop
+                    continue
 
-                    allpair_file: str = [
-                        file for file in allpair_files
-                        if "".join([chr_num, "."]) in file and variant in file
-                    ][0]
+                elif carrier_int == 0:
 
-                except IndexError:
+                    print(f"The variant, {variant}, failed")
 
-                    # returns either a 1 or 0 if the variant is in the no_carrier_file.txt list
-                    carrier_int: int = check_no_carrier(
-                        no_carrier_file, variant)
+                    # writing the variant that failed to a file
+                    with open("".join([output, "failed_variants.txt"]),
+                              "a+") as file:
 
-                    if carrier_int == 1:
+                        file.write(f"{variant}\n")
 
-                        # print statement that explains that ther is no variant
-                        print(f"The variant, {variant}, has no carriers")
-                        # skips to the next iteration of the for loop
-                        continue
+                    continue
 
-                    elif carrier_int == 0:
+            # getting a list of carriers that share segments and therefore are "confirmed"
 
-                        print(f"The variant, {variant}, failed")
+            confirmed_carrier_list: list = search_allpair_file(
+                allpair_file, carrier_list)
 
-                        # writing the variant that failed to a file
-                        with open("".join([output, "failed_variants.txt"]),
-                                  "a+") as file:
+            # This will subset the dataframe for the carriers
+            subset_df: pd.DataFrame = subset_genotype(genotype_df,
+                                                      carrier_list,
+                                                      variant[:-2])
 
-                            file.write(f"{variant}\n")
+            # Adding a column for the carrier status to the file
+            modified_geno_df: pd.DataFrame = add_column(
+                subset_df, confirmed_carrier_list)
 
-                        continue
+            # adding a column for the chromosome number to be able to differentiate the variants
+            modified_geno_df = add_chr_column(modified_geno_df, chr_num)
 
-                # getting a list of carriers that share segments and therefore are "confirmed"
-
-                confirmed_carrier_list: list = search_allpair_file(
-                    allpair_file, carrier_list)
-
-                # This will subset the dataframe for the carriers
-                subset_df: pd.DataFrame = subset_genotype(
-                    genotype_df, carrier_list, variant[:-2])
-
-                # Adding a column for the carrier status to the file
-                modified_geno_df: pd.DataFrame = add_column(
-                    subset_df, confirmed_carrier_list)
-
-                # adding a column for the chromosome number to be able to differentiate the variants
-                modified_geno_df = add_chr_column(modified_geno_df, chr_num)
-
-                # Combining the dataframes
-                write_to_file(modified_geno_df, output_path)
+            # Combining the dataframes
+            write_to_file(modified_geno_df, output_path)

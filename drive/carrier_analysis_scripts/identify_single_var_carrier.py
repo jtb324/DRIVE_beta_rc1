@@ -7,6 +7,7 @@ import logging
 import glob
 import os
 import re
+import csv
 
 ###################################################################################
 # importing necessary functions from other files
@@ -59,27 +60,113 @@ def find_all_files(input_file_path: str):
     return recode_file_list
 
 
-def create_readme(output_path):
-    '''This function creates a readme object for the singleVariantAnalysis function'''
-
-    readme = utility_scripts.Readme("_README.md", output_path)
-    readme.rm_previous_file()
-    readme.write_header(output_path)
-    readme.create_date_info()
-    readme.add_line(utility_scripts.carrier_analysis_body_text)
-
-
 ###########################################################################################
 # This function determines all the individuals who have a specific variant
 
 
-def singleVariantAnalysis(
-    recodeFile: str,
-    write_path: str,
-    pop_info: str,
-    pop_code: str,
-):
-    """This function returns a csv containing a list of individuals who carry each variants. It takes a recoded variant file, a path to write the output to, and a file name"""
+def get_chr_num(file_str: str) -> str:
+    """Function that can identify the chromosome number in the provided file string
+    Parameters
+    __________
+    file_str : str
+        this is a file string that has a chromosome number within it
+
+    Returns
+    _______
+    str
+        returns a chromsome number of the form chrXX where XX are digits
+    """
+    match = re.search(r".chr\d\d_", file_str)
+
+    chr_num: str = match.group(0)
+
+    chr_num: str = chr_num.strip(".")
+
+    file_prefix: str = chr_num.strip("_")
+
+    return file_prefix
+
+
+def run_pop_filter(pop_info: str, raw_file: str,
+                   pop_code: str) -> pd.DataFrame:
+    """Function to filter the raw files to individuals in a specific population
+    Parameters
+    __________
+    pop_info : str
+        file that contains information about what ancestry each grid is from
+
+    raw_file : str
+        file path to the raw file that was output from PLINK
+
+    pop_code : str
+        specified population code of interest from 1000 genomes
+
+    Returns
+    _______
+    pd.DataFrame
+        this is the filtered raw file loaded into a dataframe
+    """
+    dataset_filter = population_filter_scripts.Pop_Filter(pop_info, raw_file)
+
+    pop_info_df, recode_df = dataset_filter.load_files()
+
+    pop_info_subset_df = dataset_filter.get_pop_info_subset(
+        pop_info_df, pop_code)
+
+    raw_file = dataset_filter.filter_recode_df(pop_info_subset_df, recode_df)
+
+    return raw_file
+
+
+def reformatting_file(var_dict: dict, output_path: str, file_prefix: str):
+    """Function to write the var dict to a reformated file
+    Parameters
+    __________
+    var_dict : dict
+        dictionary containing which single variant each grid carriers
+
+    output_path : str
+        string listing which directory to output the reformatted file to
+
+    file_prefix : str
+        string containing the chromosome number. Format should be chrXX, where
+        XX are digits
+    """
+    var_reformat_df = pd.DataFrame(var_dict, columns=["IID", "Variant ID"])
+
+    reformat_directory = file_creator_scripts.check_dir(
+        output_path, "reformatted")
+
+    var_reformat_df.to_csv(
+        "".join([
+            reformat_directory,
+            "/",
+            file_prefix,
+            ".single_var_list_reformat.csv",
+        ]),
+        index=False,
+    )
+
+@utility_scripts.func_readme_generator
+def single_variant_analysis(*args, **kwargs):
+    """Function that identifies grids that carry at least one variant
+    Parameters
+    __________
+    **kwargs : dict
+        dictionary that contains a list of parameters. For
+        this function there will be the keywords: 'recode_filepath', 'output', 'pop_info', 'pop_code'
+    """
+    # getting the main logger
+    logger = logging.getLogger(__name__)
+    # expanding parameters from the kwargs dictionary
+    recodeFile: str = kwargs.get("recode_filepath")
+
+    write_path: str = kwargs.get("output")
+            
+    pop_info: str = kwargs.get("pop_info")
+
+    pop_code: str = kwargs.get("pop_code")
+
     print("finding all the carriers")
 
     try:
@@ -94,31 +181,17 @@ def singleVariantAnalysis(
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
 
     # creating the readme
-    create_readme(output_path)
+    # create_readme(output_path)
 
     recode_file_list = find_all_files(recodeFile)
+
     for file_tuple in recode_file_list:
-        match = re.search(r".chr\d\d_", file_tuple[1])
+        file_prefix: str = get_chr_num(file_tuple[1])
 
-        chr_num: str = match.group(0)
-
-        chr_num: str = chr_num.strip(".")
-
-        file_prefix: str = chr_num.strip("_")
-
-        # if len(file_tuple[1]) == 34:
-
-        #     file_prefix = file_tuple[1][21:30]
-
-        #     output_fileName = "".join(
-        #         [file_prefix, ".", "single_variant_carrier.csv"])
-
-        # elif len(file_tuple[1]) == 35:
-
-        #     file_prefix = file_tuple[1][21:31]
-
-        output_fileName = "".join(
+        output_file_name = "".join(
             [file_prefix, ".", "single_variant_carrier.csv"])
+
+        full_output_file: str = "".join([output_path, output_file_name])
 
         recodeFile = file_tuple[0]
 
@@ -129,88 +202,48 @@ def singleVariantAnalysis(
         # subsetting the raw_file for a specific population if the population code, pop_code, is provided
 
         if pop_code:
-
-            dataset_filter = population_filter_scripts.Pop_Filter(
-                pop_info, raw_file)
-
-            pop_info_df, recode_df = dataset_filter.load_files()
-
-            pop_info_subset_df = dataset_filter.get_pop_info_subset(
-                pop_info_df, pop_code)
-
-            raw_file = dataset_filter.filter_recode_df(pop_info_subset_df,
-                                                       recode_df)
+            raw_file: pd.DataFrame = run_pop_filter(pop_info, raw_file,
+                                                    pop_code)
 
         column_list = list(raw_file.columns[6:].values)
 
-        var_dict = dict()
+        # var_dict = dict()
 
-        var_dict_reformat = dict()
-
-        total_id_set = set()
+        # var_dict_reformat = dict()
+        carrier_df: pd.DataFrame = pd.DataFrame()
+        # total_id_set = set()
+        # iid_list = []
 
         for column in column_list:
 
-            iid_list = []
-
-            index_list = raw_file.index[raw_file[column].isin([1.0,
-                                                               2.0])].tolist()
-
-            for i in index_list:
-                iid_list.append(raw_file.loc[i, "IID"])
-                total_id_set.add(raw_file.loc[i, "IID"])
-
-            if (
-                    column in var_dict
-            ):  # This checks to see if the indexTuple is already a key in the multiVarDict
-
-                # If true then it just appends the IID to the value of the multiVarDict
-                var_dict[column].append(iid_list)
-
+            IID_series: pd.Series = raw_file[raw_file[column].isin([1.0, 2.0])].IID
+            # If the IID_series has a length of 0 then there are 
+            # no carriers of the variant. The program will then make
+            # a pandas series and insert N/A into it and then this
+            # will be added to the dataframe
+            if len(IID_series) == 0:
+                IID_series = pd.Series("N/A")
+                
+                iid_dataframe: pd.DataFrame = IID_series.to_frame()
             else:
+                iid_dataframe: pd.DataFrame = IID_series.to_frame()
 
-                # If false then it creates a new multiVarDict input with that key and value
-                var_dict[column] = iid_list
+            iid_dataframe["Variant ID"] = column
 
-            for i in index_list:
+            iid_dataframe.columns = ["IID", "Variant ID"]
 
-                if "IID" and "Variant ID" in var_dict_reformat:
+            carrier_df = pd.concat([carrier_df, iid_dataframe])
 
-                    var_dict_reformat["IID"].append(raw_file.loc[i, "IID"])
+        # getting a list of IIDs
+        iid_list: list = list(set(iid_dataframe.IID.values.tolist()))
 
-                    var_dict_reformat["Variant ID"].append(column)
-
-                else:
-
-                    var_dict_reformat["IID"] = [raw_file.loc[i, "IID"]]
-                    var_dict_reformat["Variant ID"] = [column]
-
-        if var_dict_reformat:
-
-            var_reformat_df = pd.DataFrame(var_dict_reformat,
-                                           columns=["IID", "Variant ID"])
-
-            reformat_directory = file_creator_scripts.check_dir(
-                output_path, "reformatted")
-
-            var_reformat_df.to_csv(
-                "".join([
-                    reformat_directory,
-                    "/",
-                    file_prefix,
-                    ".single_var_list_reformat.csv",
-                ]),
-                index=False,
-            )
-        elif not bool(var_dict_reformat):
+        if carrier_df.empty:
 
             print(
                 "There were no individuals found so there dictionary was not written to a csv file."
             )
+            logger.info("No individuals identified as carrying variants")
 
-        totalVariantIDList(total_id_set, output_path, file_prefix)
+        totalVariantIDList(iid_list, output_path, file_prefix)
 
-        csv_writer = file_creator_scripts.Csv_Writer_Object(
-            var_dict, output_path, output_fileName)
-
-        csv_writer.write_to_csv()
+        iid_dataframe.to_csv(full_output_file, index=False)

@@ -84,12 +84,11 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list,
 
             # getting all the variants in a list
             carrier_file_df = pd.read_csv(carrier_file,
-                                          sep=",",
-                                          header=None,
-                                          names=["variant_id", "iid_list"])
+                                          sep=",")
+            print(carrier_file_df)
+            variant_list = list(set(carrier_file_df["Variant ID"].values.tolist()))
 
-            variant_list = carrier_file_df.variant_id.values.tolist()
-
+            print(variant_list)
             # loading in the raw file into a dataframe and filtering it just for the desired population code using the Pop_Filter code
             pop_filter = population_filter_scripts.Pop_Filter(
                 pop_info_filepath, raw_file)

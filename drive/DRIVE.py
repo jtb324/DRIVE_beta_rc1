@@ -88,7 +88,8 @@ def run(args):
             maf_filter=MAF_FILTER)
 
         analysis_type_checker.check_analysis(
-            readme_txt=utility_scripts.plink_readme_body_text)
+            readme_txt=utility_scripts.plink_readme_body_text,
+            output=plink_file_path)
 
         analysis_type_checker.check_missing_var_count()
 
@@ -103,7 +104,8 @@ def run(args):
 
         analysis_type_checker.check_analysis(
             range=args.range,
-            readme_txt=utility_scripts.plink_readme_body_text)
+            readme_txt=utility_scripts.plink_readme_body_text,
+            output=plink_file_path)
 
     # TODO: need to adjust the section so that it takes the proper options. At this moment this feature is not being used so it is commented out, but it is worth keeping in the program
     # if args.analysis == "multi":
@@ -121,11 +123,13 @@ def run(args):
     print("generating list of individuals at each probe id...")
 
     # The args.input should be a directory indicating where the raw files are located
-    carrier_analysis_scripts.singleVariantAnalysis(
-        plink_file_path,
-        args.output,
-        args.pop_info,
-        args.pop_code,
+    carrier_analysis_scripts.single_variant_analysis(
+        recode_filepath=plink_file_path,
+        output=args.output,
+        pop_info=args.pop_info,
+        pop_code=args.pop_code,
+        readme_output="".join([args.output, "carrier_analysis_output/"]),
+        readme_text=utility_scripts.carrier_analysis_body_text,
     )
     logger.info(
         f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
@@ -158,6 +162,7 @@ def run(args):
         "".join([
             args.output, "carrier_analysis_output/", "allele_frequencies.txt"
         ]), THRESHOLD)
+
     variants_above_threshold: list = variants_above_threshold_tuple[0]
 
     program_end_code: int = variants_above_threshold_tuple[1]
@@ -199,11 +204,28 @@ def run(args):
             file for file in IBD_PATHS_LIST if program in file.lower()
         ][0]
 
+        convert_ibd_func_param: dict = {
+            "ibd_file_path": ibd_file,
+            "carrier_file": "".join([args.output, "carrier_analysis_output/"]), 
+            "ibd_program": program,
+            "output_path": IBD_search_output_files, 
+            "map_files": "".join([args.output, "plink_output_files/"]),
+            "ibd_file_suffix": file_suffix,
+            "min_CM_threshold": MIN_CM,
+            "threads": THREADS
+        }
+
+        # pre_shared_segments_analysis_scripts.convert_ibd(
+        #     ibd_file, "".join([args.output, "carrier_analysis_output/"]),
+        #     program, IBD_search_output_files,
+        #     "".join([args.output,
+        #              "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
         pre_shared_segments_analysis_scripts.convert_ibd(
-            ibd_file, "".join([args.output, "carrier_analysis_output/"]),
-            program, IBD_search_output_files,
-            "".join([args.output,
-                     "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
+            convert_ibd_func_param, 
+            readme_output=IBD_search_output_files, 
+            readme_text=utility_scripts.formatted_ibd_dir_body_text_1
+            )
+
     print("combining segment output...")
     ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
     pre_shared_segments_analysis_scripts.combine_output(

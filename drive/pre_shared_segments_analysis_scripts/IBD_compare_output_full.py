@@ -288,6 +288,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
             if pair2 in carrier_iid_list:
                 # the carrier status is a one if the second iid pair is in the list of carriers
                 car_status = 1
+                
 
                 hapibd_segment_dict, ilash_segment_dict = pre_shared_segments_analysis_scripts.get_segment_lens(
                     pair1, pair2, map_file, variant_id, hapibd_file,
@@ -318,6 +319,11 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
 
                 potential_missed_carrier = 0
 
+                hapibd_segment_dict, ilash_segment_dict = pre_shared_segments_analysis_scripts.get_segment_lens(
+                    pair1, pair2, map_file, variant_id, hapibd_file,
+                    ilash_file)
+            
+            if not hapibd_segment_dict:
                 hapibd_segment_dict = {
                     "start": "N/A",
                     "end": "N/A",
@@ -325,7 +331,7 @@ def reformat(write_path: str, pair_list: list, variant_id: str,
                     "phase1": "N/A",
                     "phase2": "N/A"
                 }
-
+            if not ilash_segment_dict:
                 ilash_segment_dict = {
                     "start": "N/A",
                     "end": "N/A",

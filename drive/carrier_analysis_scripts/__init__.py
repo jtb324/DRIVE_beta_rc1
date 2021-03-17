@@ -1,3 +1,3 @@
 # __init__.py
-from .identify_single_var_carrier import singleVariantAnalysis
+from .identify_single_var_carrier import single_variant_analysis
 from .identify_multi_var_carriers import multiVariantAnalysis

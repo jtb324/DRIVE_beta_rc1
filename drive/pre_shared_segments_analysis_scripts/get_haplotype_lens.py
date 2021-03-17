@@ -13,10 +13,10 @@ def get_var_pos(map_file: str, variant_id: str) -> int:
                                        usecols=[1, 3])
 
     # getting the value
-    print("int the get var pos function")
-    print(variant_id)
-    print(map_df)
-    print(type(map_df[map_df[1].isin([variant_id[:-2]])]))
+    # print("int the get var pos function")
+    # print(variant_id)
+    # print(map_df)
+    # print(type(map_df[map_df[1].isin([variant_id[:-2]])]))
     pos: int = int(map_df[map_df[1].isin([variant_id[:-2]])][3].values[0])
 
     return pos
@@ -53,8 +53,8 @@ def get_phase_number(pair_df_row: pd.DataFrame, program: str) -> list:
 
     elif program == "hapibd":
         pairs: pd.DataFrame = pair_df_row[[1, 3]]
-        print("in the get phaser number function")
-        print(pairs)
+        # print("in the get phaser number function")
+        # print(pairs)
         phase1: str = pairs[1].values[0]
         phase2: str = pairs[3].values[0]
 

@@ -2,12 +2,8 @@
 
 # THese are modules used
 import re
-from numpy.lib.function_base import msort
-import pandas as pd
-import sys
 import os
 from os import path
-import shutil
 import multiprocessing as mp
 from functools import partial
 
@@ -20,7 +16,12 @@ import utility_scripts
 
 
 def remove_previous_file(file_path: str):
-    '''This function will remove previous output files from previous runs'''
+    """Function to remove the file from a previous run
+    Parameters
+    __________
+    file_path : str
+        string listing the filepath to the output from previously running this program
+    """
     # This section will check if the output file exist from a previous run and if it does then it will delete it
     if path.exists(file_path):
 
@@ -41,23 +42,26 @@ def alternate_chr_num_format(chr_num: str) -> str:
     return chr_num
 
 
-def create_readme(output: str):
-    '''This function creates a readme file in the specified directory'''
-    readme = utility_scripts.Readme("_README.md", output)
-    readme.rm_previous_file()
-    readme.write_header("formatted_ibd_output/")
-    readme.create_date_info()
-    readme.add_line(utility_scripts.formatted_ibd_dir_body_text_1)
-    readme.add_line(utility_scripts.formatted_ibd_dir_body_text_2)
+@utility_scripts.func_readme_generator
+def convert_ibd(*args, **kwargs):
 
+    # pulling the dictionary out of the args tuple
+    function_param_dict: dict = args[0]
 
-def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
-                output: str, map_file_dir: str, file_suffix: str, min_CM: str,
-                threads: str):
-
+    # checking the kwargs dictionary for specific
+    # parameters
+    ibd_files: str = function_param_dict.get("ibd_file_path")
+    carrier_file: str = function_param_dict.get("carrier_file")
+    ibd_program: str = function_param_dict.get("ibd_program")
+    output: str = function_param_dict.get("output_path")
+    map_file_dir: str = function_param_dict.get("map_files")
+    file_suffix: str = function_param_dict.get("ibd_file_suffix")
+    min_CM: str = function_param_dict.get("min_CM_threshold")
+    threads: str = function_param_dict.get("threads")
     ###########################################################
-    # This first section will be used to get the shared segment files for each chromosome
-    create_readme(output)
+    # This first section will be used to get the shared segment files for each
+    # chromosome
+
     # creating a directory
     preformater = pre_shared_segments_analysis_scripts.Pre_Shared_Segment_Converter(
         ibd_files, carrier_file, ibd_program, output, map_file_dir)
@@ -69,17 +73,12 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
 
     # getting the list of map files
     map_file_list = preformater.get_map_files()
-    # Need to make sure that the proper segment file is passed with the proper chromosome file
+    # Need to make sure that the proper segment file is passed with the proper
+    # chromosome file
     for chromo_file in chr_var_file_list:
         match = re.search(r'chr\d\d\.', chromo_file)
 
         chr_num = match.group(0)
-        if (chr_num.find("0") < len(chr_num) - 2) and chr_num.find("0") != -1:
-
-            zero_indx: str = chr_num.find("0")
-
-            alt_chr_num: str = "".join(
-                [chr_num[:zero_indx], chr_num[zero_indx + 1:]])
 
         hypen_chr_num: str = "".join([chr_num.strip("."), "_"])
 
@@ -89,14 +88,6 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
             for map_file in map_file_list
             if chr_num in segment_file and hypen_chr_num in map_file
         ]
-
-        if not segment_map_tuple:
-            segment_map_tuple = [
-                (segment_file, map_file) for segment_file in segment_file_list
-                for map_file in map_file_list
-                if (chr_num in segment_file or alt_chr_num in segment_file)
-                and hypen_chr_num in map_file
-            ]
 
         # This checks to see if the tuple is empty or not
         if segment_map_tuple:
@@ -143,37 +134,6 @@ def convert_ibd(ibd_files: str, carrier_file: str, ibd_program: str,
 
             parallel_runner.run_segments_parallel(error_filename, run_main,
                                                   header_str)
-            # run_parallel(segment_file, output, ibd_program, min_CM,
-            #              iid_file_list, var_info_list, threads)
-
-
-# def run_parallel(segment_file: str, output_path: str, ibd_format: str,
-#                  min_CM: str, iid_file_list: list, variant_info_list: list,
-#                  threads: int):
-
-#     # starting a que to create a file that keeps track of errors
-#     manager = mp.Manager()
-
-#     que = manager.Queue()
-
-#     header: str = "variant_id"
-
-#     pool = mp.Pool(int(threads))
-
-#     watcher = pool.apply_async(
-#         utility_scripts.listener,
-#         (que, "".join([output_path, "nopairs_identified.txt"]), header))
-
-#     func = partial(run_main, segment_file, output_path, ibd_format, min_CM,
-#                    iid_file_list, que)
-
-#     pool.map(func, variant_info_list)
-
-#     que.put("kill")
-
-#     pool.close()
-
-#     pool.join()
 
 
 def run_main(segment_file: str, output_path: str, ibd_format: list,

@@ -88,8 +88,8 @@ class Pre_Shared_Segment_Converter:
             pass
 
         # load in the csv file that list the IIDs of grids per variant on a specific chromosome
-        carrier_df = pd.read_csv(chromo_var_file, sep=",", header=None)
-
+        carrier_df = pd.read_csv(chromo_var_file, sep=",")
+        
         # Need to determine the # of rows of the carrier_df
         carrier_df_size = len(carrier_df)
 
@@ -104,53 +104,58 @@ class Pre_Shared_Segment_Converter:
         # going to create two list where one contains the variant_id, one contains a list of base positions,
         variant_id_list = []
         base_pos_list = []
+        carrier_df_variants: list = list(set(
+            carrier_df["Variant ID"].values.tolist()))
 
-        for row in carrier_df.itertuples():
+        for variant in carrier_df_variants:
+        # for row in carrier_df.itertuples():
+            # getting the subset of the carrier_df that corresponds
+            # to the variant
+            df_subset: pd.DateFrame = carrier_df[
+                carrier_df["Variant ID"] == variant]
 
-            variant_id = str(row[1])
+            # getting a list of all the iids that are associated 
+            # with the variant
 
-            ###################################################################################################
+            iid_list: list = df_subset["IID"].values.tolist()
+
             # getting the list of variants and writing to a single text file for each variant in the chromosome.
-            iid_list = row[2].strip("[]").replace("\'",
-                                                  "").replace(" ",
-                                                              "").split(",")
+            
+            chr_num = map_file_df[map_file_df["variant id"] == variant[:(
+                len(variant) - 2)]].chr.values[0]
 
-            chr_num = map_file_df[map_file_df["variant id"] == variant_id[:(
-                len(variant_id) - 2)]].chr.values[0]
-
-            if carrier_df_size == 1:
+            if carrier_df_size == 1 and iid_list[0] == "":
 
                 # If this single variant has no carriers than the function returns empty strings for the
                 #var_info_file_path, variant_directory
                 # If the iid_list has no carriers thant eh first element would just be a ""
-                if iid_list[0] == "":
-                    no_carriers_file = open(
-                        "".join([self.output, "no_carriers_in_file.txt"]),
-                        "a+")
-                    no_carriers_file.write(variant_id)
-                    no_carriers_file.write("\t")
-                    no_carriers_file.write(str(chr_num))
-                    no_carriers_file.write("\n")
-                    no_carriers_file.close()
-                    return None, ""
+                no_carriers_file = open(
+                    "".join([self.output, "no_carriers_in_file.txt"]),
+                    "a+")
+                no_carriers_file.write(variant)
+                no_carriers_file.write("\t")
+                no_carriers_file.write(str(chr_num))
+                no_carriers_file.write("\n")
+                no_carriers_file.close()
+                return None, ""
 
             # If the carrier df has more than one carrier it will search through all rows and just skip any row
             # that has now carriers
             if iid_list[0] == "":
                 no_carriers_file = open(
                     "".join([self.output, "no_carriers_in_file.txt"]), "a+")
-                no_carriers_file.write(variant_id)
+                no_carriers_file.write(variant)
                 no_carriers_file.write("\t")
                 no_carriers_file.write(str(chr_num))
                 no_carriers_file.write("\n")
                 no_carriers_file.close()
                 print(
-                    f"There were no carriers found for the variant {variant_id}"
+                    f"There were no carriers found for the variant {variant}"
                 )
                 continue
 
             # Writing the variants to a txt file in a specific directory
-            MyFile = open("".join([var_list_dir, variant_id, ".txt"]), 'w')
+            MyFile = open("".join([var_list_dir, variant, ".txt"]), 'w')
 
             for element in iid_list:
                 MyFile.write(element)
@@ -162,11 +167,11 @@ class Pre_Shared_Segment_Converter:
             # getting the base pair position and writing that to a text file
 
             # append the variant_id
-            variant_id_list.append(variant_id)
+            variant_id_list.append(variant)
 
             # getting the base post
-            base_pos = map_file_df[map_file_df["variant id"] == variant_id[:(
-                len(variant_id) - 2)]].site.values[0]
+            base_pos = map_file_df[map_file_df["variant id"] == variant[:(
+                len(variant) - 2)]].site.values[0]
 
             # appending the base position to the list
             base_pos_list.append(base_pos)
@@ -231,13 +236,6 @@ class Shared_Segment_Convert(newPOS):
         self.bp = int(base_position)
         # This gets the name of the variant of interest assuming it is input as a text file
         self.variant_name = variant_id
-
-        # Printing the initialized
-        #print('Input: {}'.format(self.segment_file))
-        #print('Phenotype file: {}'.format(self.iid_file))
-        #print('Output: {}'.format(self.output))
-        #print('Input file format: {}'.format(self.format))
-        #print('Min output IBD length: {}'.format(self.min_cM))
 
     def generate_parameters(self) -> dict:
         '''This will get some of the parameters used later'''

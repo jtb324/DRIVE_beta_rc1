@@ -149,6 +149,14 @@ class Input_Gather:
         if not MAF_FILTER:
 
             MAF_FILTER: str = '0.05'
+        if float(MAF_FILTER) > 0.5:
+            print(
+                "minor allele frequency filter must be lower than 0.5. System terminating...")
+
+            self.logger.error(
+                f"A minor allele frequency of {MAF_FILTER} was passed to the program minor allele frequency filter must be lower than 0.5.")
+
+            sys.exit(1)
 
         self.logger.info(f"MAF_FILTER: {MAF_FILTER}")
 
