@@ -281,7 +281,6 @@ def reformat_files(carrier_dir: str, plink_dir: str, allpair_dir: str,
         # getting a list of all the unique variants in the dataframe
         variant_list: list = list(set(car_df["Variant ID"].values.tolist()))
 
-        print(variant_list)
         # Iterating through each variant and then getting a list of carriers
         # for each variant
         for variant in variant_list:

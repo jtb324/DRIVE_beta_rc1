@@ -206,9 +206,9 @@ def run(args):
 
         convert_ibd_func_param: dict = {
             "ibd_file_path": ibd_file,
-            "carrier_file": "".join([args.output, "carrier_analysis_output/"]), 
+            "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
             "ibd_program": program,
-            "output_path": IBD_search_output_files, 
+            "output_path": IBD_search_output_files,
             "map_files": "".join([args.output, "plink_output_files/"]),
             "ibd_file_suffix": file_suffix,
             "min_CM_threshold": MIN_CM,
@@ -221,10 +221,9 @@ def run(args):
         #     "".join([args.output,
         #              "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
         pre_shared_segments_analysis_scripts.convert_ibd(
-            convert_ibd_func_param, 
-            readme_output=IBD_search_output_files, 
-            readme_text=utility_scripts.formatted_ibd_dir_body_text_1
-            )
+            convert_ibd_func_param,
+            readme_output=IBD_search_output_files,
+            readme_text=utility_scripts.formatted_ibd_dir_body_text_1)
 
     print("combining segment output...")
     ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}

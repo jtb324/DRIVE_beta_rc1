@@ -40,7 +40,6 @@ def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
 
 def find_all_files(input_file_path: str):
     """This function will find a function of all files within a specified directory"""
-    print("Finding all the files")
     cur_dir = os.getcwd()
 
     os.chdir(input_file_path)
@@ -147,6 +146,7 @@ def reformatting_file(var_dict: dict, output_path: str, file_prefix: str):
         index=False,
     )
 
+
 @utility_scripts.func_readme_generator
 def single_variant_analysis(*args, **kwargs):
     """Function that identifies grids that carry at least one variant
@@ -162,12 +162,10 @@ def single_variant_analysis(*args, **kwargs):
     recodeFile: str = kwargs.get("recode_filepath")
 
     write_path: str = kwargs.get("output")
-            
+
     pop_info: str = kwargs.get("pop_info")
 
     pop_code: str = kwargs.get("pop_code")
-
-    print("finding all the carriers")
 
     try:
 
@@ -183,7 +181,7 @@ def single_variant_analysis(*args, **kwargs):
     # creating the readme
     # create_readme(output_path)
 
-    recode_file_list = find_all_files(recodeFile)
+    recode_file_list = utility_scripts.get_file_list(recodeFile, "*raw")
 
     for file_tuple in recode_file_list:
         file_prefix: str = get_chr_num(file_tuple[1])
@@ -205,7 +203,7 @@ def single_variant_analysis(*args, **kwargs):
             raw_file: pd.DataFrame = run_pop_filter(pop_info, raw_file,
                                                     pop_code)
 
-        column_list = list(raw_file.columns[6:].values)
+        column_list = raw_file.columns[6:].values.tolist()
 
         # var_dict = dict()
 
@@ -216,14 +214,15 @@ def single_variant_analysis(*args, **kwargs):
 
         for column in column_list:
 
-            IID_series: pd.Series = raw_file[raw_file[column].isin([1.0, 2.0])].IID
-            # If the IID_series has a length of 0 then there are 
+            IID_series: pd.Series = raw_file[raw_file[column].isin([1.0,
+                                                                    2.0])].IID
+            # If the IID_series has a length of 0 then there are
             # no carriers of the variant. The program will then make
             # a pandas series and insert N/A into it and then this
             # will be added to the dataframe
             if len(IID_series) == 0:
                 IID_series = pd.Series("N/A")
-                
+
                 iid_dataframe: pd.DataFrame = IID_series.to_frame()
             else:
                 iid_dataframe: pd.DataFrame = IID_series.to_frame()

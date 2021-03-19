@@ -7,4 +7,5 @@ from .user_input.initial_parameters import Input_Gather, get_dict_of_variables
 from .parallelize.listener import listener
 from .logger_formats import create_logger, record_user_arguments
 from .parallelize.run_parallel import Segment_Parallel_Runner, Haplotype_Parallel_Runner
+from .get_files import get_file_list
 
