@@ -345,16 +345,16 @@ def run(args):
         f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}\n"
     )
 
-    # Add the function that gets the haplotype string to this
-    logfile.add_newline(
-        "INFO",
-        f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}\n"
-    )
-    print("Finding the most probable haplotypes")
+    # # Add the function that gets the haplotype string to this
+    # logfile.add_newline(
+    #     "INFO",
+    #     f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}\n"
+    # )
+    # print("Finding the most probable haplotypes")
 
-    haplotype_segments_analysis.gather_haplotypes(
-        haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
-        args.binary_file, args.pop_info, args.pop_code)
+    # haplotype_segments_analysis.gather_haplotypes(
+    #     haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
+    #     args.binary_file, args.pop_info, args.pop_code)
 
     logfile.add_newline("INFO", 'Analysis finished...\n')
 
