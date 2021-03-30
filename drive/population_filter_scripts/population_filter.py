@@ -96,3 +96,33 @@ def pop_filter_decorator(func):
         ped_recode_file.close()
 
     return inner_func
+
+def run_pop_filter(pop_info: str, raw_file: str,
+                   pop_code: str) -> pd.DataFrame:
+    """Function to filter the raw files to individuals in a specific population
+    Parameters
+    __________
+    pop_info : str
+        file that contains information about what ancestry each grid is from
+
+    raw_file : str
+        file path to the raw file that was output from PLINK
+
+    pop_code : str
+        specified population code of interest from 1000 genomes
+
+    Returns
+    _______
+    pd.DataFrame
+        this is the filtered raw file loaded into a dataframe
+    """
+    dataset_filter = Pop_Filter(pop_info, raw_file)
+
+    pop_info_df, recode_df = dataset_filter.load_files()
+
+    pop_info_subset_df = dataset_filter.get_pop_info_subset(
+        pop_info_df, pop_code)
+
+    raw_file = dataset_filter.filter_recode_df(pop_info_subset_df, recode_df)
+
+    return raw_file

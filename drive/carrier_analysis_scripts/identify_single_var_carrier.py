@@ -7,12 +7,11 @@ import logging
 import glob
 import os
 import re
-import csv
+import sys
 
 ###################################################################################
 # importing necessary functions from other files
 
-import file_creator_scripts
 import population_filter_scripts
 import utility_scripts
 
@@ -20,43 +19,19 @@ import utility_scripts
 # Function to find the total number of variants
 
 
-def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
-    """this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row."""
+# def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
+#     """this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row."""
 
-    file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
+#     file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
 
-    writeDirectory = file_creator_scripts.writePath(writeLocation, file_name)
+#     writeDirectory = file_creator_scripts.writePath(writeLocation, file_name)
 
-    MyFile = open(writeDirectory, "w")
+#     MyFile = open(writeDirectory, "w")
 
-    for element in iid_list:
-        MyFile.write(element)
-        MyFile.write("\n")
-    MyFile.close()
-
-
-###########################################################################################
-
-
-def find_all_files(input_file_path: str):
-    """This function will find a function of all files within a specified directory"""
-    cur_dir = os.getcwd()
-
-    os.chdir(input_file_path)
-
-    recode_file_list = []
-
-    for file in glob.glob("*.raw"):
-
-        full_file_path = "".join([input_file_path, file])
-
-        recode_file_list.append((full_file_path, file))
-
-    # print(f"{len(recode_file_list)} recoded raw file found with the {os.getcwd()}")
-
-    os.chdir(cur_dir)
-
-    return recode_file_list
+#     for element in iid_list:
+#         MyFile.write(element)
+#         MyFile.write("\n")
+#     MyFile.close()
 
 
 ###########################################################################################
@@ -86,69 +61,12 @@ def get_chr_num(file_str: str) -> str:
     return file_prefix
 
 
-def run_pop_filter(pop_info: str, raw_file: str,
-                   pop_code: str) -> pd.DataFrame:
-    """Function to filter the raw files to individuals in a specific population
-    Parameters
-    __________
-    pop_info : str
-        file that contains information about what ancestry each grid is from
-
-    raw_file : str
-        file path to the raw file that was output from PLINK
-
-    pop_code : str
-        specified population code of interest from 1000 genomes
-
-    Returns
-    _______
-    pd.DataFrame
-        this is the filtered raw file loaded into a dataframe
-    """
-    dataset_filter = population_filter_scripts.Pop_Filter(pop_info, raw_file)
-
-    pop_info_df, recode_df = dataset_filter.load_files()
-
-    pop_info_subset_df = dataset_filter.get_pop_info_subset(
-        pop_info_df, pop_code)
-
-    raw_file = dataset_filter.filter_recode_df(pop_info_subset_df, recode_df)
-
-    return raw_file
-
-
-def reformatting_file(var_dict: dict, output_path: str, file_prefix: str):
-    """Function to write the var dict to a reformated file
-    Parameters
-    __________
-    var_dict : dict
-        dictionary containing which single variant each grid carriers
-
-    output_path : str
-        string listing which directory to output the reformatted file to
-
-    file_prefix : str
-        string containing the chromosome number. Format should be chrXX, where
-        XX are digits
-    """
-    var_reformat_df = pd.DataFrame(var_dict, columns=["IID", "Variant ID"])
-
-    reformat_directory = file_creator_scripts.check_dir(
-        output_path, "reformatted")
-
-    var_reformat_df.to_csv(
-        "".join([
-            reformat_directory,
-            "/",
-            file_prefix,
-            ".single_var_list_reformat.csv",
-        ]),
-        index=False,
-    )
-
+# create a decorator that can be used to check if a 
+# directory exist
 
 @utility_scripts.func_readme_generator
-def single_variant_analysis(*args, **kwargs):
+@utility_scripts.check_dir_decorator("carrier_analysis_output/")
+def single_variant_analysis(*args, parameter_dict: dict):
     """Function that identifies grids that carry at least one variant
     Parameters
     __________
@@ -159,58 +77,48 @@ def single_variant_analysis(*args, **kwargs):
     # getting the main logger
     logger = logging.getLogger(__name__)
     # expanding parameters from the kwargs dictionary
-    recodeFile: str = kwargs.get("recode_filepath")
+    recodeFile: str = parameter_dict.get("recode_filepath")
 
-    write_path: str = kwargs.get("output")
+    write_path: str = parameter_dict.get("output")
+    
+    pop_info: str = parameter_dict.get("pop_info")
 
-    pop_info: str = kwargs.get("pop_info")
-
-    pop_code: str = kwargs.get("pop_code")
-
-    try:
-
-        # making a directory to put the files from this step in
-
-        os.mkdir("".join([write_path, "carrier_analysis_output/"]))
-
-    except FileExistsError:
-        pass
+    pop_code: str = parameter_dict.get("pop_code")
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
 
-    # creating the readme
-    # create_readme(output_path)
+    recode_file_list: list = utility_scripts.get_file_list(recodeFile, "*raw")
 
-    recode_file_list = utility_scripts.get_file_list(recodeFile, "*raw")
-
-    for file_tuple in recode_file_list:
-        file_prefix: str = get_chr_num(file_tuple[1])
-
+    # iterating through each file in the recode file list
+    for recodefile in recode_file_list:   
+        # getting the chromosome number to use as a file prefix
+        # with the function get_chr_num and forming the output
+        # file name
         output_file_name = "".join(
-            [file_prefix, ".", "single_variant_carrier.csv"])
+            [get_chr_num(recodefile), ".", "single_variant_carrier.csv"])
 
-        full_output_file: str = "".join([output_path, output_file_name])
+        # forming the full path of the output file
+        full_output_file: str = os.path.join(output_path, output_file_name)
 
-        recodeFile = file_tuple[0]
+        # TODO: refactor these next two lines
+        # load the raw_file into a dataframe
+        raw_file: pd.DataFrame = pd.read_csv(recodefile, sep=" ")
 
-        file_checker = file_creator_scripts.Check_File_Exist(recodeFile)
+        # file_checker = file_creator_scripts.Check_File_Exist(recodeFile)
 
-        raw_file = file_checker.check_file_exist(separator=" ")
+        # raw_file = file_checker.check_file_exist(separator=" ")
 
         # subsetting the raw_file for a specific population if the population code, pop_code, is provided
 
         if pop_code:
-            raw_file: pd.DataFrame = run_pop_filter(pop_info, raw_file,
+            raw_file: pd.DataFrame = population_filter_scripts.run_pop_filter(pop_info, raw_file,
                                                     pop_code)
 
         column_list = raw_file.columns[6:].values.tolist()
 
-        # var_dict = dict()
-
-        # var_dict_reformat = dict()
+    
         carrier_df: pd.DataFrame = pd.DataFrame()
-        # total_id_set = set()
-        # iid_list = []
+
 
         for column in column_list:
 
@@ -230,11 +138,11 @@ def single_variant_analysis(*args, **kwargs):
             iid_dataframe["Variant ID"] = column
 
             iid_dataframe.columns = ["IID", "Variant ID"]
-
+            
             carrier_df = pd.concat([carrier_df, iid_dataframe])
 
-        # getting a list of IIDs
-        iid_list: list = list(set(iid_dataframe.IID.values.tolist()))
+        # counting how many total unique carriers
+        print(f"Number of unique IIDs who are identified as carrying a variant of interest is {len(list(set(iid_dataframe.IID.values.tolist())))}")
 
         if carrier_df.empty:
 
@@ -243,6 +151,8 @@ def single_variant_analysis(*args, **kwargs):
             )
             logger.info("No individuals identified as carrying variants")
 
-        totalVariantIDList(iid_list, output_path, file_prefix)
+            sys.exit(0)
+
+        # totalVariantIDList(iid_list, output_path, file_prefix)
 
         iid_dataframe.to_csv(full_output_file, index=False)

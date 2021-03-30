@@ -4,6 +4,7 @@ import os
 from os import path
 import re
 import population_filter_scripts
+import utility_scripts
 # need to gather all of the single var list
 
 
@@ -46,22 +47,19 @@ def get_chr_num(carrier_file: str) -> str:
 
     return chr_num
 
-
-def get_allele_frq(carrier_file_list: list, raw_file_list: list,
-                   pop_info_filepath: str, pop_code: str, output_path: str):
+@utility_scripts.check_file_decorator("carrier_analysis_output/allele_frequencies.txt")
+def get_allele_frq(*args: list, output: str):
     '''This is the function that determines the minor allele frequency of the 
     variants and then writes it to a file'''
-
-    frequency_file_path: str = "".join(
-        [output_path, "carrier_analysis_output/allele_frequencies.txt"])
-
-    # deleting the previous file so that it does not write repeating values
-    if path.exists(frequency_file_path):
-
-        os.remove(frequency_file_path)
+    # parsing through inputs
+    carrier_file_list: list = args[0]
+    raw_file_list: list = args[1]
+    pop_info_filepath: str = args[2]
+    pop_code: str = args[3]
 
     # opening the file to write to it
-    with open(frequency_file_path, "a+") as myFile:
+    with open("".join(
+        [output, "carrier_analysis_output/allele_frequencies.txt"]), "a+") as myFile:
 
         myFile.write("chr\tvariant_id\tallele_freq\n")
 
@@ -89,14 +87,9 @@ def get_allele_frq(carrier_file_list: list, raw_file_list: list,
                 set(carrier_file_df["Variant ID"].values.tolist()))
 
             # loading in the raw file into a dataframe and filtering it just for the desired population code using the Pop_Filter code
-            pop_filter = population_filter_scripts.Pop_Filter(
-                pop_info_filepath, raw_file)
-
-            pop_info_df, recode_df = pop_filter.load_files()
-
-            pop_info_df = pop_filter.get_pop_info_subset(pop_info_df, pop_code)
-
-            raw_file_df = pop_filter.filter_recode_df(pop_info_df, recode_df)
+            raw_file_df: pd.DataFrame = population_filter_scripts.run_pop_filter(pop_info_filepath, raw_file,
+                                                    pop_code)
+        
 
             for variant in variant_list:
                 # get all rows for that variant in the raw-file_df
@@ -124,4 +117,4 @@ def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str,
     raw_file_list = get_var_files(raw_dir, "*.raw")
 
     get_allele_frq(carrier_file_list, raw_file_list, pop_file, pop_code,
-                   output)
+                   output=output)

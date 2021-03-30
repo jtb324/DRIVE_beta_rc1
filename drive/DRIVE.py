@@ -5,6 +5,7 @@ import os.path
 from os import path
 import sys
 from datetime import datetime
+from collections import namedtuple
 
 import carrier_analysis_scripts
 import create_network_scripts
@@ -17,20 +18,22 @@ import full_analysis
 import utility_scripts
 
 
-def run(args):
+@utility_scripts.func_readme_generator
+def run(args: list, **kwargs: dict):
+
     # creating the README for the main parent directory
     # TODO: refactor these readme section
-    readme = utility_scripts.Readme("_README.md", args.output)
+    # readme = utility_scripts.Readme("_README.md", args.output)
 
-    readme.rm_previous_file()
+    # readme.rm_previous_file()
 
-    readme.write_header(args.output)
+    # readme.write_header(args.output)
 
-    readme.create_date_info()
+    # readme.create_date_info()
 
-    readme.add_line(utility_scripts.main_parameter_text)
-    readme.add_line(utility_scripts.main_directory_header)
-    readme.add_line(utility_scripts.main_directory_text)
+    # readme.add_line(utility_scripts.main_parameter_text)
+    # readme.add_line(utility_scripts.main_directory_header)
+    # readme.add_line(utility_scripts.main_directory_text)
 
     # Next few lines give settings for the logger
 
@@ -72,7 +75,7 @@ def run(args):
     # TODO: create a quick function that can simplify this repetitive need to check if the path already exist
     # Next line checks to see if a plink output file already exist and delets it if it does
     if os.path.exists("".join(
-        [args.output, "plink_output_files/", "plink_log.log"])):
+            [args.output, "plink_output_files/", "plink_log.log"])):
 
         os.remove("".join(
             [args.output, "plink_output_files/", "plink_log.log"]))
@@ -123,13 +126,17 @@ def run(args):
     print("generating list of individuals at each probe id...")
 
     # The args.input should be a directory indicating where the raw files are located
+    arguments_dict = {
+        "recode_filepath": plink_file_path,
+        "output": args.output,
+        "pop_info": args.pop_info,
+        "pop_code": args.pop_code,
+        "readme_output": "".join([args.output, "carrier_analysis_output/"]),
+        "readme_text": utility_scripts.carrier_analysis_body_text,
+    }
+
     carrier_analysis_scripts.single_variant_analysis(
-        recode_filepath=plink_file_path,
-        output=args.output,
-        pop_info=args.pop_info,
-        pop_code=args.pop_code,
-        readme_output="".join([args.output, "carrier_analysis_output/"]),
-        readme_text=utility_scripts.carrier_analysis_body_text,
+        parameter_dict=arguments_dict
     )
     logger.info(
         f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
@@ -152,11 +159,11 @@ def run(args):
         f"checking the variant minor allele frequencies against an arbitrary threshold of {THRESHOLD}"
     )
     # This next function will check to see if variants are above a specified threshold
-    # If they are then the user has an option to end the program and remove the variants
-    # or just continue on with the program.
-    # The function will return a tuple where the first value is a list containing variants
-    # that are above a specified threshold and the second value is either 0 or 1
-    # where 0 quits the program and 1 continues
+    # If they are then the user has an option to end the program and remove the 
+    # variants or just continue on with the program. The function will return a tuple 
+    # where the first value is a list containing variants that are above a specified 
+    # threshold and the second value is either 0 or 1 where 0 quits the program and 1 
+    # continues
 
     variants_above_threshold_tuple: tuple = allele_frequency_analysis_scripts.check_mafs(
         "".join([
@@ -181,136 +188,136 @@ def run(args):
             f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
         )
 
-    print("converting the ibd output to a human readable version...")
+    # print("converting the ibd output to a human readable version...")
 
-    IBD_search_output_files: str = "".join(
-        [args.output, "formatted_ibd_output/"])
+    # IBD_search_output_files: str = "".join(
+    #     [args.output, "formatted_ibd_output/"])
 
-    if not path.exists(IBD_search_output_files):
+    # if not path.exists(IBD_search_output_files):
 
-        os.mkdir(IBD_search_output_files)
+    #     os.mkdir(IBD_search_output_files)
 
-    for program in args.ibd_programs:
+    # for program in args.ibd_programs:
 
-        suffix_dict: dict = {
-            "ilash": ".match.gz",
-            "hapibd": ".ibd.gz",
-        }
+    #     suffix_dict: dict = {
+    #         "ilash": ".match.gz",
+    #         "hapibd": ".ibd.gz",
+    #     }
 
-        file_suffix: str = suffix_dict[program]
+    #     file_suffix: str = suffix_dict[program]
 
-        # getting the correct ibd_file_path
-        ibd_file: str = [
-            file for file in IBD_PATHS_LIST if program in file.lower()
-        ][0]
+    #     # getting the correct ibd_file_path
+    #     ibd_file: str = [
+    #         file for file in IBD_PATHS_LIST if program in file.lower()
+    #     ][0]
 
-        convert_ibd_func_param: dict = {
-            "ibd_file_path": ibd_file,
-            "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
-            "ibd_program": program,
-            "output_path": IBD_search_output_files,
-            "map_files": "".join([args.output, "plink_output_files/"]),
-            "ibd_file_suffix": file_suffix,
-            "min_CM_threshold": MIN_CM,
-            "threads": THREADS
-        }
+    #     convert_ibd_func_param: dict = {
+    #         "ibd_file_path": ibd_file,
+    #         "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
+    #         "ibd_program": program,
+    #         "output_path": IBD_search_output_files,
+    #         "map_files": "".join([args.output, "plink_output_files/"]),
+    #         "ibd_file_suffix": file_suffix,
+    #         "min_CM_threshold": MIN_CM,
+    #         "threads": THREADS
+    #     }
 
-        # pre_shared_segments_analysis_scripts.convert_ibd(
-        #     ibd_file, "".join([args.output, "carrier_analysis_output/"]),
-        #     program, IBD_search_output_files,
-        #     "".join([args.output,
-        #              "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
-        pre_shared_segments_analysis_scripts.convert_ibd(
-            convert_ibd_func_param,
-            readme_output=IBD_search_output_files,
-            readme_text=utility_scripts.formatted_ibd_dir_body_text_1)
+    #     # pre_shared_segments_analysis_scripts.convert_ibd(
+    #     #     ibd_file, "".join([args.output, "carrier_analysis_output/"]),
+    #     #     program, IBD_search_output_files,
+    #     #     "".join([args.output,
+    #     #              "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
+    #     pre_shared_segments_analysis_scripts.convert_ibd(
+    #         convert_ibd_func_param,
+    #         readme_output=IBD_search_output_files,
+    #         readme_text=utility_scripts.formatted_ibd_dir_body_text_1)
 
-    print("combining segment output...")
-    ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
-    pre_shared_segments_analysis_scripts.combine_output(
-        "".join([IBD_search_output_files, "reformatted_ibd_output/"]),
-        args.ibd_programs, IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/reformatted/"]),
-        ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
+    # print("combining segment output...")
+    # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
+    # pre_shared_segments_analysis_scripts.combine_output(
+    #     "".join([IBD_search_output_files, "reformatted_ibd_output/"]),
+    #     args.ibd_programs, IBD_search_output_files,
+    #     "".join([args.output, "carrier_analysis_output/reformatted/"]),
+    #     ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
 
-    pre_shared_segments_analysis_scripts.reformat_files(
-        "".join([args.output, "carrier_analysis_output/"]),
-        "".join([args.output, "plink_output_files/"]),
-        IBD_search_output_files,
-        IBD_search_output_files,
-        "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
-    )
-    logger.info(
-        f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
-    )
+    # pre_shared_segments_analysis_scripts.reformat_files(
+    #     "".join([args.output, "carrier_analysis_output/"]),
+    #     "".join([args.output, "plink_output_files/"]),
+    #     IBD_search_output_files,
+    #     IBD_search_output_files,
+    #     "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
+    # )
+    # logger.info(
+    #     f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
+    # )
 
-    print(
-        "generating pdf files of networks of individuals who share segments..."
-    )
+    # print(
+    #     "generating pdf files of networks of individuals who share segments..."
+    # )
 
-    # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
+    # # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
 
-    if not path.exists("".join([args.output, "networks/"])):
-        os.mkdir("".join([args.output, "networks/"]))
+    # if not path.exists("".join([args.output, "networks/"])):
+    #     os.mkdir("".join([args.output, "networks/"]))
 
-    # output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
+    # # output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
 
-    network_dir: str = "".join([args.output, "networks/"])
+    # network_dir: str = "".join([args.output, "networks/"])
 
-    create_network_scripts.create_networks(
-        IBD_search_output_files,
-        "".join([args.output,
-                 "carrier_analysis_output/"]), network_dir, network_dir)
+    # create_network_scripts.create_networks(
+    #     IBD_search_output_files,
+    #     "".join([args.output,
+    #              "carrier_analysis_output/"]), network_dir, network_dir)
 
-    logger.info(
-        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
-    )
+    # logger.info(
+    #     f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
+    # )
 
-    print(
-        "getting information about the haplotypes for the confirmed carriers")
+    # print(
+    #     "getting information about the haplotypes for the confirmed carriers")
 
-    if not path.exists("".join([args.output, "haplotype_analysis/"])):
+    # if not path.exists("".join([args.output, "haplotype_analysis/"])):
 
-        os.mkdir("".join([args.output, "haplotype_analysis/"]))
+    #     os.mkdir("".join([args.output, "haplotype_analysis/"]))
 
-    haplotype_info_path: str = haplotype_segments_analysis.get_segment_lengths(
-        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
-        "".join([args.output, "haplotype_analysis/"]),
-        ILASH_PATH,
-        HAPIBD_PATH,
-        THREADS,
-        "".join([args.output, "plink_output_files/"]),
-        "".join([args.output, "carrier_analysis_output/", "reformatted/"]),
-        "".join([args.output, "networks/", "network_groups.csv"]),
-        IBD_search_output_files,
-    )
+    # haplotype_info_path: str = haplotype_segments_analysis.get_segment_lengths(
+    #     "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
+    #     "".join([args.output, "haplotype_analysis/"]),
+    #     ILASH_PATH,
+    #     HAPIBD_PATH,
+    #     THREADS,
+    #     "".join([args.output, "plink_output_files/"]),
+    #     "".join([args.output, "carrier_analysis_output/", "reformatted/"]),
+    #     "".join([args.output, "networks/", "network_groups.csv"]),
+    #     IBD_search_output_files,
+    # )
 
-    logger.info(
-        f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}"
-    )
-    print(
-        "generating a file contain the genotypes for all IIDs in the provided file"
-    )
+    # logger.info(
+    #     f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}"
+    # )
+    # print(
+    #     "generating a file contain the genotypes for all IIDs in the provided file"
+    # )
 
-    full_analysis.get_all_genotypes(
-        "".join([args.output, "plink_output_files/"]),
-        "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
-        args.pop_info, "".join([args.output,
-                                "haplotype_analysis/"]), args.pop_code)
+    # full_analysis.get_all_genotypes(
+    #     "".join([args.output, "plink_output_files/"]),
+    #     "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
+    #     args.pop_info, "".join([args.output,
+    #                             "haplotype_analysis/"]), args.pop_code)
 
-    logger.info(
-        f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}"
-    )
+    # logger.info(
+    #     f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}"
+    # )
 
-    # Add the function that gets the haplotype string to this
-    logger.info(
-        f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}"
-    )
-    print("Finding the most probable haplotypes")
+    # # Add the function that gets the haplotype string to this
+    # logger.info(
+    #     f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}"
+    # )
+    # print("Finding the most probable haplotypes")
 
-    haplotype_segments_analysis.gather_haplotypes(
-        haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
-        args.binary_file, args.pop_info, args.pop_code)
+    # haplotype_segments_analysis.gather_haplotypes(
+    #     haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
+    #     args.binary_file, args.pop_info, args.pop_code)
 
     logger.info('Analysis finished...')
 
@@ -323,15 +330,13 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description=
-        "This identifies individuals who have a specific variant in a raw file from PLINK"
+        description="This identifies individuals who have a specific variant in a raw file from PLINK"
     )
 
     parser.add_argument(
         "--bfile",
         "-b",
-        help=
-        "This argument will list the directory to the bim file which give them"
+        help="This argument will list the directory to the bim file which give them"
         "genotype information that PLINK uses",
         dest="binary_file",
         type=str,
@@ -350,8 +355,7 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        help=
-        "This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
+        help="This is the directory that text files containing the ids of the individuals who have desired variants will be written to.",
         dest="output",
         type=str,
         required=True,
@@ -359,8 +363,7 @@ def main():
 
     parser.add_argument(
         "--analysis",
-        help=
-        "This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
+        help="This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
         dest="analysis",
         type=str,
     )
@@ -376,8 +379,7 @@ def main():
 
     parser.add_argument(
         "--variant_file",
-        help=
-        "This argument provides a path to a file that list all individuals that "
+        help="This argument provides a path to a file that list all individuals that "
         "carry a specific variant",
         dest="var_file",
         type=str,
@@ -386,8 +388,7 @@ def main():
 
     parser.add_argument(
         "--pop_info",
-        help=
-        "This argument provides the file path to a file containing the population "
+        help="This argument provides the file path to a file containing the population "
         "distribution of a dataset for each grid. This file should be a text file "
         "and at least contain two columns, where one column is 'Pop', the "
         "population code for each grid based on 1000 genomes, and then the second "
@@ -399,8 +400,7 @@ def main():
 
     parser.add_argument(
         "--pop_code",
-        help=
-        "This argument can be a single population code or a list of population "
+        help="This argument can be a single population code or a list of population "
         "codes that someone is looking for. Population codes have to match the "
         "1000 genomes.",
         dest="pop_code",
@@ -410,8 +410,7 @@ def main():
 
     parser.add_argument(
         "--range",
-        help=
-        "This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
+        help="This argument will list the  start and end bp of the range you wish to look at. The argument should be formated like '--range START END'.",
         dest="range",
         nargs="+",
         type=str,
@@ -420,7 +419,13 @@ def main():
 
     parser.set_defaults(func=run)
     args = parser.parse_args()
-    args.func(args)
+
+    # getting the parameters for the run function
+    readme_text: list = [utility_scripts.main_parameter_text,
+                         utility_scripts.main_directory_header, utility_scripts.main_directory_text]
+
+    args.func(args, parameter_dict={
+              "readme_text": readme_text, "readme_output": args.output})
 
 
 if __name__ == "__main__":

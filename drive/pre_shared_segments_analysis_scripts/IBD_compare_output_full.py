@@ -9,7 +9,7 @@ import re
 # Getting all the ibd files that end in .small.txt.gz
 import pre_shared_segments_analysis_scripts
 import utility_scripts
-import pair_info
+# import pair_info
 
 
 def get_variant_id(ibd_file: str) -> str:
@@ -139,22 +139,22 @@ def all_agree_pair(pair_list: dict) -> list:
     return unionpair
 
 
-def get_pair_info(pair_info_object, input_file_object) -> dict:
-    """Function to get a dictionary of The pairs and other pair information
-    Parameters
-    __________
+# def get_pair_info(pair_info_object, input_file_object) -> dict:
+#     """Function to get a dictionary of The pairs and other pair information
+#     Parameters
+#     __________
 
-    Returns
-    _______
-    dict
-        returns a dictionary where the key is the tuple of (pair1, pair2) and there 
-        are values "carrier_status", "connected_carriers", "missed_carriers"
-    """
+#     Returns
+#     _______
+#     dict
+#         returns a dictionary where the key is the tuple of (pair1, pair2) and there 
+#         are values "carrier_status", "connected_carriers", "missed_carriers"
+#     """
 
-    pair_info_dict: dict = form_pair_dict(allpair_file_name, pair_list, variant_id, carrier_file_dir,
-                                          chr_num, hapibd_file, ilash_file, map_file)
+#     pair_info_dict: dict = form_pair_dict(allpair_file_name, pair_list, variant_id, carrier_file_dir,
+#                                           chr_num, hapibd_file, ilash_file, map_file)
 
-    return pair_info_dict
+#     return pair_info_dict
 
 
 def get_carrier_list(file: str, variant_id: str) -> list:
@@ -228,7 +228,7 @@ def form_pair_dict(pair_info_object, input_file_object,write_path: str, pair_lis
     if os.path.isfile(pair_info_object.output_path):
 
         # removing the file
-        os.remove(pair_info_object.output_path`)
+        os.remove(pair_info_object.output_path)
 
 
     # use list comprehension to find the file with that chr_num
