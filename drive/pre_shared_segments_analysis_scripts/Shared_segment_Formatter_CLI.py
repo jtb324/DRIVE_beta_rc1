@@ -100,16 +100,62 @@ def get_file_dict(map_file_list: list, carrier_file_list: list, ibd_file_list: l
         file_dict[key].setdefault("ibd", find_match(ibd_file_list, key, "ibd"))
         
     return file_dict
+    
+def create_no_carriers_file(iid_dict: dict):
+    """Function to write to a file if the provided iid has no""" 
+    pass
+
 def create_iid_dict(variant: str, iid_dict: dict, carrier_df: pd.DataFrame) -> dict:
-    """CREATE DOC STRING"""
-    iid_list: list = carrier_df[carrier_df["Variant Id"] == variant]["IID"].values.tolist(0)
+    """Function to create a dictionary containing a list of IIDs that are identified as carrying the variants
+    Parameters
+    __________
+    variant : str
+        string containing the variant id
+    
+    iid_dict : dict
+        empty dictionary where the keys will be the variants and the values will be 
+        the list of carriers that were identified as carriers on the MEGA array
+    
+    carrier_df : pd.DataFrame
+        dataframe formed from the single_var_carriers.csv file
+    
+    Returns
+    _______
+    dict
+        dictionary that contains the variants as a key and the values are the list of 
+        carriers for that variant
+    """
+    iid_list: list = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
 
     iid_dict[variant] = iid_list
 
     return iid_dict
 
+def create_dict_with_var_pos(variant: str,  var_pos_dict: dict, map_file_df: pd.DataFrame) -> dict:
+    """Function to create a dictionary where the keys are the variants and the values are the base positions
+    Parameters
+    __________
+    variant : str
+        string containing the variant id
 
-def create_var_dict(chromo_var_file: str, map_file: str) -> dict:
+    var_pos_dict : dict
+        empty dictionary where the keys will be the variant and the 
+        values will be the base positions  
+
+    map_file_df : pd.DataFrame
+        dataframe of the map file that was output by plink
+
+    Returns 
+    _______
+    dict
+        returns the above dictionary but fillled in
+    """
+    var_pos_dict[variant] = map_file_df[map_file_df["variant id"] == variant]["site"].values.tolist()[0]
+
+    return var_pos_dict
+
+#TODO: Need to write the unit test for this section
+def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
     """function that will create a dictionary of the variants and all of 
     the corresponding information 
     Parameters
@@ -122,12 +168,13 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> dict:
         
     Returns
     _______
-    dict
-        returns dictionary where keys are the variants and the values 
-        are the values of interest in the map file
+    tuple
+        returns a tuple dictionaries where in the first the keys are the variant and values are the base position of the variant and in the second, the keys are the variants and the values are the IID's that carry the variants
     """
     # Return a dictionary of IIDs that carry the variant
     iid_var_dict: dict = {}
+    var_pos_dict: dict = {}
+
     # load in the csv file that list the IIDs of grids per variant on a 
     # specific chromosome
     carrier_df = pd.read_csv(chromo_var_file, sep=",")
@@ -146,18 +193,37 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> dict:
 
     iid_dict: dict = {key:value for element in iid_dict_list for key, value in element.items()}
 
+    var_pos_dict_list: list = map(create_dict_with_var_pos, carrier_df_var_list, var_pos_dict, map_file_df)
+
+    var_dict: dict = {key:value for element in var_pos_dict_list for key,value in element.items()}
+
     # TODO: create a function that forms the dictionary of base pairs
-    return iid_dict
+    return var_dict, iid_dict
 
 
-
+def filter_empty_dictionaries(file_dict: dict) -> dict:
+    """Function to filter the file dictionary to only those keys that contain a value
+    Parameters
+    __________
+    file_dict : dict
+        dictionary contain keys for each chromosome and dictionaries 
+        with filepaths as values
+    
+    Returns
+    _______
+    dict
+        returns the same dictionary as inputted but only the keys with 
+        values not empty dictionaries
+    """
+    return {key:file_dict[key] for key in file_dict if len(file_dict[key]) != 0}
+     
 # Initializing the parser
 @utility_scripts.func_readme_generator
 @utility_scripts.check_dir_decorator("formatted_ibd_output/")
 def convert_ibd(*args, parameter_dict: dict):
 
     # pulling the dictionary out of the args tuple
-
+    # need to refactor all the inputs here
     function_param_dict: dict = args[0]
 
     # checking the kwargs dictionary for specific
@@ -174,8 +240,7 @@ def convert_ibd(*args, parameter_dict: dict):
     # This first section will be used to get the shared segment files for each chromosome
     # getting rid of the class
     # creating a directory
-    preformater = pre_shared_segments_analysis_scripts.Pre_Shared_Segment_Converter(
-        ibd_files, carrier_file, ibd_program, output, map_file_dir)
+    
     # getting the segment file list
     segment_file_list: list = utility_scripts.get_file_list(ibd_files, file_suffix)
 
@@ -189,6 +254,9 @@ def convert_ibd(*args, parameter_dict: dict):
     # creating a dictionary that contains the correct map, carrier, and ibd files for the correct chromosome
     file_dict: dict = get_file_dict(map_file_list, chr_var_file_list, segment_file_list)
     
+    # filter the file dict to only the keys with values for each chromosome key
+    file_dict = filter_empty_dictionaries(file_dict)
+
     # Iterating through the chromosomes that have a value
     for key in file_dict:
 
@@ -196,7 +264,9 @@ def convert_ibd(*args, parameter_dict: dict):
 
             chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
-
+            
+            create_var_dict()
+            #TODO: This is where we are in refactoring the code
             var_info_df, variant_directory = preformater.create_variant_lists(
                 chromo_file, map_file)
 
