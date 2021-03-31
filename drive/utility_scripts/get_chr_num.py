@@ -1,20 +1,27 @@
 import re
 
 
-def get_chr_num(file: str) -> str:
-    '''This function will get the chr_num from the file name'''
+def get_chr_num(file: str, pattern: str) -> str:
+    """This function will get the chr_num from the file name
+    Parameters
+    __________
+    file : str
+        string containing the name of the file that the chromosome 
+        number will be extracted from
+        
+    pattern : str
+        this is the regular expression that will be matched
+        
+    Returns
+    _______
+    str
+        returns a string of the chromosome number. Should be of 
+        the format chrXX where X is a number 
+    """
 
-    match = re.search(r'chr\d\d_', file)
+    match = re.search(pattern, file)
 
-    # find chromosome number
-    if match:
-
-        chr_num = match.group(0)
-
-    else:
-        match = re.search(r'chr\d_', file)
-
-        chr_num = match.group(0)
+    chr_num = match.group(0)
 
     chr_num = chr_num.strip(".").strip("_")
 

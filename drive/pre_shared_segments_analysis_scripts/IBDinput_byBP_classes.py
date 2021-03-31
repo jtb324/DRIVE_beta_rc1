@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import shutil
 
-import file_creator_scripts
+
 
 ####################################################################################################
 
@@ -26,52 +26,6 @@ class Pre_Shared_Segment_Converter:
         self.cur_dir = os.getcwd()
         self.map_file_dir = map_file_dir
 
-    def gather_segment_files(self, segment_file_suffix: str) -> list:
-
-        os.chdir(self.segment_dir)
-
-        segment_files_list = []
-
-        for file in glob.glob("".join(["*", segment_file_suffix])):
-
-            full_file_path = "".join([self.segment_dir, file])
-
-            segment_files_list.append(full_file_path)
-
-        os.chdir(self.cur_dir)
-
-        return segment_files_list
-
-    def gather_chromosome_files(self) -> list:
-        os.chdir(self.chromosome_dir)
-
-        chromo_file_list = []
-
-        for file in glob.glob("*.single_variant_carrier.csv"):
-
-            full_file_path = "".join([self.chromosome_dir, file])
-
-            chromo_file_list.append(full_file_path)
-
-        os.chdir(self.cur_dir)
-
-        return chromo_file_list
-
-    def get_map_files(self) -> list:
-        '''This function returns a list of all the map files'''
-        os.chdir(self.map_file_dir)
-
-        map_file_list = []
-
-        for file in glob.glob("*.map"):
-
-            full_file_path = "".join([self.map_file_dir, file])
-
-            map_file_list.append(full_file_path)
-
-        os.chdir(self.cur_dir)
-
-        return map_file_list
 
     # returns a dataframe and a string
     def create_variant_lists(self, chromo_var_file: str, map_file_path: str):
@@ -184,21 +138,6 @@ class Pre_Shared_Segment_Converter:
         variant_info_df = pd.DataFrame(variant_info_dict)
 
         return variant_info_df, var_list_dir
-
-    def get_iid_files(self, iid_list_file_path: str) -> list:
-        os.chdir(iid_list_file_path)
-
-        iid_file_list = []
-
-        for file in glob.glob("*.txt"):
-
-            full_file_path = "".join([iid_list_file_path, file])
-
-            iid_file_list.append(full_file_path)
-
-        os.chdir(self.cur_dir)
-
-        return iid_file_list
 
 
 class newPOS:

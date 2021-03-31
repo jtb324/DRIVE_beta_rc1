@@ -9,31 +9,16 @@ from collections import namedtuple
 
 import carrier_analysis_scripts
 import create_network_scripts
-import file_creator_scripts
-import allele_frequency_analysis_scripts
-import pre_shared_segments_analysis_scripts
-import plink_initial_format_scripts
+import run_plink
 import haplotype_segments_analysis
+import pre_shared_segments_analysis_scripts
 import full_analysis
 import utility_scripts
+import collect_phenotype_info
 
 
 @utility_scripts.func_readme_generator
 def run(args: list, **kwargs: dict):
-
-    # creating the README for the main parent directory
-    # TODO: refactor these readme section
-    # readme = utility_scripts.Readme("_README.md", args.output)
-
-    # readme.rm_previous_file()
-
-    # readme.write_header(args.output)
-
-    # readme.create_date_info()
-
-    # readme.add_line(utility_scripts.main_parameter_text)
-    # readme.add_line(utility_scripts.main_directory_header)
-    # readme.add_line(utility_scripts.main_directory_text)
 
     # Next few lines give settings for the logger
 
@@ -46,8 +31,7 @@ def run(args: list, **kwargs: dict):
 
     utility_scripts.record_user_arguments(logger, args)
 
-    # creating an object that will ask for user input for the Analysis type,
-    # the minimum  centimorgan threshold, the threads to be used and the
+    # creating an object that will ask for user input for the Analysis type, the minimum  centimorgan threshold, the threads to be used and the
     # minor allele frequency threshold
     input_gatherer: object = utility_scripts.Input_Gather()
 
@@ -70,167 +54,173 @@ def run(args: list, **kwargs: dict):
 
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
 
-    # output path that all the plink files will output to
-    plink_file_path = "".join([args.output, "plink_output_files/"])
-    # TODO: create a quick function that can simplify this repetitive need to check if the path already exist
-    # Next line checks to see if a plink output file already exist and delets it if it does
-    if os.path.exists("".join(
-            [args.output, "plink_output_files/", "plink_log.log"])):
-
-        os.remove("".join(
-            [args.output, "plink_output_files/", "plink_log.log"]))
-    # TODO: Refactor this next line from line 93
-    if args.var_file:
-        analysis_type_checker: object = plink_initial_format_scripts.Analysis_Checker(
-            ANALYSIS_TYPE,
-            args.recode_options,
-            args.binary_file,
-            args.output,
-            plink_file_path,
-            var_file=args.var_file,
-            maf_filter=MAF_FILTER)
-
-        analysis_type_checker.check_analysis(
-            readme_txt=utility_scripts.plink_readme_body_text,
-            output=plink_file_path)
-
-        analysis_type_checker.check_missing_var_count()
+    # need to have it create branch where it will either do a 
+    # phenotype analysis or begin running plink
+    if ANALYSIS_TYPE == "phenotype":
+        logger.info("Beginning phenotype based analysis")
+        # loading all the necessary files into dataframes
+        pheno_df, pheno_carriers_df = collect_phenotype_info.load_pheno_file(args.pheno_file, args.phenotype_carriers)
 
     else:
-        analysis_type_checker: object = plink_initial_format_scripts.Analysis_Checker(
-            ANALYSIS_TYPE,
-            args.recode_options,
-            args.binary_file,
-            args.output,
-            plink_file_path,
-            maf_filter=MAF_FILTER)
+        # output path that all the plink files will output to
+        plink_file_path = "".join([args.output, "plink_output_files/"])
+        # TODO: create a quick function that can simplify this repetitive need to check if the path already exist
+        # Next line checks to see if a plink output file already exist and delets it if it does
+        # TODO: Need tp refactpr the inputs to the plink _output_files part so that it can be decoratored to see if the file exist
+        if os.path.exists("".join(
+                [args.output, "plink_output_files/", "plink_log.log"])):
 
-        analysis_type_checker.check_analysis(
-            range=args.range,
-            readme_txt=utility_scripts.plink_readme_body_text,
-            output=plink_file_path)
+            os.remove("".join(
+                [args.output, "plink_output_files/", "plink_log.log"]))
+        # Refactor
+        # TODO: Refactor this next line from line 93
+        if args.var_file:
+            analysis_type_checker: object = run_plink.Analysis_Checker(
+                ANALYSIS_TYPE,
+                args.recode_options,
+                args.binary_file,
+                args.output,
+                plink_file_path,
+                var_file=args.var_file,
+                maf_filter=MAF_FILTER)
 
-    # TODO: need to adjust the section so that it takes the proper options. At this moment this feature is not being used so it is commented out, but it is worth keeping in the program
-    # if args.analysis == "multi":
+            analysis_type_checker.check_analysis(
+                readme_txt=utility_scripts.plink_readme_body_text,
+                output=plink_file_path)
 
-    #     print("generating list of individuals carrying multiple variants....")
+            analysis_type_checker.check_missing_var_count()
 
-    #     carrier_analysis_scripts.multiVariantAnalysis(
-    #         args.input, args.output, args.compatible_format, "multi_variant_list.csv"
-    #     )
+        else:
+            analysis_type_checker: object = run_plink.Analysis_Checker(
+                ANALYSIS_TYPE,
+                args.recode_options,
+                args.binary_file,
+                args.output,
+                plink_file_path,
+                maf_filter=MAF_FILTER)
 
-    #     logfile.add_newline(
-    #         "Finished creating a list of individuals carrying multiple variants"
-    #     )
+            analysis_type_checker.check_analysis(
+                range=args.range,
+                readme_txt=utility_scripts.plink_readme_body_text,
+                output=plink_file_path)
 
-    print("generating list of individuals at each probe id...")
+        # TODO: need to adjust the section so that it takes the proper options. At this moment this feature is not being used so it is commented out, but it is worth keeping in the program
+        # if args.analysis == "multi":
 
-    # The args.input should be a directory indicating where the raw files are located
-    arguments_dict = {
-        "recode_filepath": plink_file_path,
-        "output": args.output,
-        "pop_info": args.pop_info,
-        "pop_code": args.pop_code,
-        "readme_output": "".join([args.output, "carrier_analysis_output/"]),
-        "readme_text": utility_scripts.carrier_analysis_body_text,
-    }
+        #     print("generating list of individuals carrying multiple variants....")
 
-    carrier_analysis_scripts.single_variant_analysis(
-        parameter_dict=arguments_dict
-    )
-    logger.info(
-        f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
-    )
+        #     carrier_analysis_scripts.multiVariantAnalysis(
+        #         args.input, args.output, args.compatible_format, "multi_variant_list.csv"
+        #     )
 
-    # The above function outputs files to a subdirectory called
-    # "carrier_analysis_output"
+        #     logfile.add_newline(
+        #         "Finished creating a list of individuals carrying multiple variants"
+        #     )
 
-    print(
-        "determining the minor allele frequency within the provided binary file..."
-    )
-    allele_frequency_analysis_scripts.determine_maf(
-        "".join([args.output, "carrier_analysis_output/"]),
-        "".join([args.output, "plink_output_files/"]), args.pop_info,
-        args.pop_code, args.output)
+        print("generating list of individuals at each probe id...")
 
-    THRESHOLD: float = 0.10
+        # The args.input should be a directory indicating where the raw files are located
+        arguments_dict = {
+            "recode_filepath": plink_file_path,
+            "output": args.output,
+            "pop_info": args.pop_info,
+            "pop_code": args.pop_code,
+            "readme_output": "".join([args.output, "carrier_analysis_output/"]),
+            "readme_text": utility_scripts.carrier_analysis_body_text,
+        }
 
-    print(
-        f"checking the variant minor allele frequencies against an arbitrary threshold of {THRESHOLD}"
-    )
-    # This next function will check to see if variants are above a specified threshold
-    # If they are then the user has an option to end the program and remove the 
-    # variants or just continue on with the program. The function will return a tuple 
-    # where the first value is a list containing variants that are above a specified 
-    # threshold and the second value is either 0 or 1 where 0 quits the program and 1 
-    # continues
-
-    variants_above_threshold_tuple: tuple = allele_frequency_analysis_scripts.check_mafs(
-        "".join([
-            args.output, "carrier_analysis_output/", "allele_frequencies.txt"
-        ]), THRESHOLD)
-
-    variants_above_threshold: list = variants_above_threshold_tuple[0]
-
-    program_end_code: int = variants_above_threshold_tuple[1]
-
-    if program_end_code == 0:
-        logger.warning(
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
+        carrier_analysis_scripts.single_variant_analysis(
+            parameter_dict=arguments_dict
+        )
+        logger.info(
+            f"Writing the results of the carrier analysis called: {''.join([args.output, 'carrier_analysis_output/'])}"
         )
 
-        logger.warning(
-            "Ending program so that the user can remove the above variants")
-        sys.exit(1)
+        # The above function outputs files to a subdirectory called
+        # "carrier_analysis_output"
 
-    elif program_end_code == 1 and variants_above_threshold:
-        logger.warning(
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
+        print(
+            "determining the minor allele frequency within the provided binary file..."
         )
+        carrier_analysis_scripts.determine_maf(
+            "".join([args.output, "carrier_analysis_output/"]),
+            "".join([args.output, "plink_output_files/"]), args.pop_info,
+            args.pop_code, args.output)
 
-    # print("converting the ibd output to a human readable version...")
+        THRESHOLD: float = 0.10
 
-    # IBD_search_output_files: str = "".join(
-    #     [args.output, "formatted_ibd_output/"])
+        print(
+            f"checking the variant minor allele frequencies against an arbitrary threshold of {THRESHOLD}"
+        )
+        # This next function will check to see if variants are above a specified threshold
+        # If they are then the user has an option to end the program and remove the 
+        # variants or just continue on with the program. The function will return a tuple 
+        # where the first value is a list containing variants that are above a specified 
+        # threshold and the second value is either 0 or 1 where 0 quits the program and 1 
+        # continues
+
+        variants_above_threshold_tuple: tuple = carrier_analysis_scripts.check_mafs(
+            "".join([
+                args.output, "carrier_analysis_output/", "allele_frequencies.txt"
+            ]), THRESHOLD)
+
+        variants_above_threshold: list = variants_above_threshold_tuple[0]
+
+        program_end_code: int = variants_above_threshold_tuple[1]
+
+        if program_end_code == 0:
+            logger.warning(
+                f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
+            )
+
+            logger.warning(
+                "Ending program so that the user can remove the above variants")
+            sys.exit(1)
+
+        elif program_end_code == 1 and variants_above_threshold:
+            logger.warning(
+                f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
+            )
+
+    print("converting the ibd output to a human readable version...")
+
+    # If the user selects to run the program on phenotype then the analysis should start at this step effectively
+    IBD_search_output_files: str = "".join(
+        [args.output, "formatted_ibd_output/"])
 
     # if not path.exists(IBD_search_output_files):
 
     #     os.mkdir(IBD_search_output_files)
 
-    # for program in args.ibd_programs:
+    for program in args.ibd_programs:
 
-    #     suffix_dict: dict = {
-    #         "ilash": ".match.gz",
-    #         "hapibd": ".ibd.gz",
-    #     }
+        suffix_dict: dict = {
+            "ilash": ".match.gz",
+            "hapibd": ".ibd.gz",
+        }
 
-    #     file_suffix: str = suffix_dict[program]
+        file_suffix: str = suffix_dict[program]
 
-    #     # getting the correct ibd_file_path
-    #     ibd_file: str = [
-    #         file for file in IBD_PATHS_LIST if program in file.lower()
-    #     ][0]
+        # getting the correct ibd_file_path
+        ibd_file: str = [
+            file for file in IBD_PATHS_LIST if program in file.lower()
+        ][0]
 
-    #     convert_ibd_func_param: dict = {
-    #         "ibd_file_path": ibd_file,
-    #         "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
-    #         "ibd_program": program,
-    #         "output_path": IBD_search_output_files,
-    #         "map_files": "".join([args.output, "plink_output_files/"]),
-    #         "ibd_file_suffix": file_suffix,
-    #         "min_CM_threshold": MIN_CM,
-    #         "threads": THREADS
-    #     }
+        convert_ibd_func_param: dict = {
+            "ibd_file_path": ibd_file,
+            "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
+            "ibd_program": program,
+            "output": IBD_search_output_files,
+            "map_files": "".join([args.output, "plink_output_files/"]),
+            "ibd_file_suffix": file_suffix,
+            "min_CM_threshold": MIN_CM,
+            "threads": THREADS,
+            "readme_output":IBD_search_output_files,
+            "readme_text":utility_scripts.formatted_ibd_dir_body_text_1
+        }
 
-    #     # pre_shared_segments_analysis_scripts.convert_ibd(
-    #     #     ibd_file, "".join([args.output, "carrier_analysis_output/"]),
-    #     #     program, IBD_search_output_files,
-    #     #     "".join([args.output,
-    #     #              "plink_output_files/"]), file_suffix, MIN_CM, THREADS)
-    #     pre_shared_segments_analysis_scripts.convert_ibd(
-    #         convert_ibd_func_param,
-    #         readme_output=IBD_search_output_files,
-    #         readme_text=utility_scripts.formatted_ibd_dir_body_text_1)
+        
+        pre_shared_segments_analysis_scripts.convert_ibd(parameter_dict=convert_ibd_func_param)
 
     # print("combining segment output...")
     # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
@@ -363,7 +353,7 @@ def main():
 
     parser.add_argument(
         "--analysis",
-        help="This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf'. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
+        help="This flag will pass the analysis type if the user wants to first run plink for the variants. The flag expects the argument to either be 'gene' or 'maf', or phenotyoe. If the maf option is chosen than the user also needs to specify a start and end bp range and a chromosome as well as a minor allele frequency threshold",
         dest="analysis",
         type=str,
     )
@@ -415,6 +405,20 @@ def main():
         nargs="+",
         type=str,
         required=False,
+    )
+    parser.add_argument(
+        "--pheno_file",
+        help="This argument will list the file path to a file that contains information about the chromsome of interest and the start and end points",
+        dest="pheno_file",
+        type=str,
+        required=False
+    )
+    parser.add_argument(
+        "--pheno_carrier",
+        help="This argument will list the file path to a file that contains information about grids identified as carriers based on phenotype",
+        dest="phenotype_carriers",
+        type=str,
+        required=False
     )
 
     parser.set_defaults(func=run)

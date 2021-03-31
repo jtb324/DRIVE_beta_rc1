@@ -65,10 +65,10 @@ class Input_Gather:
         else:
             self.logger.info("no analysis type passed to the program")
 
-        if ANALYSIS_TYPE not in ["gene", "maf", ""]:
+        if ANALYSIS_TYPE not in ["gene", "maf", "", "phenotype"]:
 
             print(
-                "Please choose one of the allowed analysis types: 'gene'/'maf'/'' "
+                "Please choose one of the allowed analysis types: 'gene'/'maf'/phenotype/'' "
             )
 
             self.logger.error(

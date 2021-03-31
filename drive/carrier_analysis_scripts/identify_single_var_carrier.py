@@ -15,25 +15,6 @@ import sys
 import population_filter_scripts
 import utility_scripts
 
-###################################################################################
-# Function to find the total number of variants
-
-
-# def totalVariantIDList(iid_list: set, writeLocation: str, file_name_head: str):
-#     """this is a function for the inner loop that will search through each position in the row and when it encouters a one or a two it will add that to the idlist and then return so that the outer loop in the main script moves on to the next row."""
-
-#     file_name = "".join([file_name_head, ".total_variant_ID_list.txt"])
-
-#     writeDirectory = file_creator_scripts.writePath(writeLocation, file_name)
-
-#     MyFile = open(writeDirectory, "w")
-
-#     for element in iid_list:
-#         MyFile.write(element)
-#         MyFile.write("\n")
-#     MyFile.close()
-
-
 ###########################################################################################
 # This function determines all the individuals who have a specific variant
 
