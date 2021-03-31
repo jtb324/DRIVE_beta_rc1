@@ -220,8 +220,12 @@ def run(args: list, **kwargs: dict):
             "readme_text":utility_scripts.formatted_ibd_dir_body_text_1
         }
 
-        
-        pre_shared_segments_analysis_scripts.convert_ibd(parameter_dict=convert_ibd_func_param)
+        # Forming the file dictionary which is a file that contains the appropriate files for each chromosome
+        file_dict: dict = pre_shared_segments_analysis_scripts.collect_files(parameter_dict=convert_ibd_func_param)
+
+        # iterating over this dictionary so that we can get the 
+        # variants for each chromosome
+        pre_shared_segments_analysis_scripts.iterate_file_dict(file_dict)
 
     # print("combining segment output...")
     # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
