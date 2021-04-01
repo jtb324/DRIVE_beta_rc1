@@ -72,49 +72,6 @@ class Shared_Segment_Convert(newPOS):
         # This gets the name of the variant of interest assuming it is input as a text file
         self.variant_name = variant_id
 
-    def generate_parameters(self) -> dict:
-        '''This will get some of the parameters used later'''
-        parameter_dict = {
-            "id1_indx": 0,
-            "id2_indx": 2,
-            "chr_indx": 4,
-            "str_indx": 5,
-            "end_indx": 6
-        }
-
-        # This section checks the in_format argument to determine which software program was used for IBD detection
-        if self.format.lower() == 'germline':
-            parameter_dict["cM_indx"] = 10
-            parameter_dict["unit"] = 11
-
-        elif self.format.lower() == 'ilash':
-            parameter_dict["cM_indx"] = 9
-
-        elif self.format.lower() in ['hap-ibd', 'hapibd']:
-            parameter_dict["cM_indx"] = 7
-
-        elif self.format.lower() == 'rapid':
-            parameter_dict["id1_indx"] = 1
-            parameter_dict["id2_indx"] = 2
-            parameter_dict["chr_indx"] = 0
-            parameter_dict["cM_indx"] = 7
-
-        else:
-            if self.format.lower().split(':')[0] in ['other', 'others']:
-                indx = self.format.lower().split(':')[1].split(';')
-                parameter_dict["id1_indx"] = int(indx[0]) - 1
-                parameter_dict["id2_indx"] = int(indx[1]) - 1
-                parameter_dict["chr_indx"] = int(indx[2]) - 1
-                parameter_dict["str_indx"] = int(indx[3]) - 1
-                parameter_dict["end_indx"] = int(indx[4]) - 1
-                parameter_dict["cM_indx"] = int(indx[5]) - 1
-
-            else:
-                sys.exit(
-                    'unrecognized or incorrect format: GREMLINE/iLASH/RaPID/hap-ibd/other:id1;id2;chr;str;start bp;end bp;cM'
-                )
-        return parameter_dict
-
     def build_id_pairs(self):
         '''This creates a two list of unique iids and duplicate iids'''
 
