@@ -48,12 +48,13 @@ def find_match(file_list: list, chr_num: str, file_type: str) -> str:
             "carrier":[file for file in file_list if "".join([chr_num, "."]) in file],
             "ibd": [file for file in file_list if "".join([alt_chr_num, "."]) in file]
             }
-
+    
     try:
         
         file: str = file_handler[file_type][0]
 
     except IndexError:
+
         return "None"
     
     return file

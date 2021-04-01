@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import sys  # THese are modules used
 import gzip
 import multiprocessing as mp
@@ -7,138 +6,12 @@ import re
 import glob
 import os
 import pandas as pd
+from dataclasses import dataclass
 import shutil
 
-
+import pre_shared_segments_analysis_scripts.generate_indx_dict as generate_indx_dict
 
 ####################################################################################################
-
-
-class Pre_Shared_Segment_Converter:
-    '''This class will prepare the input for all of the shared segment converter'''
-
-    def __init__(self, ibd_output_directory: str, chromosome_files_dir: str,
-                 ibd_software: str, output_dir: str, map_file_dir: str):
-        self.segment_dir = ibd_output_directory
-        self.chromosome_dir = chromosome_files_dir
-        self.output = output_dir
-        self.program_used = ibd_software
-        self.cur_dir = os.getcwd()
-        self.map_file_dir = map_file_dir
-
-
-
-    # returns a dataframe and a string
-    def create_variant_lists(self, chromo_var_file: str, map_file_path: str):
-        '''This function will take a csv file of carriers and then forming txt files for list carriers for each variant.'''
-        # this makes the directory name to output the files to
-        var_list_dir = "".join([self.output, "variant_lists/"])
-
-        # This attempts to make the directory for the list of IIDs per variant
-        try:
-            os.mkdir(var_list_dir)
-
-        # This exception should never be raised
-        except FileExistsError:
-            pass
-
-        # load in the csv file that list the IIDs of grids per variant on a specific chromosome
-        carrier_df = pd.read_csv(chromo_var_file, sep=",")
-        
-        # Need to determine the # of rows of the carrier_df
-        carrier_df_size = len(carrier_df)
-
-        # reading in the map file
-        map_file_df = pd.read_csv(map_file_path,
-                                  sep="\t",
-                                  header=None,
-                                  names=["chr", "variant id", "cM", "site"])
-
-        # bringing in the original variant excel file to get the variant site position
-        # iterate through each row of the chromosome so that
-        # going to create two list where one contains the variant_id, one contains a list of base positions,
-        variant_id_list = []
-        base_pos_list = []
-        carrier_df_variants: list = list(set(
-            carrier_df["Variant ID"].values.tolist()))
-
-        for variant in carrier_df_variants:
-        # for row in carrier_df.itertuples():
-            # getting the subset of the carrier_df that corresponds
-            # to the variant
-            df_subset: pd.DateFrame = carrier_df[
-                carrier_df["Variant ID"] == variant]
-
-            # getting a list of all the iids that are associated 
-            # with the variant
-
-            iid_list: list = df_subset["IID"].values.tolist()
-
-            # getting the list of variants and writing to a single text file for each variant in the chromosome.
-            
-            chr_num = map_file_df[map_file_df["variant id"] == variant[:(
-                len(variant) - 2)]].chr.values[0]
-
-            if carrier_df_size == 1 and iid_list[0] == "":
-
-                # If this single variant has no carriers than the function returns empty strings for the
-                #var_info_file_path, variant_directory
-                # If the iid_list has no carriers thant eh first element would just be a ""
-                no_carriers_file = open(
-                    "".join([self.output, "no_carriers_in_file.txt"]),
-                    "a+")
-                no_carriers_file.write(variant)
-                no_carriers_file.write("\t")
-                no_carriers_file.write(str(chr_num))
-                no_carriers_file.write("\n")
-                no_carriers_file.close()
-                return None, ""
-
-            # If the carrier df has more than one carrier it will search through all rows and just skip any row
-            # that has now carriers
-            if iid_list[0] == "":
-                no_carriers_file = open(
-                    "".join([self.output, "no_carriers_in_file.txt"]), "a+")
-                no_carriers_file.write(variant)
-                no_carriers_file.write("\t")
-                no_carriers_file.write(str(chr_num))
-                no_carriers_file.write("\n")
-                no_carriers_file.close()
-                print(
-                    f"There were no carriers found for the variant {variant}"
-                )
-                continue
-
-            # Writing the variants to a txt file in a specific directory
-            MyFile = open("".join([var_list_dir, variant, ".txt"]), 'w')
-
-            for element in iid_list:
-                MyFile.write(element)
-                MyFile.write('\n')
-            MyFile.close()
-
-            # This next section will return a dataframe of values
-            #####################################################################################################
-            # getting the base pair position and writing that to a text file
-
-            # append the variant_id
-            variant_id_list.append(variant)
-
-            # getting the base post
-            base_pos = map_file_df[map_file_df["variant id"] == variant[:(
-                len(variant) - 2)]].site.values[0]
-
-            # appending the base position to the list
-            base_pos_list.append(base_pos)
-
-        variant_info_dict = {
-            "variant_id": variant_id_list,
-            "site": base_pos_list
-        }
-
-        variant_info_df = pd.DataFrame(variant_info_dict)
-
-        return variant_info_df, var_list_dir
 
 
 class newPOS:
@@ -149,10 +22,33 @@ class newPOS:
         self.rem = rem
 
 
+def generate_parameters(ibd_program: str) -> dict:
+    """Function to generate a dictionary of the indices for the parameters 
+    that you have
+    Parameters
+    __________
+    ibd_program : str
+        string containing the ibd program that the input is coming from. 
+        This value should be ilash, hapibd, or germline
+    """
+    # using a dictionary to determine 
+    ibd_handler_dict: dict = {
+        "hapibd": generate_indx_dict.Hapibd_Indices(ibd_program),
+        "ilash": generate_indx_dict.Ilash_Indices(ibd_program),
+        "germine": generate_indx_dict.Germline_Indices(ibd_program)
+    }
+
+    param_class = ibd_handler_dict[ibd_program.lower()]
+
+    # updating the indices for which ever option was chosen
+    param_class.update_indices()
+
+    return param_class.return_param_dict()
+
 class Shared_Segment_Convert(newPOS):
     def __init__(self, shared_segment_file: str, pheno_file: str,
                  output_path: str, ibd_program_used: str,
-                 min_cM_threshold: int, thread: int, base_position,
+                 min_cM_threshold: int, base_position,
                  variant_id):
         # This is the germline or hapibd or ilash file
         self.segment_file = str(shared_segment_file)
@@ -172,7 +68,6 @@ class Shared_Segment_Convert(newPOS):
             [output_path, "reformatted_ibd_output/", ibd_program_used])
         self.format = str(ibd_program_used)
         self.min_cM = int(min_cM_threshold)
-        self.thread = int(thread)
         self.bp = int(base_position)
         # This gets the name of the variant of interest assuming it is input as a text file
         self.variant_name = variant_id
@@ -227,25 +122,20 @@ class Shared_Segment_Convert(newPOS):
         uniqID = {}  # creates empty dictionary
         dupID = []  # creates empty list
 
-        # Opens the file from for the list of IIDs to search through
-        pheno_file = open(self.iid_file, 'r')
-
         IDnum = 0
 
-        for line in pheno_file:  # This goes through each line and will get the id's
-            line = line.strip()
+        for iid in self.iid_file:  # This goes through each line and will get the id's
 
-            if line in uniqID:
-                dupID.append(line[0])
+            if iid in uniqID:
+                dupID.append(iid)
             else:
 
-                uniqID[line] = IDnum
+                uniqID[iid] = IDnum
                 IDnum = IDnum + 1
 
         # print('identified ' + str(len(uniqID)) + ' unique IDs')
 
         # Closing the file
-        pheno_file.close()
 
         return uniqID, dupID
 

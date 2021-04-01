@@ -125,7 +125,6 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
 
     var_dict: dict = {key:value for element in var_pos_dict_list for key,value in element.items()}
 
-    # TODO: create a function that forms the dictionary of base pairs
     return var_dict, iid_dict
 
 
@@ -166,6 +165,7 @@ def collect_files(*args, parameter_dict: dict) -> dict:
     file_dict = file_dict_creator.filter_empty_dictionaries(file_dict)
 
     return file_dict
+
 def create_var_info_dict(var_info_dict: dict, var_iid_dict: dict, variant: str, bp: str) -> dict:
     """Function that will add the variants and the corresponding info about iids that carry and the bp to the var_info_dict
     Parameters
@@ -196,8 +196,42 @@ def create_var_info_dict(var_info_dict: dict, var_iid_dict: dict, variant: str, 
     var_info_dict[variant] = {"base_pos": bp, "iid_list": iid_list}
 
     return var_info_dict
-                
-def iterate_file_dict(file_dict: dict, output: str):
+# unit test this function
+def filter_no_carriers(var_iid_dict: dict, output_path: str, chr_num: str) -> dict:
+    """Function to filter all variants that have no carriers out 
+    of the var_iid_dict
+    Parameters
+    __________
+    var_iid_dict : dict
+        dictionary containing variant ids as the keys and list
+        of iids who carry the variant as values
+    
+    output_path : str
+        string listing the directory to output the file to
+
+    chr_num : str
+        string that tells which chromosome the variant should be 
+        on. This will be of the format chrXX where X is a digit
+    """  
+    # creating a dictionary of filtered variants to return
+    filtered_var_dict: dict = {}
+
+    # iterating through all the variants to see if there is a 
+    # variant with no carriers     
+    for variant in var_iid_dict:
+        # if the variant has no carriers write this to a file
+        if "None" in var_iid_dict[variant]:
+
+            create_no_carriers_file(variant, chr_num, output_path)
+
+        else:
+            filtered_var_dict[variant] = var_iid_dict[variant]
+
+    return filtered_var_dict
+
+#TODO: refactor to make this function testable
+# This function is not testable at the moment
+def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: str, min_CM: str):
     """Function will iterate through the file dictionary which has paired the chromosome number with the appropriate files 
     Parameters
     __________
@@ -217,6 +251,7 @@ def iterate_file_dict(file_dict: dict, output: str):
 
             chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
+            ibd_file: str = file_dict[key]["ibd"]
 
             # In the var_pos_dict the keys are the variant and values 
             # are the base position of the variant and in the 
@@ -224,16 +259,11 @@ def iterate_file_dict(file_dict: dict, output: str):
             # are the IID's that carry the variants
             var_pos_dict, var_iid_dict = create_var_dict(chromo_file, map_file)
             
-            # need to create a function that will check if there are no variants for a 
-            # specific file
-            #TODO: creating a function to do the above mentioned thing
-            
+            # need to create a function that will check if there are no carriers for a 
+            # specific file. If there are no carriers it will write that to a file. It
+            # returns a dictionary that only contains variant that have carriers
+            filter_no_carriers(var_iid_dict, output, key)
 
-            # This checks if the var_info_file_path and the variant_directory are empty string because
-            # this would mean that the the chromo_file only has one variant and it has no carriers
-            # if variant_directory == "":
-            #     print(f"There were no carriers in the file {chromo_file}")
-            #     continue
             #iterating through
             # forming the dictionary to have all the variant info
             var_info_dict: dict = {}
@@ -242,27 +272,10 @@ def iterate_file_dict(file_dict: dict, output: str):
             for variant, bp in var_pos_dict.items():
 
                 var_info_dict = create_var_info_dict( var_info_dict,var_iid_dict, variant, bp)
-             
-            
-            variant_bp_list = var_info_df.site.values.tolist()
 
-            variant_id_list = var_info_df.variant_id.values.tolist()
-
-            # creating a list the base pairs with the variant id
-            var_info_list: list = [
-                (var_bp, var_id)
-                for var_bp, var_id in zip(variant_bp_list, variant_id_list)
-            ]
-
-            # creating a dictionary to couple the iid_file_list and the var_info_list
-            # into a single data structure
-            file_list_dict: dict = {
-                "iid_files": iid_file_list,
-                "var_info_files": var_info_list
-            }
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
-                int(threads), output, ibd_program, min_CM, file_list_dict,
-                segment_file)
+                int(threads), output, ibd_program, min_CM, var_info_dict,
+                ibd_file)
 
             error_filename: str = "nopairs-identified.txt"
             header_str: str = "variant_id"
@@ -270,28 +283,23 @@ def iterate_file_dict(file_dict: dict, output: str):
             parallel_runner.run_segments_parallel(error_filename, run_main,
                                                   header_str)
 
-
+# TODO: rename function
 def run_main(segment_file: str, output_path: str, ibd_format: list,
-             min_CM: str, iid_file_list: list, que_object, var_info_tuple):
+             min_CM: str, var_info_dict: list, que_object, variant):
 
-    variant_position = int(var_info_tuple[0])
+    variant_position: int = int(var_info_dict[variant]["base_pos"])
 
-    variant_id = str(var_info_tuple[1])
-    print(f"running the variant {variant_id}")
+    print(f"running the variant {variant}")
 
-    iid_file = [
-        iid_file for iid_file in iid_file_list if variant_id in iid_file
-    ][0]
-
-    pheno_file = iid_file
+    carrier_list: list = var_info_dict[variant]["iid_list"]
 
     ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
-        segment_file, pheno_file, output_path, ibd_format, min_CM, 1,
-        variant_position, variant_id)
+        segment_file, carrier_list, output_path, ibd_format, min_CM,
+        variant_position, variant)
 
     parameter_dict = ibd_file_converter.generate_parameters()
 
-    uniqID, dupID = ibd_file_converter.build_id_pairs()
+    uniqID, _ = ibd_file_converter.build_id_pairs()
 
     IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
 
