@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
-# THese are modules used
+# THese are modules 
 import re
 import os
 from os import path
 import pandas as pd
 
-import pre_shared_segments_analysis_scripts
 import utility_scripts
 import pre_shared_segments_analysis_scripts.file_dict_creator as file_dict_creator
 
@@ -280,11 +279,11 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
             error_filename: str = "nopairs-identified.txt"
             header_str: str = "variant_id"
 
-            parallel_runner.run_segments_parallel(error_filename, run_main,
+            parallel_runner.run_segments_parallel(error_filename, gather_shared_segments,
                                                   header_str)
 
 # TODO: rename function
-def run_main(segment_file: str, output_path: str, ibd_format: list,
+def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list,
              min_CM: str, var_info_dict: list, que_object, variant):
 
     variant_position: int = int(var_info_dict[variant]["base_pos"])
@@ -297,9 +296,9 @@ def run_main(segment_file: str, output_path: str, ibd_format: list,
         segment_file, carrier_list, output_path, ibd_format, min_CM,
         variant_position, variant)
 
-    parameter_dict = ibd_file_converter.generate_parameters()
+    parameter_dict = pre_shared_segments_analysis_scripts.generate_parameters(ibd_format)
 
-    uniqID, _ = ibd_file_converter.build_id_pairs()
+    uniqID = ibd_file_converter.build_id_pairs()
 
     IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
 

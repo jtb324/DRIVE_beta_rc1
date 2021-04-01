@@ -4,7 +4,7 @@ import pandas as pd
 import collections
 sys.path.append("../drive")
 
-from pre_shared_segments_analysis_scripts.Shared_segment_Formatter_CLI import create_iid_dict, create_dict_with_var_pos, create_no_carriers_file, create_var_info_dict, filter_no_carriers
+from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.gather_ibd_info import create_iid_dict, create_dict_with_var_pos, create_no_carriers_file, create_var_info_dict, filter_no_carriers
 
 
 def test_create_iid_dict():

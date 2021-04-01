@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../drive/")
 
-import pre_shared_segments_analysis_scripts.generate_indx_dict as generate_indx_dict
+import pre_shared_segments_analysis_scripts.shared_segment_detection.generate_indx_dict as generate_indx_dict
 
 def test_parameter_dict():
     """unit test for testing the Parameter_Dict class"""

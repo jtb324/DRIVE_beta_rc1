@@ -65,22 +65,19 @@ class Segment_Parallel_Runner(Parallel_Runner):
     Parameters
     __________
     ibd_format : str
-        string listing the ibd program that was used. This will be either 
-        hapibd or ilash
+        string listing the ibd program that was used. This will be either hapibd or ilash
 
     min_CM : str
-        string that lists the minimum centimorgan threshold to be used 
-        throughout the computation
+        string that lists the minimum centimorgan threshold to be used throughout the computation
 
     file_list_dict : dict    
-        dictionary containing a list of the iid_files, and a list of the 
-        variant_info files. The keys in the dictionary will be "iid_files" 
-        and "var_info_files"
+        dictionary of dictionaries where the outer key is the 
+        variant and the inner dictionary has two keys, base_pos and iid_list which have the variants base position and 
+        the list of grids that carry the variant according to the
+        mega array
 
     segment_file : str
-        string that list the path to the segment file. This file should be 
-        the output from either hapibd or ilash and should be a .match.gz or 
-        a .ibd.gz
+        string that list the path to the segment file. This file should be the output from either hapibd or ilash and should be a .match.gz or a .ibd.gz
     """
 
     ibd_format: str
@@ -120,14 +117,14 @@ class Segment_Parallel_Runner(Parallel_Runner):
         # expanding the second argument of the arg list into the parallel_func
         parallel_func: object = args[1]
 
-        # expanding the file_list_dict variable into two separate list
-        iid_file_list: list = self.file_list_dict["iid_files"]
-        variant_info_list: list = self.file_list_dict["var_info_files"]
+
+        # get all the variants from the file_list_dict
+        variant_list: list = self.file_list_dict.keys()
 
         func = partial(parallel_func, self.segment_file, self.output,
-                       self.ibd_format, self.min_CM, iid_file_list, que_object)
+                       self.ibd_format, self.min_CM, self.file_list_dict, que_object)
 
-        pool_object.map(func, variant_info_list)
+        pool_object.map(func, variant_list)
 
 
 @dataclass
