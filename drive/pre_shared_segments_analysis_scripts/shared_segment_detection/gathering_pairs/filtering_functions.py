@@ -53,7 +53,7 @@ def filter_to_greater_than_3_cm(df_chunk: pd.DataFrame, cM_indx: int, min_CM: in
         centimorgan threshold
     """
     # This is reducing the dataframe to only pairs greater than min_cM threshold
-    print(f" This is the cM: {df_chunk[cM_indx]}\n")
+
     chunk_greater_than_3_cm = df_chunk[(
         df_chunk[cM_indx] >= min_CM)]
     # Need to check if the unit doesn't equal cM. This only applies in the case of germline

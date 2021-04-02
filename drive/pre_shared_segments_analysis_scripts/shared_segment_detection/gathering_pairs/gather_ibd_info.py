@@ -8,6 +8,7 @@ import pandas as pd
 
 import utility_scripts
 import pre_shared_segments_analysis_scripts.file_dict_creator as file_dict_creator
+from .collect_shared_segments import gather_pairs, generate_parameters, build_unique_id_dict, create_ibd_arrays, write_to_file
 
 ####################################################################################################
 
@@ -272,6 +273,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
 
                 var_info_dict = create_var_info_dict( var_info_dict,var_iid_dict, variant, bp)
 
+            # need to fix this part for the new function
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
                 int(threads), output, ibd_program, min_CM, var_info_dict,
                 ibd_file)
@@ -292,15 +294,24 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list
 
     carrier_list: list = var_info_dict[variant]["iid_list"]
 
-    ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
-        segment_file, carrier_list, output_path, ibd_format, min_CM,
-        variant_position, variant)
+    parameter_dict: dict = generate_parameters(ibd_format)
 
-    parameter_dict = pre_shared_segments_analysis_scripts.generate_parameters(ibd_format)
+    uniqID: dict = build_unique_id_dict(carrier_list)
 
-    uniqID = ibd_file_converter.build_id_pairs()
+    IBDdata, IBDindex = create_ibd_arrays()
 
-    IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+    IBDdata, IBDindex = gather_pairs(IBDdata, IBDdata, segment_file, uniqID, min_CM, variant_position) 
 
-    ibd_file_converter.run(IBDdata, IBDindex, parameter_dict, uniqID,
-                           que_object)
+    write_to_file(que_object)
+    # ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
+    #     segment_file, carrier_list, output_path, ibd_format, min_CM,
+    #     variant_position, variant)
+
+    # parameter_dict = pre_shared_segments_analysis_scripts.generate_parameters(ibd_format)
+
+    # uniqID = ibd_file_converter.build_id_pairs()
+
+    # IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
+
+    # ibd_file_converter.run(IBDdata, IBDindex, parameter_dict, uniqID,
+    #                        que_object)

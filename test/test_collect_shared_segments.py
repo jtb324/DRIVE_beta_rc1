@@ -1,7 +1,9 @@
 import sys
+import pandas as pd
+import numpy as np
 sys.path.append("../drive")
 
-from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.collect_shared_segments import generate_parameters, build_unique_id_dict, create_ibd_arrays
+from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.collect_shared_segments import generate_parameters, build_unique_id_dict, create_ibd_arrays, get_pair_string, build_ibddata_and_ibddict
 
 def test_generate_parameters():
     """unit test to test if the parameters are being properly generated"""
@@ -72,3 +74,112 @@ def test_create_ibd_arrays():
             errors.append("The contents of the inner dictionary in the IBD_index dictionary are not as expected")   
       
     assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+
+def test_get_pair_string():
+    """unit test for testing the get_pair_string function"""
+
+    # making a list to keep track of all the errors
+    errors: list = []
+    # testing the case where both ids are in the uniqID dict and they are in order
+    row: pd.Series = pd.Series(np.array(["R12341234", "R2345112", "3.4"]))
+    print(row)
+    uniqID: dict = {
+        "R12341234": 0,
+        "R2345112": 1
+    }
+
+    both_pair_str: str = get_pair_string(row, 0,1,2, uniqID)
+
+    if both_pair_str != '{0}:{1}-{2}'.format("3.4", "R12341234", "R2345112"):
+        errors.append(f"Expected the string to be of the format: 3.4: R12341234-R2345112, instead it was of the format: {both_pair_str}")
+
+    # testing the case where both ids are in the uniqID
+    uniqID_2:dict = {
+        "R12341234": 1,
+        "R2345112": 0
+    }
+
+    out_of_order_str: str = get_pair_string(row, 0, 1, 2, uniqID_2)
+
+    if out_of_order_str != '{0}:{1}-{2}'.format("3.4",  "R2345112", "R12341234"):
+        errors.append(f"Expected the string to be of the format: 3.4: R2345112-R12341234, instead it was of the format: {out_of_order_str}")
+
+    # testing the case where 1st id is in uniqID. Use uniqID 
+    row1: pd.Series = pd.Series(np.array(["R12341234", "R234545678", "3.4"]))
+
+    first_in_pair: str = get_pair_string(row1, 0,1,2, uniqID)
+
+    if first_in_pair != '{0}:{1}-{2}'.format("3.4",  "R12341234", "R234545678"):
+        errors.append(f"Expected the string to be of the format: 3.4: R12341234-R234545678, instead it was of the format: {first_in_pair}")
+
+    # testing the case where 2 id is in the uniqID. Use uniqID
+    row2: pd.Series = pd.Series(np.array(["R124765234", "R2345112", "3.4"]))
+    
+    second_in_pair: str = get_pair_string(row2, 0, 1, 2, uniqID)
+
+    if second_in_pair != '{0}:{1}-{2}'.format("3.4", "R2345112", "R124765234"):
+        errors.append(f"Expected the string to be of the format: 3.4: R2345112-R124765234, instead it was of the format: {second_in_pair}")
+    
+    assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+
+def test_apply_on_get_pair_string():
+    """unit test to make sure that the apply function will work on the get_pair_str """
+    # making a list to keep track of errors
+    errors: list = []
+
+    uniqID: dict = {
+        "R12341234": 0,
+        "R2345112": 2,
+        "R1234512341":1,
+        "R1290384": 3
+    }
+
+    chunk_dict: dict = {
+        0: ["R12341234", "R2345112", "R1234512341", "4356789"],
+        1: ["R2345112", "R1234512341", "R097897", "R1290384"], 
+        2: ["4.5", "5.5", "6.6", "7.7"]
+    }
+    chunk: pd.DataFrame = pd.DataFrame.from_dict(chunk_dict)
+
+    chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, 0, 1, 2, uniqID), axis = 1)
+
+    # checking if the pair_string column is formed
+    if "pair_string" not in chunk.columns:
+        errors.append(f"expected the dataframe to have a column titled 'pair_string', but this was not found. Instead the columns are {chunk.columns}")
+
+    # checking if a value in the column is as expected
+    if chunk[chunk[0] == "R12341234"]["pair_string"].values.tolist()[0] != '4.5:R12341234-R2345112':
+        errors.append(f"Expected the pair string to be: '4.5:R12341234-R2345112', instead it was {chunk[chunk[0] == 'R12341234']['pair_string'].values.tolist()[0]}")
+
+    assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+
+def test_build_ibddata_and_ibdindex():
+    """unit test to test the build_ibddata_and_ibdindex function"""
+
+    # making a list to keep track of all the errors
+    errors: list = []
+    # testing the case where both ids are in the uniqID dict and they are in order
+    row: pd.Series = pd.Series(np.array(["R12341234", "R2345112","4", "3.4","12341234", "23452345", "3.4:R12341234-R2345112"]))
+
+    IBDdata: dict = {str(i): {} for i in range(1, 23)}
+    IBDindex: dict = {
+            str(i): {
+                'start': 999999999,
+                'end': 0,
+                'allpos': []
+            }
+            for i in range(1, 23)
+        }
+    
+    chr_num: str = build_ibddata_and_ibddict(row, 4,5,2, IBDdata, IBDindex)
+
+    # checking if a value got put into the IBDdata
+    if len(IBDdata["4"]) == 0:
+        errors.append(f"Expected the IBDdata key 4 to not be empty.")
+    if len(IBDindex["4"]["allpos"]) == 0:
+        errors.append(f"Expected the allpos position for chromosome 4 to not be empty")
+    if chr_num != "4":
+        errors.append(f"Expected chromosome number returned was 4, instead returned {chr_num}")
+    
+    assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+    

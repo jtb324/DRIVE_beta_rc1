@@ -18,30 +18,6 @@ import utility_scripts
 ###########################################################################################
 # This function determines all the individuals who have a specific variant
 
-
-def get_chr_num(file_str: str) -> str:
-    """Function that can identify the chromosome number in the provided file string
-    Parameters
-    __________
-    file_str : str
-        this is a file string that has a chromosome number within it
-
-    Returns
-    _______
-    str
-        returns a chromsome number of the form chrXX where XX are digits
-    """
-    match = re.search(r".chr\d\d_", file_str)
-
-    chr_num: str = match.group(0)
-
-    chr_num: str = chr_num.strip(".")
-
-    file_prefix: str = chr_num.strip("_")
-
-    return file_prefix
-
-
 # create a decorator that can be used to check if a 
 # directory exist
 
@@ -76,7 +52,7 @@ def single_variant_analysis(*args, parameter_dict: dict):
         # with the function get_chr_num and forming the output
         # file name
         output_file_name = "".join(
-            [get_chr_num(recodefile), ".", "single_variant_carrier.csv"])
+            [utility_scripts.get_chr_num(recodefile, r".chr\d\d_"), ".", "single_variant_carrier.csv"])
 
         # forming the full path of the output file
         full_output_file: str = os.path.join(output_path, output_file_name)

@@ -24,7 +24,8 @@ class newPOS:
         self.add = add
         self.rem = rem
 
-
+class Pairs:
+    """This is a class to keep information about the Pairs"""
 def generate_parameters(ibd_program: str) -> dict:
     """Function to generate a dictionary of the indices for the parameters 
     that you have
@@ -137,8 +138,92 @@ def create_ibd_arrays() -> Union[dict, dict]:
 #         self.variant_name = variant_id
 
 # define a class to get some these parameters
-def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str,
-            uniqID: dict, que_object, min_cM: int, base_pair: int, output: str, variant_name: str):
+
+def get_pair_string(row: pd.Series, id1_indx: int, id2_indx: int, cM_indx: int, uniqID: dict) -> pd.DataFrame:
+    """Function to get the pair string for each row in the dataframe
+    Parameters
+    __________
+    row : pd.Series 
+        this is the pandas series that would be each row of the chunk dataframe in the gather pairs function
+    
+    id1_indx : int
+        this is the index to the column that has the pair1 id information
+    
+    id2_indx : int
+        this is the index to the column that has the pair2 id information
+    
+    cM_indx : int
+        this is the index to the column that has the total length of the ibd segment in centimorgans
+
+    uniqID : dict 
+        this is the dictionary were each key is the iids that carry the specific variant 
+    
+    Returns
+    _______
+    str
+        returns the pair string 
+    """
+
+    if row[id1_indx] in (uniqID) and row[id2_indx] in (uniqID):
+
+        if uniqID[row[id1_indx]] < uniqID[row[id2_indx]]:
+                        # If both ids are in the list then it writes the pairs to a variable pair
+            return '{0}:{1}-{2}'.format(row[cM_indx], row[id1_indx], row[id2_indx])
+
+        else:
+            # this just puts the ids in order
+            return '{0}:{1}-{2}'.format(row[cM_indx], row[id2_indx], row[id1_indx])
+
+    elif row[id1_indx] in (uniqID) and not row[id2_indx] in (uniqID):  # If only one id is in the uniqID then it writes it this way with the matched id in
+
+        return '{0}:{1}-{2}'.format(row[cM_indx], row[id1_indx], row[id2_indx])
+
+    elif row[id1_indx] not in (uniqID) and row[id2_indx] in (uniqID):  # If only id 2 is in the uniqID then it write that pair to the list
+        return '{0}:{1}-{2}'.format(row[cM_indx], row[id2_indx], row[id1_indx])
+
+def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: str, IBDdata: dict, IBDindex: dict) -> Union[dict, dict]:
+    """Function that will identify breakpoints"""
+    
+    CHR: str = str(row[chr_indx])
+    start: int = int(row[start_indx])
+    end: int =  int(row[end_indx])
+    pair: str = row[len(row)-1]
+
+    # start and end not in identified breakpoints
+    if int(start) not in IBDindex[CHR]['allpos'] and int(
+            end) not in IBDindex[CHR]['allpos']:
+
+        IBDdata[CHR][str(start)] = newPOS([pair], [])
+        IBDdata[CHR][str(end)] = newPOS([], [pair])
+        IBDindex[CHR]['allpos'].append(int(start))
+        IBDindex[CHR]['allpos'].append(int(end))
+
+    # start is not in identified breakpoints but end is
+    elif int(start) not in IBDindex[CHR]['allpos'] and int(
+            end) in IBDindex[CHR]['allpos']:
+
+        IBDdata[CHR][str(start)] = newPOS([pair], [])
+        IBDdata[CHR][str(end)].rem.append(str(pair))
+        IBDindex[CHR]['allpos'].append(int(start))
+
+    # start is in identified breakpoints but end not
+    elif int(start_indx) in IBDindex[CHR]['allpos'] and int(
+            end) not in IBDindex[CHR]['allpos']:
+
+        IBDdata[CHR][str(start)].add.append(str(pair))
+        IBDdata[CHR][str(end)] = newPOS([], [pair])
+        IBDindex[CHR]['allpos'].append(int(end))
+
+    # both start and end in identified breakpoints
+    elif int(start) in IBDindex[CHR]['allpos'] and int(
+            end) in IBDindex[CHR]['allpos']:
+
+        IBDdata[CHR][str(start)].add.append(str(pair))
+        IBDdata[CHR][str(end)].rem.append(str(pair))
+
+    return CHR
+
+def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, base_pair: int):
     '''This function will be used in the parallelism function'''
 
     # undoing the parameter_dict
@@ -148,6 +233,8 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
     str_indx = int(parameter_dict["str_indx"])
     end_indx = int(parameter_dict["end_indx"])
     cM_indx = int(parameter_dict["cM_indx"])
+
+    # getting the chromosome number that will be returned at the end of the program
 
     # This catches the KeyError raised because unit is only found in GERMLINE files
     try:
@@ -162,13 +249,14 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
                                 header=None,
                                 chunksize=1000000):
 
+
         # Checking to see if the ids are in the uniqID dictionary
         chunk_in_uniqID = filter_to_individual_in_uniqID(chunk, uniqID, id1_indx, id2_indx)
 
 
         # This is filtering the dataframe to only pairs greater than min_cM threshold
         if unit:
-
+            # If germline files are used then you have to use this
             chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM, unit)
         else:
             chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM)
@@ -179,73 +267,23 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
 
         # This will iterate through each row of the filtered chunk
         if not chunk.empty:
-            for row in chunk.itertuples():
+            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis = 1)
 
-                id1 = str(row[id1_indx + 1])
-                id2 = str(row[id2_indx + 1])
-                cM = str(row[cM_indx + 1])
-                CHR = str(row[chr_indx + 1])
-                start = min(int(row[str_indx + 1]), int(row[end_indx + 1]))
-                end = max(int(row[str_indx + 1]), int(row[end_indx + 1]))
+            
+            chr_num:str = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
+    
+    return chr_num
+            
 
-                if id1 in uniqID and id2 in uniqID:  # Checks to see if the ids are in the uniqID list
-
-                    if uniqID[id1] < uniqID[id2]:
-                        # If both ids are in the list then it writes the pairs to a variable pair
-
-                        pair = '{0}:{1}-{2}'.format(cM, id1, id2)
-
-                    else:
-                        # this just puts the ids in order
-                        pair = '{0}:{1}-{2}'.format(cM, id2, id1)
-
-                elif id1 in uniqID:  # If only one id is in the uniqID then it writes it this way with the matched id in
-
-                    pair = '{0}:{1}-{2}'.format(cM, id1, id2)
-
-                elif id2 in uniqID:  # If only id 2 is in the uniqID then it write that pair to the list
-                    pair = '{0}:{1}-{2}'.format(cM, id2, id1)
-
-            # start and end not in identified breakpoints
-                if int(start) not in IBDindex[CHR]['allpos'] and int(
-                        end) not in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)] = newPOS([pair], [])
-                    IBDdata[CHR][str(end)] = newPOS([], [pair])
-                    IBDindex[CHR]['allpos'].append(int(start))
-                    IBDindex[CHR]['allpos'].append(int(end))
-
-                # start is not in identified breakpoints but end is
-                elif int(start) not in IBDindex[CHR]['allpos'] and int(
-                        end) in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)] = newPOS([pair], [])
-                    IBDdata[CHR][str(end)].rem.append(str(pair))
-                    IBDindex[CHR]['allpos'].append(int(start))
-            #
-            # start is in identified breakpoints but end not
-                elif int(start) in IBDindex[CHR]['allpos'] and int(
-                        end) not in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)].add.append(str(pair))
-                    IBDdata[CHR][str(end)] = newPOS([], [pair])
-                    IBDindex[CHR]['allpos'].append(int(end))
-        #
-        # both start and end in identified breakpoints
-                elif int(start) in IBDindex[CHR]['allpos'] and int(
-                        end) in IBDindex[CHR]['allpos']:
-
-                    IBDdata[CHR][str(start)].add.append(str(pair))
-                    IBDdata[CHR][str(end)].rem.append(str(pair))
+def write_to_file(IBDdata: dict, IBDindex: dict, output: str, variant_name: str, CHR: str, que_object):
     try:
-
         # print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
         #       ' breakpoints on chr' + str(CHR))
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
         write_path = "".join([
-            self.output, '_', self.variant_name, '.chr',
+            output, '_', variant_name, '.chr',
             str(CHR), '.small.txt.gz'
         ])
 
@@ -293,17 +331,15 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         IBDdata[str(CHR)] = []
         out.close()
 
+        del (IBDdata)
+        del (IBDindex)
+
     except UnboundLocalError:
 
         print(
-            f"There were no pairs identified for the variant {self.variant_name}. This failure is written to a file at {''.join([self.output_dir, 'nopairs_identified.txt'])}"
+            f"There were no pairs identified for the variant {variant_name}. This failure is written to a file at {''.join([output, 'nopairs_identified.txt'])}"
         )
 
-        que_object.put(f"{self.variant_name}")
-
-def run(self, IBDdata, IBDindex, parameter_dict, uniqID, que_object):
-
-    self.gather_pairs(IBDdata, IBDindex, parameter_dict, uniqID, que_object)
-
-    del (IBDdata)
-    del (IBDindex)
+        que_object.put(f"{variant_name}")
+    
+    

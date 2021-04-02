@@ -1,11 +1,14 @@
+import sys
 import pandas as pd
 import os
 
 
 def load_frequency_file(file_path: str) -> pd.DataFrame:
     '''This function loads the provided file into a pandas dataframe'''
-
-    return pd.read_csv(file_path, sep="\t")
+    try:
+        return pd.read_csv(file_path, sep="\t")
+    except FileNotFoundError:
+        raise Exception("file was not found")
 
 
 def filter_for_higher_maf(frequency_df: pd.DataFrame,
