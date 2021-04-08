@@ -77,6 +77,7 @@ def get_file_dict(map_file_list: list, carrier_file_list: list, ibd_file_list: l
     dictionary
         returns a dictionary where the keys are the chromsomes and the values are dictionaries with the corresponding files
     """
+
     # forming a dictionary of dictionaries where the key is the 
     # chromosome number
     file_dict: dict = {form_chr_num(i):{} for i in range(1,22)}
@@ -104,4 +105,4 @@ def filter_empty_dictionaries(file_dict: dict) -> dict:
         returns the same dictionary as inputted but only the keys with 
         values not empty dictionaries
     """
-    return {key:file_dict[key] for key in file_dict if len(file_dict[key]) != 0}
+    return {key:file_dict[key] for key in file_dict if "None" not in file_dict[key].values()}

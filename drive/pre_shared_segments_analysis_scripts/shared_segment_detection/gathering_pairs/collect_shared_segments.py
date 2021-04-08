@@ -5,6 +5,7 @@ import multiprocessing as mp
 import re
 import glob
 import os
+import utility_scripts
 import pandas as pd
 from dataclasses import dataclass
 import shutil
@@ -88,25 +89,25 @@ def build_unique_id_dict(iid_list: list) -> dict:
 
     return uniqID
 
-def create_ibd_arrays() -> Union[dict, dict]:
-        '''This creates two IBD arrays that will be used later'''
+def create_ibd_arrays() -> tuple:
+    '''This creates two IBD arrays that will be used later'''
 
-        # creating a dictionary with 22 key slots and 22 empty dictionaries
-        # Also creating a dicitonary IBDindex with 22 dictionaries containing 'start': 999999999, 'end': 0, 'allpos': []
-        # Using dictionary comprehension to make the two dictionaries. Just a little more concise than the for loop.
-        # The 22 is for the different chromosomes.
-        # the "allpos" is the breakpoints
-        IBDdata = {str(i): {} for i in range(1, 23)}
-        IBDindex = {
-            str(i): {
-                'start': 999999999,
-                'end': 0,
-                'allpos': []
-            }
-            for i in range(1, 23)
+    # creating a dictionary with 22 key slots and 22 empty dictionaries
+    # Also creating a dicitonary IBDindex with 22 dictionaries containing 'start': 999999999, 'end': 0, 'allpos': []
+    # Using dictionary comprehension to make the two dictionaries. Just a little more concise than the for loop.
+    # The 22 is for the different chromosomes.
+    # the "allpos" is the breakpoints
+    IBDdata = {str(i): {} for i in range(1, 23)}
+    IBDindex = {
+        str(i): {
+            'start': 999999999,
+            'end': 0,
+            'allpos': []
         }
+        for i in range(1, 23)
+    }
 
-        return IBDdata, IBDindex
+    return IBDdata, IBDindex
 
 # class Shared_Segment_Convert(newPOS):
 #     def __init__(self, shared_segment_file: str, pheno_file: str,
@@ -179,13 +180,13 @@ def get_pair_string(row: pd.Series, id1_indx: int, id2_indx: int, cM_indx: int, 
     elif row[id1_indx] not in (uniqID) and row[id2_indx] in (uniqID):  # If only id 2 is in the uniqID then it write that pair to the list
         return '{0}:{1}-{2}'.format(row[cM_indx], row[id2_indx], row[id1_indx])
 
-def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: str, IBDdata: dict, IBDindex: dict) -> str:
+def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: int, IBDdata: dict, IBDindex: dict) -> str:
     """Function that will identify breakpoints"""
-    
+
     CHR: str = str(row[chr_indx])
     start: int = int(row[start_indx])
     end: int =  int(row[end_indx])
-    pair: str = row[len(row)-1]
+    pair: str = row["pair_string"]
 
     # start and end not in identified breakpoints
     if int(start) not in IBDindex[CHR]['allpos'] and int(
@@ -220,6 +221,7 @@ def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, ch
         IBDdata[CHR][str(end)].rem.append(str(pair))
 
     return CHR
+
 def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx: int, gene_start: int, gene_end: int) -> pd.DataFrame:
     """Function to filter tha dataframe chunk for sites where the 
     shared segment is partially in the gene or the the entire gene 
@@ -257,81 +259,24 @@ def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx
     
     return filtered_chunk
 
-
-
-def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, var_position: int = None, gene_start: int = None, gene_end: int = None):
-    '''This function will be used in the parallelism function'''
-
-    # undoing the parameter_dict
-    id1_indx = int(parameter_dict["id1_indx"])
-    id2_indx = int(parameter_dict["id2_indx"])
-    chr_indx = int(parameter_dict["chr_indx"])
-    str_indx = int(parameter_dict["str_indx"])
-    end_indx = int(parameter_dict["end_indx"])
-    cM_indx = int(parameter_dict["cM_indx"])
-
-    # getting the chromosome number that will be returned at the end of the program
-
-    # This catches the KeyError raised because unit is only found in GERMLINE files
-    try:
-        unit = parameter_dict["unit"]
-    except KeyError:
-        pass
-
-    # creating a dictionary to handle which way to filter for above the min_cM threshold
-    
-    for chunk in pd.read_csv(segment_file,
-                                sep="\t",
-                                header=None,
-                                chunksize=1000000):
-
-
-        # Checking to see if the ids are in the uniqID dictionary
-        chunk_in_uniqID = filter_to_individual_in_uniqID(chunk, uniqID, id1_indx, id2_indx)
-
-
-        # This is filtering the dataframe to only pairs greater than min_cM threshold
-        if unit:
-            # If germline files are used then you have to use this
-            chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM, unit)
-        else:
-            chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM)
-        
-        # filtering for values where the start value is less than the base pair and the 
-        # end value is greater than the base pair
-        # This method will only be done if the user is using a gene 
-        # driving approach
-        if var_position:
-            chunk = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, var_position)
-
-        # looking for segments where the start or end of the segment 
-        # is within the gene or the 
-        if gene_start and gene_end:
-
-            chunk = filter_for_gene_site(chunk_greater_than_3_cm, str_indx, end_indx, gene_start, gene_end)
-            
-        # This will iterate through each row of the filtered chunk
-        if not chunk.empty:
-            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis = 1)
-
-            
-            chr_num:str = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
-    
-    return chr_num
-            
-
-def write_to_file(IBDdata: dict, IBDindex: dict, output: str, variant_name: str, CHR: str, que_object):
+def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_object, ibd_program: str, variant_name: str=None, gene_name: str=None):
     try:
         # print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
         #       ' breakpoints on chr' + str(CHR))
 
         # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
-        write_path = "".join([
-            output, '_', variant_name, '.chr',
-            str(CHR), '.small.txt.gz'
-        ])
+        if variant_name:
+            write_path = os.path.join(
+                output, "".join([ibd_program, '_', variant_name, '.chr',
+                str(CHR), '.small.txt.gz']))
+        else: 
+            write_path = os.path.join(
+                output, "".join([ibd_program,'_', gene_name, '.chr',
+                str(CHR), '.small.txt.gz']))
 
+        # checking to see if the file already exists from a previous one and then deleteing it
+        utility_scripts.check_file(write_path)
         out = gzip.open(write_path, 'wt')
 
         # Writing the header line to the file
@@ -386,5 +331,78 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, variant_name: str,
         )
 
         que_object.put(f"{variant_name}")
+
+def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path, ibd_program: str, var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
+    '''This function will be used in the parallelism function'''
+
+    # undoing the parameter_dict
+    id1_indx = int(parameter_dict["id1_indx"])
+    id2_indx = int(parameter_dict["id2_indx"])
+    chr_indx = int(parameter_dict["chr_indx"])
+    str_indx = int(parameter_dict["str_indx"])
+    end_indx = int(parameter_dict["end_indx"])
+    cM_indx = int(parameter_dict["cM_indx"])
+
+    # getting the chromosome number that will be returned at the end of the program
+
+    # This catches the KeyError raised because unit is only found in GERMLINE files
+    try:
+        unit = parameter_dict["unit"]
+    except KeyError:
+        unit = None
+
+    # creating a dictionary to handle which way to filter for above the min_cM threshold
+    
+    for chunk in pd.read_csv(segment_file,
+                                sep="\t",
+                                header=None,
+                                chunksize=1000000):
+
+
+        # Checking to see if the ids are in the uniqID dictionary
+        chunk_in_uniqID = filter_to_individual_in_uniqID(chunk, uniqID, id1_indx, id2_indx)
+
+
+        # This is filtering the dataframe to only pairs greater than min_cM threshold
+        if unit:
+            # If germline files are used then you have to use this
+            chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM, unit)
+        else:
+            chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM)
+        
+        # filtering for values where the start value is less than the base pair and the 
+        # end value is greater than the base pair
+        # This method will only be done if the user is using a gene 
+        # driving approach
+        if var_position:
+            chunk = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, var_position)
+
+        # looking for segments where the start or end of the segment 
+        # is within the gene or the 
+        if gene_start and gene_end:
+
+            chunk = filter_for_gene_site(chunk_greater_than_3_cm, str_indx, end_indx, gene_start, gene_end)
+            
+        # This will iterate through each row of the filtered chunk
+        if not chunk.empty:
+            # getting rid of an warning message that indicates that the resulting chunk is a pandas dataframe
+            chunk.is_copy = False
+
+            # creating a new column with the pair string for each pair
+            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis = 1)
+
+            
+            chr_num_series:pd.Series = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
+
+            chr_num: str = list(set(chr_num_series.values))[0]
+
+    if variant_name:
+        write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, variant_name)
+    if gene_name:
+        write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, gene_name)
+    return chr_num
+            
+
+
     
     

@@ -33,12 +33,12 @@ def create_no_carriers_file(variant_id: str, chr_num: str, output_path: str):
         no_carrier_file.write(f"{variant_id}\t")
         no_carrier_file.write(f"{chr_num[-2:]}\n")
 
-def create_iid_dict(variant: str, iid_dict: dict, carrier_df: pd.DataFrame) -> dict:
+def create_iid_dict(variant_list: list, iid_dict: dict, carrier_df: pd.DataFrame) -> dict:
     """Function to create a dictionary containing a list of IIDs that are identified as carrying the variants
     Parameters
     __________
-    variant : str
-        string containing the variant id
+    variant : list
+        list containing the variant ids
     
     iid_dict : dict
         empty dictionary where the keys will be the variants and the values will be 
@@ -53,18 +53,19 @@ def create_iid_dict(variant: str, iid_dict: dict, carrier_df: pd.DataFrame) -> d
         dictionary that contains the variants as a key and the values are the list of 
         carriers for that variant
     """
-    iid_list: list = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
+    for variant in variant_list:
+        iid_list: list = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
 
     iid_dict[variant] = iid_list
 
     return iid_dict
 
-def create_dict_with_var_pos(variant: str,  var_pos_dict: dict, map_file_df: pd.DataFrame) -> dict:
+def create_dict_with_var_pos(variant_list: list,  var_pos_dict: dict, map_file_df: pd.DataFrame) -> dict:
     """Function to create a dictionary where the keys are the variants and the values are the base positions
     Parameters
     __________
-    variant : str
-        string containing the variant id
+    variant_list : list
+        list containing the variant ids
 
     var_pos_dict : dict
         empty dictionary where the keys will be the variant and the 
@@ -78,7 +79,10 @@ def create_dict_with_var_pos(variant: str,  var_pos_dict: dict, map_file_df: pd.
     dict
         returns the above dictionary but fillled in
     """
-    var_pos_dict[variant] = map_file_df[map_file_df["variant id"] == variant]["site"].values.tolist()[0]
+
+    for variant in variant_list:
+        
+        var_pos_dict[variant] = map_file_df[map_file_df["variant id"] == variant[:-2]]["site"].values.tolist()[0]
 
     return var_pos_dict
 
@@ -117,15 +121,13 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
     carrier_df_var_list: list = list(set(carrier_df["Variant ID"].values.tolist()))
 
     # These next two lines create a dictionary that has all the variants as keys and then all the iids that carry that variant as values
-    iid_dict_list: list = map(create_iid_dict, carrier_df_var_list, iid_var_dict, carrier_df)
 
-    iid_dict: dict = {key:value for element in iid_dict_list for key, value in element.items()}
+    iid_dict = create_iid_dict(carrier_df_var_list, iid_var_dict, carrier_df)
 
-    var_pos_dict_list: list = map(create_dict_with_var_pos, carrier_df_var_list, var_pos_dict, map_file_df)
 
-    var_dict: dict = {key:value for element in var_pos_dict_list for key,value in element.items()}
+    var_pos_dict = create_dict_with_var_pos(carrier_df_var_list, var_pos_dict, map_file_df)
 
-    return var_dict, iid_dict
+    return var_pos_dict, iid_dict
 
 
 # Need to check the inputs of this function
@@ -147,8 +149,9 @@ def collect_files(parameter_dict: dict) -> dict:
 
     utility_scripts.check_dir(output, "formatted_ibd_output/")
     # getting the segment file list
+    
     segment_file_list: list = utility_scripts.get_file_list(ibd_files, file_suffix)
-
+   
     chr_var_file_list: list = utility_scripts.get_file_list(carrier_file, "*.single_variant_carrier.csv")
 
     # getting the list of map files
@@ -243,9 +246,10 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
     """
     # Iterating through the chromosomes that have a value
     for key in file_dict:
-
-        if len(file_dict[key]) != 1:
-
+    
+        if "None" not in file_dict[key].values():
+            print(key)
+            print(len(file_dict[key]))  
             chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
             ibd_file: str = file_dict[key]["ibd"]
@@ -264,12 +268,15 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
             #iterating through
             # forming the dictionary to have all the variant info
             var_info_dict: dict = {}
-
+            # print("var_pos_dict")
+            # print(var_pos_dict)
             # iterating through the above 
             for variant, bp in var_pos_dict.items():
+                # print(variant, bp)
+                # print(var_iid_dict)
+                var_info_dict = create_var_info_dict(var_info_dict, var_iid_dict, variant, bp)
 
-                var_info_dict = create_var_info_dict( var_info_dict,var_iid_dict, variant, bp)
-
+            print(var_info_dict)
             # need to fix this part for the new function
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
                 int(threads), output, ibd_program, min_CM, var_info_dict,
@@ -297,6 +304,6 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    chr_num: str = gather_pairs(IBDdata, IBDdata, parameter_dict, segment_file, uniqID, min_CM, variant_position) 
+    chr_num: str = gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, var_position=variant_position, variant_name=variant) 
 
-    write_to_file(que_object)
+    

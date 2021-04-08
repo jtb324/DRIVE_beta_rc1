@@ -17,22 +17,20 @@ def check_dir(output_str: str, directory_name: str):
     try:
         os.mkdir(total_directory)
 
+
     except FileExistsError:
         pass
 
-def check_file(output_str: str, file_name: str):
+    return total_directory
+     
+def check_file(file_string: str):
     """Function to check if the provided file exist from a previous run and if it does then it deletes the file
     Parameter
     _________
-    output_str: str
-        string listing the path output path that is being used 
-        during the function that this function is run in
-
-    file_name : str
-        the name of the file
+    file_str : str
+        the full path of the file
     """
-    total_filepath: str = os.path.join(output_str, file_name)
 
-    if os.path.exists(total_filepath):
-        os.remove(total_filepath)
+    if os.path.exists(file_string):
+        os.remove(file_string)
 

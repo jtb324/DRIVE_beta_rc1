@@ -19,7 +19,7 @@ import utility_scripts
 # This function determines all the individuals who have a specific variant
 
 
-@utility_scripts.func_readme_generator
+# @utility_scripts.func_readme_generator
 def single_variant_analysis(parameter_dict: dict):
     """Function that identifies grids that carry at least one variant
     Parameters
@@ -39,10 +39,9 @@ def single_variant_analysis(parameter_dict: dict):
     pop_info: str = parameter_dict.get("pop_info")
 
     pop_code: str = parameter_dict.get("pop_code")
-
-    output_path: str = "".join([write_path, "carrier_analysis_output/"])
+    print(f"This is the write path: {write_path}")
     # checking if the output path exists and making it if it doesn't
-    utility_scripts.check_dir(output_path)
+    full_output_dir: str =utility_scripts.check_dir(write_path, "carrier_analysis_output/")
 
     recode_file_list: list = utility_scripts.get_file_list(recodeFile, "*raw")
 
@@ -55,7 +54,7 @@ def single_variant_analysis(parameter_dict: dict):
             [utility_scripts.get_chr_num(recodefile, r".chr\d\d_"), ".", "single_variant_carrier.csv"])
 
         # forming the full path of the output file
-        full_output_file: str = os.path.join(output_path, output_file_name)
+        full_output_file: str = os.path.join(full_output_dir, output_file_name)
 
         # TODO: refactor these next two lines
         # load the raw_file into a dataframe

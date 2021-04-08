@@ -35,7 +35,7 @@ def create_args(run_func: object) -> argparse.ArgumentParser:
         dest="recode_options",
         nargs="+",
         type=str,
-        required=True,
+        required=False,
     )
 
     parser.add_argument(
@@ -110,7 +110,7 @@ def create_args(run_func: object) -> argparse.ArgumentParser:
         required=False
     )
     parser.add_argument(
-        "--pheno_carrier",
+        "--pheno_carriers",
         help="This argument will list the file path to a file that contains information about grids identified as carriers based on phenotype",
         dest="phenotype_carriers",
         type=str,

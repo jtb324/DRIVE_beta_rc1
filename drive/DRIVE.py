@@ -184,21 +184,19 @@ def run(args: list, **kwargs: dict):
                 f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
             )
 
-    print("converting the ibd output to a human readable version...")
+    print("identifying pairs within region that shared IBD segments...")
 
     # If the user selects to run the program on phenotype then the analysis should start at this step effectively
-    IBD_search_output_files: str = "".join(
-        [args.output, "formatted_ibd_output/"])
 
-    # if not path.exists(IBD_search_output_files):
+    # check to make sure the formatted_ibd_output exists
+    IBD_search_output_files: str = utility_scripts.check_dir(args.output, "formatted_ibd_output/")
 
-    #     os.mkdir(IBD_search_output_files)
 
     for program in args.ibd_programs:
 
         suffix_dict: dict = {
-            "ilash": ".match.gz",
-            "hapibd": ".ibd.gz",
+            "ilash": "*.match.gz",
+            "hapibd": "*.ibd.gz",
         }
 
         file_suffix: str = suffix_dict[program]
@@ -209,8 +207,8 @@ def run(args: list, **kwargs: dict):
         ][0]
 
         if ANALYSIS_TYPE == "phenotype":
-            
-            pass
+
+            pre_shared_segments_analysis_scripts.shared_segment_detection.gather_shared_segments(ibd_file, pheno_df, pheno_carriers_df, IBD_search_output_files, program, MIN_CM, file_suffix, THREADS)
 
         else:
             convert_ibd_func_param: dict = {
@@ -229,9 +227,9 @@ def run(args: list, **kwargs: dict):
         # Forming the file dictionary which is a file that contains the appropriate files for each chromosome
             file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.collect_files(parameter_dict=convert_ibd_func_param)
             print(file_dict)
-        # iterating over this dictionary so that we can get the 
-        # variants for each chromosome
-        pre_shared_segments_analysis_scripts.shared_segment_detection.iterate_file_dict(file_dict, IBD_search_output_files, THREADS, program, MIN_CM)
+            # iterating over this dictionary so that we can get the 
+            # variants for each chromosome
+            pre_shared_segments_analysis_scripts.shared_segment_detection.iterate_file_dict(file_dict, IBD_search_output_files, THREADS, program, MIN_CM)
 
     # print("combining segment output...")
     # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
