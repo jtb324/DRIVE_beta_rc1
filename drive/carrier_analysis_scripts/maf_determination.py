@@ -59,7 +59,7 @@ def get_allele_frq(*args: list, output: str):
 
     # checking if the output file does exist and removing it if it 
     # does
-    utility_scripts.check_file(output, "carrier_analysis_output/allele_frequencies.txt")
+    utility_scripts.check_file(os.path.join(output, "carrier_analysis_output/allele_frequencies.txt"))
 
     # opening the file to write to it
     with open(os.path.join(

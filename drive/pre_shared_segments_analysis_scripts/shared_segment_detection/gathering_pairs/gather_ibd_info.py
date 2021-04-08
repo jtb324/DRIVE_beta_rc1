@@ -289,7 +289,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
                                                   header_str)
 
 # TODO: rename function
-def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list,
+def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
              min_CM: str, var_info_dict: list, que_object, variant):
 
     variant_position: int = int(var_info_dict[variant]["base_pos"])
@@ -304,6 +304,6 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    chr_num: str = gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, var_position=variant_position, variant_name=variant) 
+    chr_num: str = gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, ibd_format, var_position=variant_position, variant_name=variant) 
 
     
