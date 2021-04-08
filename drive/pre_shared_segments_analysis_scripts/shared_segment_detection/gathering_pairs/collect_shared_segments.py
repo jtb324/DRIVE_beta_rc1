@@ -252,11 +252,9 @@ def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx
 
     
     # checking for the case where the shared segment end is before the gene end or where the shared segment start is after the gene start or where the gene is within the shared segment
-    print(df_chunk)
-    print(gene_start)
-    print(gene_end)
+
     filtered_chunk: pd.DataFrame = df_chunk[((df_chunk[ibd_end_indx].astype(int) <= gene_end) & (df_chunk[ibd_end_indx].astype(int) >= gene_start))| ((df_chunk[ibd_str_indx].astype(int) >= gene_start) & (df_chunk[ibd_str_indx].astype(int) <= gene_end)) | ((df_chunk[ibd_str_indx].astype(int) <= gene_start) & (df_chunk[ibd_end_indx].astype(int) >= gene_end))]
-    print(filtered_chunk)
+    
     return filtered_chunk
 
 

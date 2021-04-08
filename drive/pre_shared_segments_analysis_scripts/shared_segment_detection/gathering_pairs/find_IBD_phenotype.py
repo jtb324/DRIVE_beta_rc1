@@ -5,6 +5,7 @@ import os
 
 from .collect_shared_segments import generate_parameters, build_unique_id_dict, create_ibd_arrays, gather_pairs
 import utility_scripts
+
 # making a custom exception for when the iid_list is empty
 
 class EmptyList(Exception):
@@ -12,8 +13,6 @@ class EmptyList(Exception):
         super().__init__(message)
         self.errors = errors
         print("Printing Errors: ")
-        print(errors
-        )
         
 def get_carriers(phenotype_carriers_df: pd.DataFrame) -> list:
     """Function to get the list of iids identified as having the phenotype
@@ -41,7 +40,7 @@ def get_carriers(phenotype_carriers_df: pd.DataFrame) -> list:
 
 def create_dictionary(row: pd.Series, gene_dict: dict, ):
     """Function to create the dictionary for each gene"""
-    print(row)
+
     gene_dict[row[0]] = {
         "chr": row[1],
         "start": row[2],
@@ -88,7 +87,7 @@ def get_ibd_file(ibd_list: list, chr_num) -> str:
         string that list the pathway to the ibd_file for the specified chromosome 
     """
 
-    chr_num = "".join(["chr", chr_num,"."])
+    chr_num = "".join(["chr", str(chr_num),"."])
 
     return [file for file in ibd_list if chr_num in file][0]
 
@@ -137,7 +136,7 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
         # building the uniqID dict
         uniqID: dict = build_unique_id_dict(carrier_list)
 
-        
+
         IBDdata, _ = create_ibd_arrays()
 
         chr_num: str = gather_pairs(IBDdata, IBDdata, parameter_dict, ibd_file, uniqID, min_CM) 

@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 sys.path.append("../drive")
 
-from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.find_IBD_phenotype import get_carriers, gather_gene_info
+from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.find_IBD_phenotype import get_carriers, gather_gene_info, get_ibd_file
 
 def test_get_carriers():
     """unit test for the get_carriers function"""
@@ -72,3 +72,23 @@ def test_gather_gene_info():
         errors.append(f"Expected the value of the dictionary at ['MPO']['end'] to be 4567 instead it was {int(gene_dict['MPO']['end'])}")
     
     assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+
+def test_get_ibd_file():
+    """unit test for testing the get_ibd_file"""
+
+    # creating a list to mimic a file list
+    ibd_file_list: list = ["test_file_chr1.txt", "test_file_chr2.txt"]
+
+    ibd_file: str = get_ibd_file(ibd_file_list, "1")
+    
+    assert ibd_file == "test_file_chr1.txt", f"Expected the file, test_file_chr1.txt, to be returned, instead the file was {ibd_file}"
+
+def test_get_ibd_file_num_input():
+    """unit test for testing the get_ibd_file when a integer is passed as chr_num"""
+
+    # creating a list to mimic a file list
+    ibd_file_list: list = ["test_file_chr1.txt", "test_file_chr2.txt"]
+
+    ibd_file: str = get_ibd_file(ibd_file_list, 1)
+    
+    assert ibd_file == "test_file_chr1.txt", f"Expected the file, test_file_chr1.txt, to be returned, instead the file was {ibd_file}"

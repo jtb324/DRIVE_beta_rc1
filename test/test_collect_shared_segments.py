@@ -82,7 +82,7 @@ def test_get_pair_string():
     errors: list = []
     # testing the case where both ids are in the uniqID dict and they are in order
     row: pd.Series = pd.Series(np.array(["R12341234", "R2345112", "3.4"]))
-    print(row)
+
     uniqID: dict = {
         "R12341234": 0,
         "R2345112": 1
