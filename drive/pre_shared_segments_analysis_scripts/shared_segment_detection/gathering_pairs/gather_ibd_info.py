@@ -129,27 +129,23 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
 
 
 # Need to check the inputs of this function
-@utility_scripts.func_readme_generator
-@utility_scripts.check_dir_decorator("formatted_ibd_output/")
-def collect_files(*args, parameter_dict: dict) -> dict:
-
-    # pulling the dictionary out of the args tuple
-    # need to refactor all the inputs here
-    function_param_dict: dict = args[0]
-
+# @utility_scripts.func_readme_generator
+def collect_files(parameter_dict: dict) -> dict:
+    
+    
     # checking the kwargs dictionary for specific
     # parameters
-    ibd_files: str = function_param_dict.get("ibd_file_path")
-    carrier_file: str = function_param_dict.get("carrier_file")
-    ibd_program: str = function_param_dict.get("ibd_program")
-    output: str = function_param_dict.get("output")
-    map_file_dir: str = function_param_dict.get("map_files")
-    file_suffix: str = function_param_dict.get("ibd_file_suffix")
-    min_CM: str = function_param_dict.get("min_CM_threshold")
-    threads: str = function_param_dict.get("threads")
+    ibd_files: str = parameter_dict.get("ibd_file_path")
+    carrier_file: str = parameter_dict.get("carrier_file")
+    ibd_program: str = parameter_dict.get("ibd_program")
+    output: str = parameter_dict.get("output")
+    map_file_dir: str = parameter_dict.get("map_files")
+    file_suffix: str = parameter_dict.get("ibd_file_suffix")
+    min_CM: str = parameter_dict.get("min_CM_threshold")
+    threads: str = parameter_dict.get("threads")
     ###########################################################
 
-    
+    utility_scripts.check_dir(output, "formatted_ibd_output/")
     # getting the segment file list
     segment_file_list: list = utility_scripts.get_file_list(ibd_files, file_suffix)
 
@@ -196,6 +192,7 @@ def create_var_info_dict(var_info_dict: dict, var_iid_dict: dict, variant: str, 
     var_info_dict[variant] = {"base_pos": bp, "iid_list": iid_list}
 
     return var_info_dict
+
 # unit test this function
 def filter_no_carriers(var_iid_dict: dict, output_path: str, chr_num: str) -> dict:
     """Function to filter all variants that have no carriers out 
@@ -300,18 +297,6 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: list
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    IBDdata, IBDindex = gather_pairs(IBDdata, IBDdata, segment_file, uniqID, min_CM, variant_position) 
+    chr_num: str = gather_pairs(IBDdata, IBDdata, parameter_dict, segment_file, uniqID, min_CM, variant_position) 
 
     write_to_file(que_object)
-    # ibd_file_converter = pre_shared_segments_analysis_scripts.Shared_Segment_Convert(
-    #     segment_file, carrier_list, output_path, ibd_format, min_CM,
-    #     variant_position, variant)
-
-    # parameter_dict = pre_shared_segments_analysis_scripts.generate_parameters(ibd_format)
-
-    # uniqID = ibd_file_converter.build_id_pairs()
-
-    # IBDdata, IBDindex = ibd_file_converter.create_ibd_arrays()
-
-    # ibd_file_converter.run(IBDdata, IBDindex, parameter_dict, uniqID,
-    #                        que_object)

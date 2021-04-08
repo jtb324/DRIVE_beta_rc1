@@ -18,12 +18,9 @@ import utility_scripts
 ###########################################################################################
 # This function determines all the individuals who have a specific variant
 
-# create a decorator that can be used to check if a 
-# directory exist
 
 @utility_scripts.func_readme_generator
-@utility_scripts.check_dir_decorator("carrier_analysis_output/")
-def single_variant_analysis(*args, parameter_dict: dict):
+def single_variant_analysis(parameter_dict: dict):
     """Function that identifies grids that carry at least one variant
     Parameters
     __________
@@ -31,6 +28,7 @@ def single_variant_analysis(*args, parameter_dict: dict):
         dictionary that contains a list of parameters. For
         this function there will be the keywords: 'recode_filepath', 'output', 'pop_info', 'pop_code'
     """
+
     # getting the main logger
     logger = logging.getLogger(__name__)
     # expanding parameters from the kwargs dictionary
@@ -43,6 +41,8 @@ def single_variant_analysis(*args, parameter_dict: dict):
     pop_code: str = parameter_dict.get("pop_code")
 
     output_path: str = "".join([write_path, "carrier_analysis_output/"])
+    # checking if the output path exists and making it if it doesn't
+    utility_scripts.check_dir(output_path)
 
     recode_file_list: list = utility_scripts.get_file_list(recodeFile, "*raw")
 
@@ -60,12 +60,6 @@ def single_variant_analysis(*args, parameter_dict: dict):
         # TODO: refactor these next two lines
         # load the raw_file into a dataframe
         raw_file: pd.DataFrame = pd.read_csv(recodefile, sep=" ")
-
-        # file_checker = file_creator_scripts.Check_File_Exist(recodeFile)
-
-        # raw_file = file_checker.check_file_exist(separator=" ")
-
-        # subsetting the raw_file for a specific population if the population code, pop_code, is provided
 
         if pop_code:
             raw_file: pd.DataFrame = population_filter_scripts.run_pop_filter(pop_info, raw_file,

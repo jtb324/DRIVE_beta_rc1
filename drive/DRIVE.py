@@ -13,6 +13,7 @@ import create_network_scripts
 import run_plink
 import haplotype_segments_analysis
 import pre_shared_segments_analysis_scripts
+import pre_shared_segments_analysis_scripts.shared_segment_detection
 import full_analysis
 import utility_scripts
 import collect_phenotype_info
@@ -207,25 +208,30 @@ def run(args: list, **kwargs: dict):
             file for file in IBD_PATHS_LIST if program in file.lower()
         ][0]
 
-        convert_ibd_func_param: dict = {
-            "ibd_file_path": ibd_file,
-            "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
-            "ibd_program": program,
-            "output": IBD_search_output_files,
-            "map_files": "".join([args.output, "plink_output_files/"]),
-            "ibd_file_suffix": file_suffix,
-            "min_CM_threshold": MIN_CM,
-            "threads": THREADS,
-            "readme_output":IBD_search_output_files,
-            "readme_text":utility_scripts.formatted_ibd_dir_body_text_1
-        }
+        if ANALYSIS_TYPE == "phenotype":
+            
+            pass
+
+        else:
+            convert_ibd_func_param: dict = {
+                "ibd_file_path": ibd_file,
+                "carrier_file": "".join([args.output, "carrier_analysis_output/"]),
+                "ibd_program": program,
+                "output": IBD_search_output_files,
+                "map_files": "".join([args.output, "plink_output_files/"]),
+                "ibd_file_suffix": file_suffix,
+                "min_CM_threshold": MIN_CM,
+                "threads": THREADS,
+                "readme_output":IBD_search_output_files,
+                "readme_text":utility_scripts.formatted_ibd_dir_body_text_1
+            }
 
         # Forming the file dictionary which is a file that contains the appropriate files for each chromosome
-        file_dict: dict = pre_shared_segments_analysis_scripts.collect_files(parameter_dict=convert_ibd_func_param)
-
+            file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.collect_files(parameter_dict=convert_ibd_func_param)
+            print(file_dict)
         # iterating over this dictionary so that we can get the 
         # variants for each chromosome
-        pre_shared_segments_analysis_scripts.iterate_file_dict(file_dict)
+        pre_shared_segments_analysis_scripts.shared_segment_detection.iterate_file_dict(file_dict, IBD_search_output_files, THREADS, program, MIN_CM)
 
     # print("combining segment output...")
     # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}

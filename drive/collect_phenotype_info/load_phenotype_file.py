@@ -6,7 +6,7 @@ def load_pheno_file(pheno_filepath: str, carriers_file: str) -> tuple:
     Parameters
     __________
     pheno_filepath : str 
-        file path to the excel file that will load the phenotype file. This file will contain information about the chromosomes of interest and the 
+        file path to the excel file that will load the phenotype file. This file will contain information about the chromosomes of interest and the position
     carriers_file : str 
         sfilepath to the input file that contains a list of grids that were identified as carrying a disease based off of Phenotype
     

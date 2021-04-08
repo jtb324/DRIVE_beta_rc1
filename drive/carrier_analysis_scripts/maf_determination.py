@@ -47,7 +47,7 @@ def get_chr_num(carrier_file: str) -> str:
 
     return chr_num
 
-@utility_scripts.check_file_decorator("carrier_analysis_output/allele_frequencies.txt")
+
 def get_allele_frq(*args: list, output: str):
     '''This is the function that determines the minor allele frequency of the 
     variants and then writes it to a file'''
@@ -57,9 +57,13 @@ def get_allele_frq(*args: list, output: str):
     pop_info_filepath: str = args[2]
     pop_code: str = args[3]
 
+    # checking if the output file does exist and removing it if it 
+    # does
+    utility_scripts.check_file(output, "carrier_analysis_output/allele_frequencies.txt")
+
     # opening the file to write to it
-    with open("".join(
-        [output, "carrier_analysis_output/allele_frequencies.txt"]), "a+") as myFile:
+    with open(os.path.join(
+        output, "carrier_analysis_output/allele_frequencies.txt"), "a+") as myFile:
 
         myFile.write("chr\tvariant_id\tallele_freq\n")
 

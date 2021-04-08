@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 sys.path.append("../drive")
 
-from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.collect_shared_segments import generate_parameters, build_unique_id_dict, create_ibd_arrays, get_pair_string, build_ibddata_and_ibddict
+from pre_shared_segments_analysis_scripts.shared_segment_detection.gathering_pairs.collect_shared_segments import generate_parameters, build_unique_id_dict, create_ibd_arrays, get_pair_string, build_ibddata_and_ibddict, filter_for_gene_site
 
 def test_generate_parameters():
     """unit test to test if the parameters are being properly generated"""
@@ -182,4 +182,32 @@ def test_build_ibddata_and_ibdindex():
         errors.append(f"Expected chromosome number returned was 4, instead returned {chr_num}")
     
     assert not errors, "errors occured: \n{}".format('\n'.join(errors))
+
+def test_filter_for_gene_site():
+    """Unit test for the filter_for_gene_site function"""
+
+    # creating a list to keep track of errors
+    errors: list = []
+
+    gene_start: int = 20
+    gene_end : int = 50
+
+    chunk_dict: dict = {
+        0:["R234523", "R45674567", "R234523444", "R23452345", "R98766"],
+        1:["R45674567", "R234523444", "R23452345", "R98766", "R89"],
+        2: ["12", "23", "10", "55", "10"],
+        3:["40", "55", "56", "70", "15"]
+    }    
+
+    chunk_df: pd.DataFrame = pd.DataFrame.from_dict(chunk_dict)
+
+    filtered_df: pd.DataFrame = filter_for_gene_site(chunk_df, 2,3, gene_start, gene_end)
     
+    if len(filtered_df) != 3:
+        errors.append(f"Expected the length of the returned dataframe to be 3 instead it was {len(filtered_df)}")
+    if (filtered_df[0].values != ["R234523", "R45674567", "R2345234"]).all():
+        errors.append(f"Expected the returned dataframe to contain the pair 1 values of ['R234523', 'R45674567', 'R234523'], instead the values {filtered_df[0].values}")
+    if (filtered_df[2].values != ["12", "23", "10"]).all():
+        errors.append(f"Expected the returned dataframe to have the values ['12', '23', '10'] for the start_indx column instead found the values {filtered_df[2].values}")
+
+    assert not errors, "errors occured: \n{}".format('\n'.join(errors))

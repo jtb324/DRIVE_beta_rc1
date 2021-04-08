@@ -24,8 +24,6 @@ class newPOS:
         self.add = add
         self.rem = rem
 
-class Pairs:
-    """This is a class to keep information about the Pairs"""
 def generate_parameters(ibd_program: str) -> dict:
     """Function to generate a dictionary of the indices for the parameters 
     that you have
@@ -181,7 +179,7 @@ def get_pair_string(row: pd.Series, id1_indx: int, id2_indx: int, cM_indx: int, 
     elif row[id1_indx] not in (uniqID) and row[id2_indx] in (uniqID):  # If only id 2 is in the uniqID then it write that pair to the list
         return '{0}:{1}-{2}'.format(row[cM_indx], row[id2_indx], row[id1_indx])
 
-def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: str, IBDdata: dict, IBDindex: dict) -> Union[dict, dict]:
+def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: str, IBDdata: dict, IBDindex: dict) -> str:
     """Function that will identify breakpoints"""
     
     CHR: str = str(row[chr_indx])
@@ -222,8 +220,48 @@ def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, ch
         IBDdata[CHR][str(end)].rem.append(str(pair))
 
     return CHR
+def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx: int, gene_start: int, gene_end: int) -> pd.DataFrame:
+    """Function to filter tha dataframe chunk for sites where the 
+    shared segment is partially in the gene or the the entire gene 
+    is in the shared segment
+    Parameters
+    __________
+    df_chunk : pd.DataFrame
+        dataframe containing a chunk of information from the 
+        ibd_file. This will be the output from the 
+        filter_to_greater_than_3_cm function
+    
+    ibd_str_indx : int
+        integer that gives the index of the ibd start position
 
-def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, base_pair: int):
+    ibd_end_indx : int
+        integer that give index of the ibd end position shared 
+        segment
+    
+    gene_start : int
+        integer that tells the base position of where the gene begins
+    
+    gene_end : int
+        integer that tells the base position of where the gene ends
+    
+    Returns
+    _______
+    pd.DataFrame
+        returns a pandas dataframe that is filtered for sites where part of the shared segment is within the gene or the gene is within the shared segment
+    """
+
+    
+    # checking for the case where the shared segment end is before the gene end or where the shared segment start is after the gene start or where the gene is within the shared segment
+    print(df_chunk)
+    print(gene_start)
+    print(gene_end)
+    filtered_chunk: pd.DataFrame = df_chunk[((df_chunk[ibd_end_indx].astype(int) <= gene_end) & (df_chunk[ibd_end_indx].astype(int) >= gene_start))| ((df_chunk[ibd_str_indx].astype(int) >= gene_start) & (df_chunk[ibd_str_indx].astype(int) <= gene_end)) | ((df_chunk[ibd_str_indx].astype(int) <= gene_start) & (df_chunk[ibd_end_indx].astype(int) >= gene_end))]
+    print(filtered_chunk)
+    return filtered_chunk
+
+
+
+def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, var_position: int = None, gene_start: int = None, gene_end: int = None):
     '''This function will be used in the parallelism function'''
 
     # undoing the parameter_dict
@@ -263,8 +301,17 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         
         # filtering for values where the start value is less than the base pair and the 
         # end value is greater than the base pair
-        chunk = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, base_pair)
+        # This method will only be done if the user is using a gene 
+        # driving approach
+        if var_position:
+            chunk = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, var_position)
 
+        # looking for segments where the start or end of the segment 
+        # is within the gene or the 
+        if gene_start and gene_end:
+
+            chunk = filter_for_gene_site(chunk_greater_than_3_cm, str_indx, end_indx, gene_start, gene_end)
+            
         # This will iterate through each row of the filtered chunk
         if not chunk.empty:
             chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis = 1)
