@@ -2,3 +2,6 @@ from .gathering_pairs.collect_shared_segments import  generate_parameters, build
 from .gathering_pairs.gather_ibd_info import collect_files, iterate_file_dict
 from .gathering_pairs.filtering_functions import filter_for_correct_base_pair, filter_to_greater_than_3_cm, filter_to_individual_in_uniqID
 from .gathering_pairs.find_IBD_phenotype import gather_shared_segments
+from .combine_output.combine_ibd_pairs import combine_output, gather_files
+from .combine_output.building_file_dict import build_file_dict
+from .pair_info.pair_info_class import Pair_Info_Class

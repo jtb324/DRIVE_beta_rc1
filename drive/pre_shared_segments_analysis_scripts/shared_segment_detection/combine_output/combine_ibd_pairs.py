@@ -7,7 +7,9 @@ import os
 import re
 
 # Getting all the ibd files that end in .small.txt.gz
+import pre_shared_segments_analysis_scripts.pair_info
 import pre_shared_segments_analysis_scripts
+from .pair_functions import is_max_pairs_found, after_max_pair_found, Pair_Info_Class
 import utility_scripts
 
 
@@ -115,20 +117,17 @@ def check_for_missed_carriers(pair_2: str, pair_list: list,
 
     return int(len(connected_carriers_list))
 
-
-def form_pair_dict(pair_info_object, input_file_object,write_path: str, pair_list: list, variant_id: str,
-                   carrier_file_dir: str, chr_num: str, hapibd_file: str,
-                   ilash_file: str, map_file: str) -> dict:
+# This was previously the reformat function
+def form_pair_dict(pair_info_object,   hapibd_file: str,
+                   ilash_file: str, map_file: str,
+                   carrier_file_dir: str=None,) -> dict:
     '''this function takes the original allpair.txt file and reformats it to four columns.
     The first columnn is the ibd program that identified the pairs, the second column is the
     first pair, the third column is the second pair, and then the fourth column tells if the
     second pair is a carrier'''
 
     # Removing the allpair.txt file if it already exists from a previous run
-    if os.path.isfile(pair_info_object.output_path):
-
-        # removing the file
-        os.remove(pair_info_object.output_path)
+    utility_scripts.check_file(pair_info_object.output_path)
 
 
     # use list comprehension to find the file with that chr_num
@@ -250,22 +249,22 @@ def form_pair_dict(pair_info_object, input_file_object,write_path: str, pair_lis
     return pairs_dict
 
 
-def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
+# def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
 
-    pair_handler_dict = {False: 0, True: 1}
+#     pair_handler_dict = {False: 0, True: 1}
 
-    # This function will return either 1 or zero from the pair handler_dict based on whether or not curr_max_pair from the previous row is less than or greater than the max pairs from the current row
-    return pair_handler_dict[curr_max_pairs >= new_max_pairs]
+#     # This function will return either 1 or zero from the pair handler_dict based on whether or not curr_max_pair from the previous row is less than or greater than the max pairs from the current row
+#     return pair_handler_dict[curr_max_pairs >= new_max_pairs]
 
 
-def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
-    '''This function will break out of the loop if a max pair is found and then the size of the pair list starts decreasing'''
+# def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
+#     '''This function will break out of the loop if a max pair is found and then the size of the pair list starts decreasing'''
 
-    # If the previous rows max number of pairs is higher than the current row then this function will return a one
-    if curr_max_pair > new_max_pair:
-        return 1
-    elif curr_max_pair == new_max_pair:  # If the the above is not true than it returns a 0
-        return 0
+#     # If the previous rows max number of pairs is higher than the current row then this function will return a one
+#     if curr_max_pair > new_max_pair:
+#         return 1
+#     elif curr_max_pair == new_max_pair:  # If the the above is not true than it returns a 0
+#         return 0
 
 
 # TODO: incorporate this function into the main combine_output function
@@ -378,11 +377,26 @@ def read_first_line(files: list, openfile: dict, endline: dict, curr_pos: dict, 
     
     return line1
 
-def combine_output(gathered_file_dict: dict, file_dict: dict, output: str,
-                   car_file: str):
+def form_all_combinations(file_dict: dict, all_comb_dict: dict):
+    """Function to form all the combinations from the file dict
+    Parameters
+    __________
+    file_dict : dict
+        dictionary that has the files per certain chromosomes and the identifier
+    
+    all_comb_dict : dict
+        dictionary that will have the different combinations of items from
+        the file dictionary
+    """
+
+    for i in range(len(file_dict.keys()), 0, -1):
+        for item in list(itertools.combinations(file_dict.keys(), i)):
+            all_comb_dict['+'.join(item)] = item
+            
+def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analysis_type: str,
+                   car_file_dir: str= None, pheno_carrier_df: pd.DataFrame=None):
     """"""
     
-
     for chr_num, identifier in file_dict.keys():
         print(chr_num)
         # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
@@ -430,9 +444,9 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str,
         #TODO: keep working on changing this into smaller functions
         allcomb = {}
 
-        for i in range(len(files.keys()), 0, -1):
-            for item in list(itertools.combinations(files.keys(), i)):
-                allcomb['+'.join(item)] = item
+        # creating all the combinations based on the file dict
+        form_all_combinations(files, allcomb)
+    
 
         combtab = pd.DataFrame(0, columns=files.keys(), index=allcomb.keys())
 
@@ -483,7 +497,7 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str,
             #     map(lambda comb: len(allinter(comb, curr_pair)),
             #         allcomb.values()))
             # uniqrow = get_uniqrow(1, allcomb, curr_pair, combtab)
-
+            print(f"This is the curr_pair {curr_pair}")
             newallpair: list = all_agree_pair(curr_pair)
 
             max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
@@ -525,13 +539,30 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str,
                         [out, ".", start_bp, "-", end_bp, ".allpair.txt"])
 
                     # Entering into the get_max_pairs function
-                    # TODO: Make a pairs object that can contain some of this information
-                    pair_info_object = pair_info.Pair_Info_Class(
-                        max_pairs_str, variant_id, chr_num, allagree_path)
+                    # TODO: Make a pairs object that can contain the information about the pair object such as the string of pairs, the identifier which is the variant_id or gene name, the chromosome number, the output_path, and the analysis type
+                    pair_info_object = Pair_Info_Class(
+                        max_pairs_str, identifier, chr_num, allagree_path, analysis_type)
 
-                    input_file_object = pair_info.Input_Files(
-                        car_file, hapibd_file, ilash_file, map_file)
+                    # forming a list of iids that that are identified as carrying 
+                    # the variant. This list becomes an attribute of the 
+                    # pair_info_object called self.iid_list
+                    # will check if the pheno_carrier_df exists and if it doesn't
+                    # then it will use the car_file_dir
 
+                    if pheno_carrier_df:
+                        pair_info_object.iid_list_handler(pheno_carriers=pheno_carrier_df)
+                    else:
+                        pair_info_object.iid_list_handler(carrier_analysis_dir=car_file_dir)
+                    #
+                    # Next two lines need to be refacotred
+                    # input_file_object = pair_info.Input_Files(
+                    #     car_file, hapibd_file, ilash_file, map_file)
+                    # actually need to generate the pair dictionary
+                    pair_info_dict: dict = pair_info_object.generate_pairs_dict()
+
+                    form_pair_dict(pair_info_object, pair_info_object,write_path: str, pair_list: list, variant_id: str,
+                   carrier_file_dir: str, chr_num: str, hapibd_file: str,
+                   ilash_file: str, map_file: str)
                     get_pair_info(pair_info_object, input_file_object)
 
                     break
