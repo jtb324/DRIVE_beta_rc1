@@ -231,13 +231,15 @@ def run(args: list, **kwargs: dict):
             # variants for each chromosome
             pre_shared_segments_analysis_scripts.shared_segment_detection.iterate_file_dict(file_dict, IBD_search_output_files, THREADS, program, MIN_CM)
 
-    # print("combining segment output...")
-    # ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
-    # pre_shared_segments_analysis_scripts.combine_output(
-    #     "".join([IBD_search_output_files, "reformatted_ibd_output/"]),
-    #     args.ibd_programs, IBD_search_output_files,
-    #     "".join([args.output, "carrier_analysis_output/reformatted/"]),
-    #     ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
+    print("Identifying networks of pairs...")
+
+    ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
+
+    pre_shared_segments_analysis_scripts.combine_output(
+        "".join([IBD_search_output_files, "collected_pairs/"]),
+        args.ibd_programs, IBD_search_output_files,
+        "".join([args.output, "carrier_analysis_output/reformatted/"]),
+        ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
 
     # pre_shared_segments_analysis_scripts.reformat_files(
     #     "".join([args.output, "carrier_analysis_output/"]),

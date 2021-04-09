@@ -24,7 +24,8 @@ def test_create_iid_dict():
 
     carrier_df: pd.DataFrame = pd.DataFrame.from_dict(carrier_dict)
 
-    iid_dict = create_iid_dict(variant, iid_dict, carrier_df)
+    iid_dict = create_iid_dict([variant], iid_dict, carrier_df)
+    print(iid_dict)
 
     if len(iid_dict[variant]) != 3:
         errors.append(f"expected the length of the value for the key {variant} to be 3, instead the length was {len(iid_dict[variant])}")
@@ -40,7 +41,7 @@ def test_create_dict_with_var_pos():
     errors: list = []
 
     # Getting the necessary parameters for the function
-    variant: str = "exm65234"
+    variant: str = "exm65234-G"
 
     var_pos_dict: dict = {}
 
@@ -54,7 +55,7 @@ def test_create_dict_with_var_pos():
     map_df: pd.DataFrame = pd.DataFrame.from_dict(map_dict)
 
     # running the create_dict_with_var_pos functions
-    var_pos_dict = create_dict_with_var_pos(variant, var_pos_dict, map_df)
+    var_pos_dict = create_dict_with_var_pos([variant], var_pos_dict, map_df)
 
     if type(var_pos_dict[variant]) == str:
         errors.append(f"expected the length of the value for the key {variant} to be 3, instead the length was {len(var_pos_dict[variant])}")

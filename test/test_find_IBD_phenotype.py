@@ -56,7 +56,9 @@ def test_gather_gene_info():
     errors: list = []
 
     # running the function on the test data
-    gene_dict: dict = gather_gene_info("./test_data/test_gmap_file.txt")
+    gmap_df: pd.DataFrame = pd.read_csv("./test_data/test_gmap_file.txt", sep="\t") 
+
+    gene_dict: dict = gather_gene_info(gmap_df)
 
     # checking to see if the dictionary has the right keys
     if list(gene_dict.keys()) != ["MPO", "EXT1"]:

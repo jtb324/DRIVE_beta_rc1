@@ -159,7 +159,9 @@ def test_build_ibddata_and_ibdindex():
     # making a list to keep track of all the errors
     errors: list = []
     # testing the case where both ids are in the uniqID dict and they are in order
-    row: pd.Series = pd.Series(np.array(["R12341234", "R2345112","4", "3.4","12341234", "23452345", "3.4:R12341234-R2345112"]))
+    row: pd.Series = pd.Series(np.array(["R12341234", "R2345112","4", "3.4","12341234", "23452345",]))
+    
+    row = row.append(pd.Series(["3.4:R12341234-R2345112"], index=["pair_string"]))
 
     IBDdata: dict = {str(i): {} for i in range(1, 23)}
     IBDindex: dict = {
@@ -171,7 +173,7 @@ def test_build_ibddata_and_ibdindex():
             for i in range(1, 23)
         }
     
-    chr_num: str = build_ibddata_and_ibddict(row, 4,5,2, IBDdata, IBDindex)
+    chr_num: pd.Series = build_ibddata_and_ibddict(row, 4,5,2, IBDdata, IBDindex)
 
     # checking if a value got put into the IBDdata
     if len(IBDdata["4"]) == 0:
