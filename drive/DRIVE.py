@@ -234,12 +234,20 @@ def run(args: list, **kwargs: dict):
     print("Identifying networks of pairs...")
 
     ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
+    # getting a dictionary of all the files
+    gathered_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.gather_files(
+        ibd_dir_dict,
+        os.path.join(IBD_search_output_files, "collected_pairs/"),
+         os.path.join(args.output, "plink_output_files/")
+        )
+    # getting a dictionary of all the files with the ibd files
+    ibd_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.build_file_dict(gathered_file_dict["ibd_pair_file_list"], args.ibd_programs)
 
-    pre_shared_segments_analysis_scripts.combine_output(
+    pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
         "".join([IBD_search_output_files, "collected_pairs/"]),
         args.ibd_programs, IBD_search_output_files,
         "".join([args.output, "carrier_analysis_output/reformatted/"]),
-        ibd_dir_dict, "".join([args.output, "plink_output_files/"]))
+        ibd_dir_dict, os.path.join(args.output, "plink_output_files/"))
 
     # pre_shared_segments_analysis_scripts.reformat_files(
     #     "".join([args.output, "carrier_analysis_output/"]),

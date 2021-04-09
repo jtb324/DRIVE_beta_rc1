@@ -248,7 +248,8 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
     for key in file_dict:
     
         if "None" not in file_dict[key].values():
-
+            print(key)
+            print(len(file_dict[key]))  
             chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
             ibd_file: str = file_dict[key]["ibd"]
@@ -275,6 +276,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
                 # print(var_iid_dict)
                 var_info_dict = create_var_info_dict(var_info_dict, var_iid_dict, variant, bp)
 
+            print(var_info_dict)
             # need to fix this part for the new function
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
                 int(threads), output, ibd_program, min_CM, var_info_dict,

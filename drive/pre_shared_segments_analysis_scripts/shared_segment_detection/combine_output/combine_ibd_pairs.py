@@ -9,94 +9,6 @@ import re
 # Getting all the ibd files that end in .small.txt.gz
 import pre_shared_segments_analysis_scripts
 import utility_scripts
-# import pair_info
-
-
-def get_variant_id(ibd_file: str) -> str:
-    '''This function will get the proper variant_id'''
-
-    dot_indx_list: list = [
-        indx for indx, letter in enumerate(ibd_file) if letter == "."
-    ]
-
-    variant_id_handler = {
-        4: ibd_file[:dot_indx_list[0]],
-        5: ibd_file[:dot_indx_list[1]]
-    }
-
-    variant_id: str = variant_id_handler[len(dot_indx_list)]
-
-    return variant_id
-
-
-def build_file_dict(ibd_file_list: list, program_list: list) -> dict:
-    '''This function aligns all the files from each ibd program together'''
-    file_dict = dict()
-
-    # iterate through the files to build the dictionary
-    for ibd_file in ibd_file_list:
-
-        match = re.search(r'.chr\d\d\.', ibd_file)
-
-        # find chromosome number
-        if match:
-
-            chr_num = match.group(0)
-
-        else:
-            match = re.search(r'.chr\d_', ibd_file)
-
-            if not match:
-                match = re.search(r'.chr\d\.', ibd_file)
-
-            chr_num = match.group(0)
-
-        # Finding the variant id of the file. file names are built so that the
-        # variant id sits between the first "_" and the first "."
-        for ibd_program in program_list:
-
-            if ibd_program in ibd_file:
-                underscore_indx = ibd_file.find("".join([ibd_program, "_"]))
-
-                shorten_ibd_file_string: str = ibd_file[underscore_indx +
-                                                        len(ibd_program) + 1:]
-
-        variant_id = get_variant_id(shorten_ibd_file_string)
-
-        # using list comprehension to get all the files that contain that
-        # variant and chromosome
-        filter_ibd_file_list = [
-            file for file in ibd_file_list
-            if variant_id in file and chr_num in file
-        ]
-
-        # match up the variants with the IBD program
-        for ibd_program in program_list:
-
-            # This goes through the three files in the filter_ibd_file_list
-            for file in filter_ibd_file_list:
-
-                # This checks to see if the variant id is in the dictionary
-                # and that the ibd program is in the file
-                if ibd_program in file and (
-                        chr_num, variant_id) not in file_dict.keys():
-
-                    # If it is not then the
-                    file_dict[(chr_num, variant_id)] = set()
-
-                    file_dict[(chr_num, variant_id)].add("".join(
-                        [ibd_program, ":", file]))
-
-                elif ibd_program in file and (chr_num,
-                                              variant_id) in file_dict.keys():
-
-                    file_dict[(chr_num, variant_id)].add("".join(
-                        [ibd_program, ":", file]))
-
-    return file_dict
-
-
-# Checking the system arguments
 
 
 def findkey(i, mydict):
@@ -180,18 +92,6 @@ def get_carrier_list(file: str, variant_id: str) -> list:
     carrier_list = carrier_df[carrier_df["Variant ID"] ==
                               variant_id]["IID"].values.tolist()
     return carrier_list
-
-
-# def alternate_chr_num_format(chr_num: str) -> str:
-#     '''This function will add a zero between the number if it is a single digit chromosome'''
-
-#     if len(chr_num.strip(".")) == 4:
-
-#         chr_num = chr_num.strip(".")
-
-#         chr_num = "".join([".", chr_num[:-1], "0", chr_num[3], "."])
-
-#     return chr_num
 
 
 def check_for_missed_carriers(pair_2: str, pair_list: list,
@@ -396,11 +296,45 @@ def find_ibd_file(ibd_dir: list, chr_num: str) -> str:
 
     return ibd_file
 
+def form_file_dict(file_list: list) -> dict:
+    """function to form a dictionary of file
+    Parameters
+    __________
+    file_list : list
+        list of all the files ibd files"""
+    files = {}
 
-def combine_output(segment_dir: str, ibd_programs: list, output: str,
-                   car_file: str, ibd_files: dict, map_file_dir: str):
+    for f in file_list:
+
+        files[f.split(':', 1)[0]] = f.split(':', 1)[1]
+    
+    return files
+def gather_files(ibd_files: dict, segment_dir: str, map_file_dir: str) -> dict:
+    """Function to gather the necessary files and then return them as a dictionary
+    Parameters
+    __________
+    ibd_files : dict
+        dictionary containing two keys: ilash and hapibd. The 
+        values of these keys are the directories for each 
+        respective program that contains the programs output
+    
+    segment_dir: str
+        string listing the directory that has the .small.txt.gz 
+        files
+    
+    map_file_dir: str
+        string that list the directory that has all of the .map 
+        files
+    
+    Returns
+    _______
+    dict
+        returns a dictionary that contains list to all of the output files"""
+
+    # pulling out the hapibd and the ilash directory files               
     ilash_dir_str: str = ibd_files["ilash"]
     hapibd_dir_str: str = ibd_files["hapibd"]
+
     # using the above two directories to extract the hapibd and iLash files:
     ilash_file_list: list = utility_scripts.get_file_list(
         ilash_dir_str, "*match.gz")
@@ -410,47 +344,77 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str,
     # getting all the map files from the
     map_file_list: list = utility_scripts.get_file_list(map_file_dir, "*.map")
 
-    output: str = "".join([output, ""])
-
+    # output: str = "".join([output, ""])
+    
     ibd_file_list: list = utility_scripts.get_file_list(
         segment_dir, "*.small.txt.gz")
+    
+    return {
+        "ilash_file_list": ilash_file_list,
+        "hapibd_file_list": hapibd_file_list,
+        "map_file_list": map_file_list,
+        "ibd_pair_file_list": ibd_file_list
+    }
 
-    file_dict: dict = build_file_dict(ibd_file_list, ibd_programs)
+def read_first_line(files: list, openfile: dict, endline: dict, curr_pos: dict, curr_ibd: dict, curr_pair: dict, newpos: dict, newline: dict, endtest: dict) -> str:
+    """This function will read the first line of the files into the appropriate dictionary
+    Parameters
+    __________"""
 
-    for chr_num, variant_id in file_dict.keys():
+    for f in files:
+        openfile[f] = gzip.open(files[f], 'rt')
+        openfile[f].seek(0, 2)
+        endline[f] = openfile[f].tell()
+        openfile[f].seek(0)
+        line0 = openfile[f].readline()
+        curr_pos[f] = 0
+        curr_ibd[f] = set([])
+        curr_pair[f] = set([])
+        line1 = openfile[f].readline()
+        line1 = line1.strip()
+        newpos[f] = int(line1.split('\t')[1])
+        newline[f] = line1
+        endtest[f] = 0
+    
+    return line1
+
+def combine_output(gathered_file_dict: dict, file_dict: dict, output: str,
+                   car_file: str):
+    """"""
+    
+
+    for chr_num, identifier in file_dict.keys():
         print(chr_num)
         # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
         max_pairs: int = 0
 
-        file_list: list = file_dict[(chr_num, variant_id)]
+        file_list: list = file_dict[(chr_num, identifier)]
 
         # alt_chr_num: str = alternate_chr_num_format(chr_num)
         # getting the hapibd file that corresponds to the correct chromosome number
-        hapibd_file: str = find_ibd_file(hapibd_file_list, chr_num)
+        hapibd_file: str = find_ibd_file(gathered_file_dict["hapibd_file_list"], chr_num)
         # getting the ilash file that corresponds to the correct chromsome number
-        ilash_file: str = find_ibd_file(ilash_file_list, chr_num)
+        ilash_file: str = find_ibd_file(gathered_file_dict["ilash_file_list"], chr_num)
 
         # getting the map file that corresponds to the correct chromosome number
         map_file: str = [
-            file for file in map_file_list if "".join([chr_num[:-1], "_"])
+            file for file in gathered_file_dict["map_file_list"] if "".join([chr_num[:-1], "_"])
         ][0]
 
         if len(file_list) == 0:  # Checking length of system arguments
-            sys.exit(f"no files found for this variant {variant_id}")
+            sys.exit(f"no files found for this id {identifier}")
 
-        # Making the first argument the output variable
 
-        out = "".join([output, "IBD_", variant_id, chr_num[:-1]])
-        # next three lines write the files to a dictionary
-        files = {}
+        # creating the output path for the file
+        out = os.path.join(output, "".join(["IBD_", identifier, chr_num[:-1]]))
+        
+        # next line writes the file
+        files = form_file_dict(file_list)
 
-        for f in file_list:
 
-            files[f.split(':', 1)[0]] = f.split(':', 1)[1]
-
-        # print('input {0} files: {1}'.format(len(files),
-        #                                  ' '.join(files.keys())))
-
+        
+        # creating dictionaries that will be used in the rest of the 
+        # code
         curr_pair = {}
         curr_pos = {}
         curr_ibd = {}
@@ -461,22 +425,11 @@ def combine_output(segment_dir: str, ibd_programs: list, output: str,
         endline = {}
 
         # read first line for all input files
-        for f in files:
-            openfile[f] = gzip.open(files[f], 'rt')
-            openfile[f].seek(0, 2)
-            endline[f] = openfile[f].tell()
-            openfile[f].seek(0)
-            line0 = openfile[f].readline()
-            curr_pos[f] = 0
-            curr_ibd[f] = set([])
-            curr_pair[f] = set([])
-            line1 = openfile[f].readline()
-            line1 = line1.strip()
-            newpos[f] = int(line1.split('\t')[1])
-            newline[f] = line1
-            endtest[f] = 0
+        line1: str = read_first_line(files, openfile, endline, curr_pos, curr_ibd, curr_pair, newpos, newline, endtest)
 
+        #TODO: keep working on changing this into smaller functions
         allcomb = {}
+
         for i in range(len(files.keys()), 0, -1):
             for item in list(itertools.combinations(files.keys(), i)):
                 allcomb['+'.join(item)] = item
