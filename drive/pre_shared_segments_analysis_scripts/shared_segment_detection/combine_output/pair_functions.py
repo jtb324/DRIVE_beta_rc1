@@ -1,5 +1,6 @@
 import pandas as pd
 import utility_scripts
+from .get_haplotype_info import hapibd_info_finder, ilash_info_finder
 # This script keeps some of the functions that are used for determining if pairs are found
 
 def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
@@ -73,7 +74,6 @@ class Pair_Info_Class:
         self.chromo_num: str = chromo_num
         self.output_path: str = allpair_filepath
         self.analysis_type: str = analysis_type
-        self.pairs_dict: dict = {}
 
     
     @staticmethod
@@ -97,12 +97,12 @@ class Pair_Info_Class:
 
         return pairs_list
 
-    def iid_list_handler(self, carrier_analysis_dir: str = None, pheno_carriers: pd.DataFrame = None):
+    def iid_list_handler(self, carrier_dir: str = None, pheno_carriers: pd.DataFrame = None):
         """Function to handle which iid list method will be formed.
 
         Parameters
         __________
-        carrier_analysis_dir : str
+        carrier_dir : str
             directory that specifies where the 
             single_variant_carrier.csv files are that list which
             iid carries which variant
@@ -114,13 +114,17 @@ class Pair_Info_Class:
             having the phenotype and then the gene that the 
             phenotype is associated with in the next column
         """
+        
+        if self.analysis_type == "phenotype":
+            self.carrier_iid_list(pheno_carriers=pheno_carriers)
+        else:
+            self.carrier_iid_list(carrier_analysis_dir=carrier_dir)
+        # iid_option_handler: dict = {
+        #     True: self.carrier_iid_list(pheno_carriers=pheno_carriers), 
+        #     False: self.carrier_iid_list(carrier_analysis_dir=carrier_dir)
+        # }
 
-        iid_option_handler: dict = {
-            True: self.carrier_iid_list(pheno_carriers), 
-            False: self.carrier_iid_list(carrier_analysis_dir)
-        }
-
-        iid_option_handler[self.analysis_type == "phenotype"]
+        # iid_option_handler[self.analysis_type == "phenotype"]
 
     def carrier_iid_list(self, carrier_analysis_dir: str = None, pheno_carriers: pd.DataFrame = None):
         """Function to determine the iid list based on the analysis 
@@ -144,6 +148,7 @@ class Pair_Info_Class:
         
         # if it is a phenotype approach then we need to get all the 
         # carriers for a specific gene
+
         if self.analysis_type == "phenotype":
             
             # pulling out the iid_list from the pheno carriers for the specific gene that you have
@@ -153,6 +158,7 @@ class Pair_Info_Class:
         # gather the carrier files from the specified directory
         # This will find individuals that carry a specific variant
         else:
+
             car_file_list: list = utility_scripts.get_file_list(carrier_analysis_dir, "*single_variant_carrier.csv")
             
             # using list comprehension to get the file that has the specific chromosome number
@@ -246,27 +252,32 @@ class Pair_Info_Class:
         else:
             pairs_dict[(pairs_object.pair1, pairs_object.pair2)]["missed_carrier"] = 0
         
-    def generate_pairs_dict(self, hapibd_file: str, ilash_file: str) -> dict:
+    def generate_pairs_dict(self, hapibd_file: pd.DataFrame, ilash_file: pd.DataFrame, analysis_type_info: dict) -> str:
         """Function that generates a dictionary of all the pairs and information
         
         Parameters
         __________
-        hapibd_file : str
-            filepath to the hapibd output file for the specific chromosome
+        hapibd_file : pd.DataFrame
+            dataframe of the hapibd output file for the specific chromosome
         
-        ilash_file : str
-            filepath to the ilash output file for the specific chromosome
-            
+        ilash_file : pd.DataFrame
+            dataframe of the ilash output file for the specific chromosome
+        
+        analysis_type_info : dict
+            dictionary containing the analysis type, the variant position or the gene start and end. These will be under these respective keys
+
         Returns
         _______
-        dict
-            returns a dicitonary that has information about the pairs such as carrier_status, connected_carriers, missed_carrier"""
+        list 
+            returns a list that has information about the for each 
+            pair as the values"""
         # creating an empty dictionary to put the pairs into
-        pairs_dict = {}
+        pairs_dict: dict = {}
 
+        pairs_list: list = []
         # iterating through each pair in the pair list
         for pair in self.pair_list:
-
+            
             # creating an Pairs object that has each pair string
             pair_object: Pairs = Pairs(pair)
 
@@ -293,7 +304,38 @@ class Pair_Info_Class:
                 self.set_missed_carrier_status(pairs_dict, connected_carriers, pair_object)
 
             # need to get the information from hapibd and ilash about the segment length
+            hapibd_info_object: hapibd_info_finder = hapibd_info_finder(hapibd_file, pair_object.pair1, pair_object.pair2, "hapibd")
 
+            ilash_info_object: ilash_info_finder = ilash_info_finder(ilash_file, pair_object.pair1, pair_object.pair2, "ilash")
+            
+            # updating the base indx dictionary for the specific 
+            # values for each program
+            hapibd_info_object.update_base_indx_dict()
 
+            ilash_info_object.update_base_indx_dict()
+            
+            # if the analysis type is phenotype then have to use the 
+            # gene start and end
+            if analysis_type_info["analysis_type"] == "phenotype":
+                
+                hapibd_info_dict: dict = hapibd_info_object.get_len_info(gene_start=analysis_type_info["gene_start"], gene_end=analysis_type_info["gene_end"])
+
+                ilash_info_dict: dict = ilash_info_object.get_len_info(gene_start=analysis_type_info["gene_start"], gene_end=analysis_type_info["gene_end"])
+
+                # creating the pair_str when the phenotype analysis is selected
+                pair_str:str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{'N/A'}\t{self.identifier}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_info_dict['phase1']}\t{hapibd_info_dict['phase2']}\t{ilash_info_dict['phase1']}\t{ilash_info_dict['phase2']}\t{hapibd_info_dict['start']}\t{hapibd_info_dict['end']}\t{hapibd_info_dict['length']}\t{ilash_info_dict['start']}\t{ilash_info_dict['end']}\t{ilash_info_dict['length']}\n"
+            # if it is not phenotype then you have to use the 
+            # variant position
+            else:
+                hapibd_info_dict: dict = hapibd_info_object.get_len_info(var_position=analysis_type_info["variant_pos"])
+
+                ilash_info_dict: dict = ilash_info_object.get_len_info(var_position=analysis_type_info["variant_pos"])
+            
+                # writing the pair string when the phenotype analysis is not used
+                pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_info_dict['phase1']}\t{hapibd_info_dict['phase2']}\t{ilash_info_dict['phase1']}\t{ilash_info_dict['phase2']}\t{hapibd_info_dict['start']}\t{hapibd_info_dict['end']}\t{hapibd_info_dict['length']}\t{ilash_info_dict['start']}\t{ilash_info_dict['end']}\t{ilash_info_dict['length']}\n"
+            
+            pairs_list.append(pair_str)
+
+        return pairs_list
 
 

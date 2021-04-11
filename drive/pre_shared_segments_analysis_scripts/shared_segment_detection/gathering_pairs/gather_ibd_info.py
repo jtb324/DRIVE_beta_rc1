@@ -139,15 +139,10 @@ def collect_files(parameter_dict: dict) -> dict:
     # parameters
     ibd_files: str = parameter_dict.get("ibd_file_path")
     carrier_file: str = parameter_dict.get("carrier_file")
-    ibd_program: str = parameter_dict.get("ibd_program")
-    output: str = parameter_dict.get("output")
     map_file_dir: str = parameter_dict.get("map_files")
     file_suffix: str = parameter_dict.get("ibd_file_suffix")
-    min_CM: str = parameter_dict.get("min_CM_threshold")
-    threads: str = parameter_dict.get("threads")
     ###########################################################
 
-    utility_scripts.check_dir(output, "formatted_ibd_output/")
     # getting the segment file list
     
     segment_file_list: list = utility_scripts.get_file_list(ibd_files, file_suffix)
@@ -248,8 +243,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
     for key in file_dict:
     
         if "None" not in file_dict[key].values():
-            print(key)
-            print(len(file_dict[key]))  
+            
             chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
             ibd_file: str = file_dict[key]["ibd"]
@@ -268,15 +262,11 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
             #iterating through
             # forming the dictionary to have all the variant info
             var_info_dict: dict = {}
-            # print("var_pos_dict")
-            # print(var_pos_dict)
+
             # iterating through the above 
             for variant, bp in var_pos_dict.items():
-                # print(variant, bp)
-                # print(var_iid_dict)
                 var_info_dict = create_var_info_dict(var_info_dict, var_iid_dict, variant, bp)
 
-            print(var_info_dict)
             # need to fix this part for the new function
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
                 int(threads), output, ibd_program, min_CM, var_info_dict,
@@ -292,6 +282,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
 def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
              min_CM: str, var_info_dict: list, que_object, variant):
 
+    output_put: str = utility_scripts.check_dir(output_path, "collected_pairs/")
     variant_position: int = int(var_info_dict[variant]["base_pos"])
 
     print(f"running the variant {variant}")
@@ -299,7 +290,7 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
     carrier_list: list = var_info_dict[variant]["iid_list"]
 
     parameter_dict: dict = generate_parameters(ibd_format)
-
+    
     uniqID: dict = build_unique_id_dict(carrier_list)
 
     IBDdata, IBDindex = create_ibd_arrays()

@@ -1,7 +1,7 @@
 # this script helps build the dictionary that contains keys of unique information like the chromosome number and the variant id/gene name (depends on the analysis type) and then the values are the .small.txt.gz files that are lined up with the correct ibd program
 
 import re
-
+import utility_scripts
 def get_variant_id(ibd_file: str) -> str:
     """This function will get the proper variant_id
     Parameters
@@ -47,27 +47,6 @@ def get_gene_name(file_name: str) -> str:
 
     # getting the gene name by getting the substring that is up until the first .
     return file_name[:dot_indx_list[0]]
-
-def match_chr(search_list: list, file: str) -> str:
-    """Function that will find the chromosome number of the string
-    Parameters
-    __________
-    search_list : list
-        list of the different regular expressions to search for
-    
-    file : str
-        string to match a pattern against
-    Returns
-    ________
-    str
-        string containing the chromosome number that was matched"""
-    for search_term in search_list:
-
-        match = re.search(search_term, file)
-
-        if match:
-            
-            return match.group(0)
 
 def get_ibd_file_substring(program_list: list, ibd_file: str) -> str:
     """Function to find the substring of the ibd_program from the ibd_file
@@ -148,9 +127,7 @@ def build_file_dict(ibd_file_list: list, program_list: list, analysis_type: str)
     # iterate through the files to build the dictionary
     for ibd_file in ibd_file_list:
 
-        print(ibd_file)
-
-        chr_num: str = match_chr([r'.chr\d\d.', r'chr\d.'], 
+        chr_num: str = utility_scripts.match_chr([r'.chr\d\d.', r'chr\d.'], 
                     ibd_file)
 
         # Finding the variant id of the file. file names are built so that the
@@ -159,7 +136,7 @@ def build_file_dict(ibd_file_list: list, program_list: list, analysis_type: str)
 
         # TODO: This spot will break for the phenotype analysis
         identifier: str = determine_identifier(shorten_ibd_file_string, analysis_type)
-
+        
         # using list comprehension to get all the files that contain that
         # variant and chromosome
         filter_ibd_file_list = [

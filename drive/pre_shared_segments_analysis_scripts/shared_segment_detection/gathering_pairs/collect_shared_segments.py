@@ -12,7 +12,7 @@ import shutil
 from typing import Union
 
 from ..generate_indx_dict.generate_dict import Germline_Indices, Ilash_Indices, Hapibd_Indices
-from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair
+from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site
 
 
 ####################################################################################################
@@ -75,17 +75,6 @@ def build_unique_id_dict(iid_list: list) -> dict:
         uniqID.setdefault(iid, IDnum)
 
         IDnum += 1
-        # if iid in uniqID:
-        #     # dupID.append(iid)
-        #     pass
-        # else:
-
-        #     uniqID[iid] = IDnum
-        #     IDnum = IDnum + 1
-
-    # print('identified ' + str(len(uniqID)) + ' unique IDs')
-
-    # Closing the file
 
     return uniqID
 
@@ -109,36 +98,8 @@ def create_ibd_arrays() -> tuple:
 
     return IBDdata, IBDindex
 
-# class Shared_Segment_Convert(newPOS):
-#     def __init__(self, shared_segment_file: str, pheno_file: str,
-#                  output_path: str, ibd_program_used: str,
-#                  min_cM_threshold: int, base_position,
-#                  variant_id):
-#         # This is the germline or hapibd or ilash file
-#         self.segment_file = str(shared_segment_file)
-#         # This will give the directory for where the chromosome files are found
-#         self.iid_file = str(pheno_file)
-#         # This will be the output directory. Need to add the ibd software to the end of it
-#         self.output_dir = output_path
 
-#         if not os.path.exists("".join([output_path, "reformatted_ibd_output/"
-#                                        ])):
-#             try:
-#                 os.mkdir("".join([output_path, "reformatted_ibd_output/"]))
-#             except FileExistsError:
-#                 pass
-
-#         self.output = "".join(
-#             [output_path, "reformatted_ibd_output/", ibd_program_used])
-#         self.format = str(ibd_program_used)
-#         self.min_cM = int(min_cM_threshold)
-#         self.bp = int(base_position)
-#         # This gets the name of the variant of interest assuming it is input as a text file
-#         self.variant_name = variant_id
-
-# define a class to get some these parameters
-
-def get_pair_string(row: pd.Series, id1_indx: int, id2_indx: int, cM_indx: int, uniqID: dict) -> pd.DataFrame:
+def get_pair_string(row: pd.DataFrame, id1_indx: int, id2_indx: int, cM_indx: int, uniqID: dict) -> pd.DataFrame:
     """Function to get the pair string for each row in the dataframe
     Parameters
     __________
@@ -159,9 +120,10 @@ def get_pair_string(row: pd.Series, id1_indx: int, id2_indx: int, cM_indx: int, 
     
     Returns
     _______
-    str
+    returns a list of pair strings
         returns the pair string 
     """
+    # for row in pair_df.itertuples():
 
     if row[id1_indx] in (uniqID) and row[id2_indx] in (uniqID):
 
@@ -206,7 +168,7 @@ def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, ch
         IBDindex[CHR]['allpos'].append(int(start))
 
     # start is in identified breakpoints but end not
-    elif int(start_indx) in IBDindex[CHR]['allpos'] and int(
+    elif int(start) in IBDindex[CHR]['allpos'] and int(
             end) not in IBDindex[CHR]['allpos']:
 
         IBDdata[CHR][str(start)].add.append(str(pair))
@@ -222,49 +184,9 @@ def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, ch
 
     return CHR
 
-def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx: int, gene_start: int, gene_end: int) -> pd.DataFrame:
-    """Function to filter tha dataframe chunk for sites where the 
-    shared segment is partially in the gene or the the entire gene 
-    is in the shared segment
-    Parameters
-    __________
-    df_chunk : pd.DataFrame
-        dataframe containing a chunk of information from the 
-        ibd_file. This will be the output from the 
-        filter_to_greater_than_3_cm function
-    
-    ibd_str_indx : int
-        integer that gives the index of the ibd start position
-
-    ibd_end_indx : int
-        integer that give index of the ibd end position shared 
-        segment
-    
-    gene_start : int
-        integer that tells the base position of where the gene begins
-    
-    gene_end : int
-        integer that tells the base position of where the gene ends
-    
-    Returns
-    _______
-    pd.DataFrame
-        returns a pandas dataframe that is filtered for sites where part of the shared segment is within the gene or the gene is within the shared segment
-    """
-
-    
-    # checking for the case where the shared segment end is before the gene end or where the shared segment start is after the gene start or where the gene is within the shared segment
-
-    filtered_chunk: pd.DataFrame = df_chunk[((df_chunk[ibd_end_indx].astype(int) <= gene_end) & (df_chunk[ibd_end_indx].astype(int) >= gene_start))| ((df_chunk[ibd_str_indx].astype(int) >= gene_start) & (df_chunk[ibd_str_indx].astype(int) <= gene_end)) | ((df_chunk[ibd_str_indx].astype(int) <= gene_start) & (df_chunk[ibd_end_indx].astype(int) >= gene_end))]
-    
-    return filtered_chunk
-
 def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_object, ibd_program: str, variant_name: str=None, gene_name: str=None):
     try:
-        # print('identified ' + str(len(IBDindex[str(CHR)]['allpos'])) +
-        #       ' breakpoints on chr' + str(CHR))
 
-        # Opening the file .small/txt/gz file to write to
         # NEED TO FIX THIS LINE HERE
         if variant_name:
             write_path = os.path.join(
@@ -285,7 +207,7 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_obje
         allibd = set([])
 
         for pos in sorted(IBDindex[str(CHR)]['allpos']):
-
+            
             allibd = allibd | set(IBDdata[str(CHR)][str(pos)].add)
             allibd = allibd - set(IBDdata[str(CHR)][str(pos)].rem)
 
@@ -311,6 +233,7 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_obje
 
                     allibdpair[pair] = str(cM)
 
+
             npair = str(len(allibdpair))
 
             out.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
@@ -332,9 +255,9 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_obje
 
         que_object.put(f"{variant_name}")
 
-def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path, ibd_program: str, var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
+def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path: str, ibd_program: str, var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
     '''This function will be used in the parallelism function'''
-
+    output_path: str = os.path.join(output_path, "collected_pairs")
     # undoing the parameter_dict
     id1_indx = int(parameter_dict["id1_indx"])
     id2_indx = int(parameter_dict["id2_indx"])
@@ -388,8 +311,9 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
             # getting rid of an warning message that indicates that the resulting chunk is a pandas dataframe
             chunk.is_copy = False
 
+
             # creating a new column with the pair string for each pair
-            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis = 1)
+            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis=1)
 
             
             chr_num_series:pd.Series = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)

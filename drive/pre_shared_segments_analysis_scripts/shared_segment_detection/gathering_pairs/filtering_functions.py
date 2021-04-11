@@ -21,7 +21,7 @@ def filter_to_individual_in_uniqID(df_chunk: pd.DataFrame, uniqID: dict, id1_ind
     Returns
     _______
     pd.DataFrame
-        returns a dataframe where either id1 or id2 are in the uniqID dictionary
+        returns a dataframe where either id1 or iƒd2 are in the uniqID dictionary
     """
 
     return df_chunk[(df_chunk[id1_indx].isin(uniqID)) |
@@ -88,3 +88,40 @@ def filter_for_correct_base_pair(df_chunk: pd.DataFrame, str_indx: int, end_indx
 
     return df_chunk[(df_chunk[str_indx] < base_pair)
             & (df_chunk[end_indx] > base_pair)]
+
+def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx: int, gene_start: int, gene_end: int) -> pd.DataFrame:
+    """Function to filter tha dataframe chunk for sites where the 
+    shared segment is partially in the gene or the the entire gene 
+    is in the shared segment
+    Parameters
+    __________
+    df_chunk : pd.DataFrame
+        dataframe containing a chunk of information from the 
+        ibd_file. This will be the output from the 
+        filter_to_greater_than_3_cm function
+    
+    ibd_str_indx : int
+        integer that gives the index of the ibd start position
+
+    ibd_end_indx : int
+        integer that give index of the ibd end position shared 
+        segment
+    
+    gene_start : int
+        integer that tells the base position of where the gene begins
+    
+    gene_end : int
+        integer that tells the base position of where the gene ends
+    
+    Returns
+    _______
+    pd.DataFrame
+        returns a pandas dataframe that is filtered for sites where part of the shared segment is within the gene or the gene is within the shared segment
+    """
+
+    
+    # checking for the case where the shared segment end is before the gene end or where the shared segment start is after the gene start or where the gene is within the shared segment
+
+    filtered_chunk: pd.DataFrame = df_chunk[((df_chunk[ibd_end_indx].astype(int) <= gene_end) & (df_chunk[ibd_end_indx].astype(int) >= gene_start))| ((df_chunk[ibd_str_indx].astype(int) >= gene_start) & (df_chunk[ibd_str_indx].astype(int) <= gene_end)) | ((df_chunk[ibd_str_indx].astype(int) <= gene_start) & (df_chunk[ibd_end_indx].astype(int) >= gene_end))]
+    
+    return filtered_chunk

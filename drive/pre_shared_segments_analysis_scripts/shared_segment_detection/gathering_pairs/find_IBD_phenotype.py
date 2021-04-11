@@ -110,7 +110,7 @@ def collect_IBD_segments(carrier_list: list, ibd_program:str, min_CM: str, ibd_f
 
 def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM: str, ibd_program: str, output: str, carrier_list: list):
     """function to run through the genes in parallel"""
-
+    print(output)
     manager = mp.Manager()
 
     que = manager.Queue()
@@ -154,9 +154,9 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
     
     ibd_program : str
         This is the ibd program used to get the shared segment data. Should be either ilash or hapibd"""
-
+    
     # checking to make sure the output directory subdirectory "collected_pairs" exists
-    output_dir: str = utility_scripts.check_dir(output_path, "collected_pairs/")
+    
     # getting a list of ibd_files
     ibd_file_list: list = utility_scripts.get_file_list(ibd_file_list, ibd_suffix)
 
@@ -166,5 +166,5 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
     # need to generate a dictionary of all chromosomes, with their start and end point
     gene_dict: dict = gather_gene_info(pheno_gmap_df)
 
-    run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, output_dir, carrier_list)
+    run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, output_path, carrier_list)
 
