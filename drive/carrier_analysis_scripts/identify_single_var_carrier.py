@@ -47,6 +47,7 @@ def single_variant_analysis(parameter_dict: dict):
 
     # iterating through each file in the recode file list
     for recodefile in recode_file_list:   
+
         # getting the chromosome number to use as a file prefix
         # with the function get_chr_num and forming the output
         # file name
@@ -74,6 +75,7 @@ def single_variant_analysis(parameter_dict: dict):
 
             IID_series: pd.Series = raw_file[raw_file[column].isin([1.0,
                                                                     2.0])].IID
+
             # If the IID_series has a length of 0 then there are
             # no carriers of the variant. The program will then make
             # a pandas series and insert N/A into it and then this
@@ -91,8 +93,9 @@ def single_variant_analysis(parameter_dict: dict):
             
             carrier_df = pd.concat([carrier_df, iid_dataframe])
 
+
         # counting how many total unique carriers
-        print(f"Number of unique IIDs who are identified as carrying a variant of interest is {len(list(set(iid_dataframe.IID.values.tolist())))}")
+        # print(f"Number of unique IIDs who are identified as carrying a variant of interest is {len(list(set(iid_dataframe.IID.values.tolist())))}")
 
         if carrier_df.empty:
 
@@ -105,4 +108,4 @@ def single_variant_analysis(parameter_dict: dict):
 
         # totalVariantIDList(iid_list, output_path, file_prefix)
 
-        iid_dataframe.to_csv(full_output_file, index=False)
+        carrier_df.to_csv(full_output_file, index=False)

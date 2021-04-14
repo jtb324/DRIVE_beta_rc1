@@ -56,7 +56,7 @@ def run(args: list, **kwargs: dict):
     IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
 
     # need to have it create branch where it will either do a 
-    # phenotype analysis or begin running plink
+    # # phenotype analysis or begin running plink
     if ANALYSIS_TYPE == "phenotype":
         logger.info("Beginning phenotype based analysis")
         # loading all the necessary files into dataframes
@@ -188,7 +188,7 @@ def run(args: list, **kwargs: dict):
 
     # If the user selects to run the program on phenotype then the analysis should start at this step effectively
 
-    # check to make sure the formatted_ibd_output exists
+    # # check to make sure the formatted_ibd_output exists
     IBD_search_output_files: str = utility_scripts.check_dir(args.output, "formatted_ibd_output/")
 
 

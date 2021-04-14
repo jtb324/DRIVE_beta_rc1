@@ -19,7 +19,8 @@ def get_variant_pos(map_file: str, identifier: str) -> tuple:
     """
     # loading the map file into a dataframe
     map_df: pd.DataFrame = pd.read_csv(map_file, sep="\t", header=None)
-    
+    print(map_df)
+    print(identifier)
     # getting the position of the variant out of the dataframe
     variant_position: str = map_df[map_df[1] == identifier[:-2]][3].values.tolist()[0]
 
