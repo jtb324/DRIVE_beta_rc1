@@ -26,7 +26,7 @@ else
     if command -v conda &> /dev/null;then
         echo -e "${GREEN}SUCCESS:${NC}--found anaconda installation"
         echo "Creating the conda virtual environment"
-        conda create -n "$ENV_NAME" python=3.7
+        conda create -n "$ENV_NAME" python=3.7 -y
         echo -e "${GREEN}SUCCESS:${NC}--conda environment created. Now activating the environment..."
         source activate "$ENV_NAME"
         echo "Fetching the newest version of pip..."
