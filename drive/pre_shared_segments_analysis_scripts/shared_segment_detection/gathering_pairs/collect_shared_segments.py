@@ -300,7 +300,10 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         unit = None
 
     # creating a dictionary to handle which way to filter for above the min_cM threshold
-    
+    # giving the chromosome a default value. If this value does not 
+    # change throughout the program then the program will just move on
+    chr_num: str = "0"
+
     for chunk in pd.read_csv(segment_file,
                                 sep="\t",
                                 header=None,
@@ -344,12 +347,19 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
             chr_num_series:pd.Series = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
 
             chr_num: str = list(set(chr_num_series.values))[0]
-   
-    if variant_name:
-        write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, variant_name)
-    if gene_name:
-        write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, gene_name)
-    return chr_num
+
+    
+    if chr_num != "0":
+        if variant_name:
+            write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, variant_name)
+        if gene_name:
+            write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, gene_name)
+    else:
+        if variant_name:
+            print(f"the were no shared IBD segments found for the variant: {variant_name}")
+        if gene_name:
+            print(f"There were no shared IBD segments found for the gene {gene_name}")
+
             
 
 

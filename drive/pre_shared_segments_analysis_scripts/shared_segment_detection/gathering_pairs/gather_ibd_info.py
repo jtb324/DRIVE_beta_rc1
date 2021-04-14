@@ -53,10 +53,10 @@ def create_iid_dict(variant_list: list, iid_dict: dict, carrier_df: pd.DataFrame
         dictionary that contains the variants as a key and the values are the list of 
         carriers for that variant
     """
+    
     for variant in variant_list:
-        iid_list: list = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
-
-    iid_dict[variant] = iid_list
+        
+        iid_dict[variant] = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
 
     return iid_dict
 
@@ -184,7 +184,7 @@ def create_var_info_dict(var_info_dict: dict, var_iid_dict: dict, variant: str, 
     dict
         returns the filled in var_info_dict
     """
-
+    print(var_iid_dict)
     iid_list: list = var_iid_dict[variant]
 
     var_info_dict[variant] = {"base_pos": bp, "iid_list": iid_list}
@@ -295,6 +295,6 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    chr_num: str = gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, ibd_format, var_position=variant_position, variant_name=variant) 
+    gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, ibd_format, var_position=variant_position, variant_name=variant) 
 
     

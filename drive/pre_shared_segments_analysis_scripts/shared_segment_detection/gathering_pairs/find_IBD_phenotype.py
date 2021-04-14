@@ -106,7 +106,7 @@ def collect_IBD_segments(carrier_list: list, ibd_program:str, min_CM: str, ibd_f
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    chr_num: str = gather_pairs(IBDdata, IBDindex, parameter_dict, ibd_file, uniqID, min_CM, que_object, output_path, ibd_program, gene_start=gene_info["start"], gene_end=gene_info["end"], gene_name=key) 
+    gather_pairs(IBDdata, IBDindex, parameter_dict, ibd_file, uniqID, min_CM, que_object, output_path, ibd_program, gene_start=gene_info["start"], gene_end=gene_info["end"], gene_name=key) 
 
 def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM: str, ibd_program: str, output: str, carrier_list: list):
     """function to run through the genes in parallel"""
