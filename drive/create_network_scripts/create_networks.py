@@ -1,121 +1,11 @@
+from create_network_scripts.network_creator_class import Network_Prep, Network_Maker
 import logging
 import re
 import os
 import pandas as pd
+from typing import List, Dict
 
-import create_network_scripts
 import utility_scripts
-
-
-def get_chr_num(file: str) -> str:
-    '''This function will get the chr_num from the file name'''
-
-    match = re.search(r'chr\d\d.', file)
-
-    # find chromosome number
-    chr_num: str = match.group(0)
-    chr_num = chr_num.strip(".")
-
-    return chr_num
-
-
-def create_carrier_dict(file) -> dict:
-    '''This function will create a dictionary where the key is the variant 
-    and the value is a list of carriers'''
-
-    # creating the carrier dictionary
-    carrier_dict: dict = dict()
-
-    # loading the file into a dataframe
-    carrier_df: pd.DataFrame = pd.read_csv(file, sep=",")
-
-    # getting a unique list of variants
-    variant_list: set = set(carrier_df["Variant ID"].tolist())
-
-    # iterating through each variant in the list
-    for variant in variant_list:
-
-        # subsetting the dataframe for the specific variant
-        carrier_df_subset: pd.DataFrame = carrier_df[carrier_df["Variant ID"]
-                                                     == variant]
-
-        # Getting a list of carriers for this variant
-        carrier_list: list = carrier_df_subset["IID"].values.tolist()
-
-        carrier_dict[variant] = carrier_list
-
-    return carrier_dict
-
-
-def check_file_exist(file_path: str):
-    '''This function will check if the provided file exist and then 
-    delete it if it does'''
-
-    # checking if the file exist
-    if os.path.isfile(file_path):
-
-        # removing the file if it exist
-        os.remove(file_path)
-
-
-def add_header_row(output_path: str):
-    '''This function takes the output file path and then adds a header row to it'''
-
-    # Loading the data into a dataframe
-    output_df: pd.DataFrame = pd.read_csv(output_path)
-
-    # writing the file to the same csv with a new header
-    output_df.to_csv(output_path,
-                     header=[
-                         "grid", "in_network_status", "network_id",
-                         " variant_id", "chr_num"
-                     ])
-
-
-def get_size(network_groups_file: str):
-    '''This function will group the provided file so that size of each network per variant
-    can be determined'''
-
-    # Load the file into a dataframe
-    network_groups_df: pd.DataFrame = pd.read_csv(network_groups_file)
-
-    # group the dataframe by two columns and then count the values in the group
-    # this block catches an error where for some reason there is a space in teh variant id column name
-    try:
-        grouped_df: pd.DataFrame = network_groups_df.groupby(
-            ["Network ID", "variant_id"]).sum()
-
-    except KeyError:
-        # This removes the space and then tries to group it again
-        network_groups_df = network_groups_df.rename(
-            columns={" variant_id": "variant_id"})
-
-        grouped_df: pd.DataFrame = network_groups_df.groupby(
-            ["Network ID", "variant_id"]).sum()
-    # dropping the chromosome column because it is unnecessary
-    final_df: pd.DataFrame = grouped_df.drop("chr_num", 1)
-
-    final_df.to_csv("network_groups_summary.csv", index=None)
-
-
-def write_missing_variants(variant: str, output_path: str):
-    '''This function will create an output file that documents which variants there was no allpair.txt file for'''
-
-    output_file_path: str = "".join([output_path, "missing_allpairs.txt"])
-
-    # opening the output_file
-    with open(output_file_path, "a+") as missing_files:
-
-        # checking to see if the files are empty
-        if os.path.getsize(missing_files) == 0:
-
-            missing_files.write(
-                "Showing a list of variants for which an allpairs.txt file was not found"
-            )
-        else:
-            missing_files.write(variant)
-            missing_files.write("\n")
-
 
 def create_readme(output_path: str):
     '''This function will create a readme file for the specified directory'''
@@ -139,116 +29,107 @@ def add_nopair_variants(ind_in_networks_dict: dict, iid_list: list,
     return ind_in_networks_dict
 
 
-def create_networks(segments_file_dir: str, variant_file_dir: str,
-                    output_path: str, networks_dir: str):
-
+def create_networks(allpair_file_dir: str, networks_dir: str, analysis_type: str, confirmed_carriers_file: str):
+    """main function that will be used to create networks of files"""
     create_readme(networks_dir)
 
-    check_file_exist("".join([output_path, "/network_groups", ".csv"]))
+    # checking to see if the next three files exist from a previous run and if they do then the progam removes them
+    utility_scripts.check_file(os.path.join(networks_dir, "network_groups.csv"))
 
-    check_file_exist("".join([output_path, "/pairs_in_networks", ".csv"]))
+    utility_scripts.check_file(os.path.join(networks_dir, "/pairs_in_networks.csv"))
 
-    # checking if the file that documnets whether or not there is an allpair file exist
-    check_file_exist("".join([output_path, "missing_allpairs.txt"]))
+    utility_scripts.check_file(os.path.join(networks_dir, "missing_allpairs.txt"))
 
     # Creating an empty dataframe that the pairs will be written to at the end in the
     # draw networks function
     pairs_df: pd.DataFrame = pd.DataFrame()
 
-    network_drawer: object = create_network_scripts.Network_Img_Maker(
-        segments_file_dir, variant_file_dir, output_path)
     # Getting all of the allpair files into a list
-    allpair_file_list: list = network_drawer.gather_files(
-        segments_file_dir, "*.allpair.txt")
+    allpair_file_list: list = utility_scripts.get_file_list(
+        allpair_file_dir, "*.allpair.txt")
+
+    # Need to refactor so that this doesn't rel on the variant_file_dir
+    network_drawer: Network_Prep = Network_Prep(
+        allpair_file_dir, networks_dir, analysis_type)
+    
+    network_drawer.determine_carriers(confirmed_carriers_file)
+    
+    
     # Getting a list of all the carrier files
-    carrier_file_list: list = network_drawer.gather_files(
-        "".join([variant_file_dir, "reformatted/"]),
-        "*.single_var_list_reformat.csv")
 
     # Creating a dictionary that will be used to record useful information
     ind_in_networks_dict = {
         "variant_id": [],
+        "gene_name": [],
         "percent_in_network": [],
         "genotyped_carriers_count": [],
         "confirmed_carrier_count": []
     }
 
-    # creating a list that will be used to keep track of which variants have no variants
+    # creating a list that will be used to keep track of which variants have no pairs
     no_pair_carry_var_list: list = []
 
-    # iterating through the carrier_file list for each file
-    for file in carrier_file_list:
 
-        # This function will get the chromosome number of the file
-        chr_num: str = get_chr_num(file)
-
-        carrier_dict: dict = create_carrier_dict(file)
-
+        # TODO: At this point the network_drawer has an attribute iid_dict that has the carriers for each variant/gene in for the chromosome 
         # iterating through each variant and getting the list of carriers
-        for items in carrier_dict.items():
+    for chromo_num in network_drawer.iid_dict.keys():
+        
+        inner_dict: Dict[str, List[str]] = network_drawer.iid_dict[chromo_num]
+        # creating an object that has the chromosome number, the variant id/gene 
+        # name, and the iid list as attributes
 
-            # getting the variant from the first element of the tuple
-            variant_id: str = items[0]
+        for identifier in inner_dict: 
+            # pulling out the list of iids that are associated with the different 
+            # genes/variant ids
+            iid_list: List[str] = inner_dict[identifier]
 
-            carrier_list: list = items[1]
+            # creating an object that will determine who is in a network
+            network_maker: Network_Maker = Network_Maker(chromo_num, identifier, iid_list, analysis_type)
 
-            try:
+            allpair_file: str = network_maker.find_allpair_file(allpair_file_list)
 
-                allpair_file_path: str = [
-                    file for file in allpair_file_list
-                    if chr_num in file and variant_id in file
-                ][0]
-
-            except IndexError:
-
-                print(
-                    f"There was no allpair.txt file found for the variant, {variant_id}"
-                )
+            if allpair_file == "None":
 
                 # TODO: add a function to write these variants to a file so that you can identify them
 
                 continue
+            
             # Loading the dataframe
-            allpair_df: pd.DataFrame = network_drawer.load_allpair_file(
-                allpair_file_path)
+            allpair_df: pd.DataFrame = network_maker.load_allpair_file(
+                allpair_file)
 
             # filtering the allpair_df for only rows were both individuals are carriers
-            filtered_allpair_df: pd.DataFrame = network_drawer.filter_for_carriers(
-                allpair_df, carrier_list)
+            filtered_allpair_df: pd.DataFrame = network_maker.filter_for_carriers(
+                allpair_df)
 
             # if the dataframe is empty then the loop needs to skip that variant
             if filtered_allpair_df.empty:
                 print(
-                    f"There were no pairs found where both individuals were carriers for the variant {variant_id}"
+                    f"There were no pairs found where both individuals were carriers for the variant {network_maker.identifier}"
                 )
 
-                no_pair_carry_var_list.append(variant_id)
+                # appending the variant/gene that has no pairs to the 
+                # no_pair_carry_var_list
+                no_pair_carry_var_list.append(network_maker.identifier)
 
-                ind_in_networks_dict = add_nopair_variants(
-                    ind_in_networks_dict, carrier_list, variant_id)
+                # adding the variants/gene that has no pairs to the ind_in_networks_dict
+                ind_in_networks_dict = network_maker.has_no_pairs(ind_in_networks_dict, networks_dir)
                 # prints the message and then moves onto the next iteration
                 continue
 
-            # This just drops any empty rows in the dataframe
-            if filtered_allpair_df["pair_1"].isnull().any(
-            ) or filtered_allpair_df["pair_2"].isnull().any():
-                filtered_allpair_df = network_drawer.drop_empty_rows(
-                    filtered_allpair_df)
-
+            filtered_allpair_df = network_maker.drop_empty_rows(filtered_allpair_df)
             # This class method will determine the percentage of carriers in each network for each variant
-            ind_in_networks_dict = network_drawer.carriers_in_network(
-                carrier_list, filtered_allpair_df, variant_id,
-                ind_in_networks_dict)
+            ind_in_networks_dict = network_maker.carriers_in_network(
+                filtered_allpair_df, ind_in_networks_dict
+                )
 
-            groups_output_path, pairs_df = network_drawer.draw_networks(
-                filtered_allpair_df, variant_id, chr_num, pairs_df)
-
-            get_size(groups_output_path)
+            groups_output_path, pairs_df = network_maker.draw_networks(
+                filtered_allpair_df, pairs_df, networks_dir)
 
     ind_in_network_df: pd.DataFrame = pd.DataFrame.from_dict(
         ind_in_networks_dict)
 
-    ind_in_network_df.to_csv("".join(
-        [output_path, "percent_confirmed_carriers.csv"]),
+    ind_in_network_df.to_csv(os.path.join(
+        networks_dir, "percent_confirmed_carriers.csv"),
                              sep=",",
                              index=False)

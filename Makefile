@@ -7,6 +7,7 @@ PYTHON = python3
 # This target is executed whenever we just type `make`
 .DEFAULT_GOAL = help
 
+
 # The @ makes sure that the command itself isn't echoed in the terminal
 help:
 	@echo "---------------HELP-----------------"
@@ -14,7 +15,17 @@ help:
 	@echo "To run the project type make run"
 	@echo "------------------------------------"
 
-test:
+unittest:
 	@echo "Running tests to ensure the integrity of all modules..."
-	@cd test
-	${PYTHON} -m pytest -v -s
+	@cd test/ && ${PYTHON} -m pytest -v -s
+
+
+build:
+	@echo "Building the executable file"
+	@echo "Make sure to have activated the conda environment"
+	@echo please delete any previous build or dist directories you may have and the *.spec file
+	@pyinstaller --onefile ./drive/DRIVE.py
+
+clean:
+	@find . | grep -E "(__pycache__|\.pytest_cache)" | xargs rm -rf
+

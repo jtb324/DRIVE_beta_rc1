@@ -17,6 +17,7 @@ def load_pheno_file(pheno_filepath: str, carriers_file: str) -> tuple:
     """
     # trying to load in the phenotype file
     try:
+
         pheno_df: pd.DataFrame = pd.read_csv(pheno_filepath, sep="\t", header=None)
     except FileNotFoundError:
         print(f"The provided input file was not found at: {pheno_filepath}")

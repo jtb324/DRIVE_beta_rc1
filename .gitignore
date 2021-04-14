@@ -20,6 +20,9 @@ gnomad_analysis/
 .vscode
 docker/
 MEGA_probes/
+build/
+dist/
+*.spec
 # Don't ignore these files
 !requirements.txt
 orignal/

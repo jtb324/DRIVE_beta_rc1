@@ -185,19 +185,25 @@ def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, ch
     return CHR
 
 def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_object, ibd_program: str, variant_name: str=None, gene_name: str=None):
+    
     try:
+        if len(CHR) == 1:
+            chr_num: str = "0"+CHR
+        else:
+            chr_num = CHR
 
         # NEED TO FIX THIS LINE HERE
         if variant_name:
             write_path = os.path.join(
                 output, "".join([ibd_program, '_', variant_name, '.chr',
-                str(CHR), '.small.txt.gz']))
+                chr_num, '.small.txt.gz']))
         else: 
             write_path = os.path.join(
                 output, "".join([ibd_program,'_', gene_name, '.chr',
-                str(CHR), '.small.txt.gz']))
+                chr_num, '.small.txt.gz']))
 
-        # checking to see if the file already exists from a previous one and then deleteing it
+        # checking to see if the file already exists from a previous 
+        # one and then deleteing it
         utility_scripts.check_file(write_path)
         out = gzip.open(write_path, 'wt')
 
@@ -255,9 +261,28 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_obje
 
         que_object.put(f"{variant_name}")
 
+def fix_chr_str(chr_num: str) -> str:
+    """Function that will check if the chromosome number obnly has 1 
+    digit and will change the format to chrXX where X is a digit
+    Parameters
+    __________
+    chr_num : str
+        chromosome number that will either be returned with a . on 
+        both sides or it will be fixed to the proper format
+    
+    Returns
+    _______
+    str
+        returns a string of the correctly formatted chromosome number
+    """
+    chr_num = chr_num.strip(".")
+    if len(chr_num) == 4:
+        chr_num: str = "".join([chr_num[:3], "0", chr_num[-1]]) 
+    
+    return chr_num
+
 def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path: str, ibd_program: str, var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
     '''This function will be used in the parallelism function'''
-    output_path: str = os.path.join(output_path, "collected_pairs")
     # undoing the parameter_dict
     id1_indx = int(parameter_dict["id1_indx"])
     id2_indx = int(parameter_dict["id2_indx"])
@@ -319,7 +344,7 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
             chr_num_series:pd.Series = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
 
             chr_num: str = list(set(chr_num_series.values))[0]
-
+   
     if variant_name:
         write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, variant_name)
     if gene_name:

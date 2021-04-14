@@ -6,84 +6,263 @@ import os.path
 from os import path
 import glob
 import gzip
+from typing import List, Dict
 
-import file_creator_scripts
+import utility_scripts
+class Network_Prep:
+    
+    def __init__(self, allpair_file_dir: str, network_dir: str, analysis_type: str) -> None:
+        self.allpair_file_list: list = utility_scripts.get_file_list(allpair_file_dir, "*allpair.txt")
+        self.output: str = network_dir
+        self.analysis_type: str = analysis_type
 
 
-class Network_Img_Maker():
-    def __init__(self, segments_file_dir, variant_file_dir: str,
-                 output_path: str):
-        # This will be the directory to where all the allpair.new.txt files are
+    def determine_carriers(self, confirmed_carriers_file: str):
+        """Function to get a dictionary of all of the carriers per variant/gene per chromosome
+        Parameters
+        __________
+        confirmed_carriers_file : str
+            string that list the filepath to the confirmed_carriers.txt file that has the iids and if they are a confirmed carrier of a variant or a gene.
+        
+        Returns 
+        _______
+        Dict[str, Dict[str, List[str]]]
+            returns a dictionary where the key is the chromosome and the values is an inner dictionary where the key is the variant or gene and the value is a list of iids that carry that variant
+        """
+        # creating a dictionary that can keep list of suspected carriers
+        iid_dict: Dict[str, Dict[str, List[str]]] = {}
+        
+        # loading the carriers file into a dataframe
+        carriers_df: pd.DataFrame = pd.read_csv(confirmed_carriers_file, sep="\t")
 
-        self.file = segments_file_dir
-        # This comes from previous singleVariantAnalysis so the file will exist
-        self.variant_file_list = variant_file_dir
-        self.output_path = output_path
-        self.network_carriers = None
-        self.var_of_interest = None
-        # This is used in creating an id set for drawing the networks later
-        self.id_list = None
-        self.curr_dir = os.getcwd()
-        self.pairs_df = None  # Creating an attribute for the pair df
+        # if the analysis type is phenotype then it will make the inner key the 
+        # gene name else it will make the inner key the variant id
+        if self.analysis_type == "phenotype":
+            
+            # getting a list of all the genes from the carriers_df
 
-    def gather_files(self, file_directory: str, file_tag: str) -> list:
-        '''This function will gather all of the allpair.new.txt files which 
-        contain information about pairs. It will also be used to get the 
-        'chr#_list.single_variant.csv' files.'''
+            gene_list: List[str] = list(set(carriers_df["gene_name"].values.tolist()))
+        
+            for gene in gene_list:
 
-        os.chdir(file_directory)
+                # getting the chromosome number for the specific variant
+                chr_num: str = str(list(set(carriers_df[carriers_df["gene_name"] == gene].chr.values.tolist()))[0])
 
-        file_list = []
+                if len(chr_num) == 1:
+                    chr_num = "".join(["0", chr_num])
 
-        for file in glob.glob(file_tag):
+                # getting the list of iids associated with that variant and ch    romosome
+                iid_list: List[str] = carriers_df[carriers_df["gene_name"] == gene].IID.values.tolist()
 
-            full_file_path = "".join([file_directory, file])
+                # writing this list ot a dictionary
+                iid_dict["".join(["chr",chr_num])] = {gene: iid_list}
 
-            file_list.append(full_file_path)
+        else:   
+            # getting a list of all the variants from the carriers_df
 
-        os.chdir(self.curr_dir)
+            variant_list: List[str] = list(set(carriers_df["variant_id"].values.tolist()))
+        
+            for variant in variant_list:
 
-        return file_list
+                # getting the chromosome number for the specific variant
+                chr_num: str = list(set(carriers_df[carriers_df["variant_id"] == variant].chr.values.tolist()))[0]
 
-    def drop_empty_rows(self, loaded_df):
-        '''This function just drops empty rows in the dataframe'''
-        print(f"dropping empty rows in file {self.file}...")
-        nan_value = float("NaN")
-        loaded_df.replace("", nan_value, inplace=True)
-        loaded_df.dropna(subset=["Pairs"], inplace=True)
+                # getting the list of iids associated with that variant and chromosome
+                iid_list: List[str] = carriers_df[carriers_df["variant_id"] == variant].IID.values.tolist()
 
-        return loaded_df
+                # writing this list ot a dictionary
+                iid_dict["".join(["chr",str(chr_num)])] = {variant: iid_list}
 
+        # creating an attribute that keeps track of these values
+        self.iid_dict : Dict[str, Dict[str, List[str]]] = iid_dict
+
+
+# need a class to keep track of the networks
+class Network_Maker:
+    """class to determine the different networks"""
+
+    def __init__(self, chr_num: str, identifier: str, iid_list: List[str], analysis_type: str) -> None:
+        self.chr_num: str = chr_num
+        self.identifier: str = identifier
+        self.iid_list: List[str] = iid_list
+        self.analysis_type: str = analysis_type
+        
+    
+    def find_allpair_file(self, allpair_list: List[str]) -> str:
+        """Function to find the specific allpair file that lines up with the chr number and the variant/gene name
+        Parameters
+        __________
+        allpair_list : List[str]
+            list of all the allpair files
+        
+        Returns
+        _______
+        str
+            specific filepath to the allpair file that matches the 
+            chr_num and variant_id
+        """
+        
+        try:
+            allpair_file_path: str = [
+                        file for file in allpair_list
+                        if self.chr_num.strip(".") in file and self.identifier in file
+                    ][0]
+
+        except IndexError:
+
+            print(
+                    f"There was no allpair.txt file found for the variant, {self.identifier}"
+                )
+            return "None"
+
+        return allpair_file_path
+    
     @staticmethod
     def load_allpair_file(allpair_file_path: str) -> pd.DataFrame:
-        '''This function will load the allpair files into a dataframe'''
+        """This function will load the allpair files into a dataframe
+        Parameters
+        __________
+        allpair_file_path : str
+            filepath to the allpair.txt file
+            
+        Returns
+        _______
+        pd.DataFrame
+            returns a dataframe that has the pair1 value, the pair2 
+            value, and then the carrier status for pair2
+        """
 
         # Reading the file into a pandas dataframe
-        allpair_df: pd.DataFrame = pd.read_csv(
+        return pd.read_csv(
             allpair_file_path,
             sep="\t",
             usecols=["pair_1", "pair_2", "carrier_status"])
 
-        return allpair_df
-
-    @staticmethod
-    def filter_for_carriers(allpair_df: pd.DataFrame,
-                            carrier_list: list) -> pd.DataFrame:
-        '''This function will filter out the rows in the allpair dataframe where the 
-         pairs are not both carriers'''
+    def filter_for_carriers(self, allpair_df: pd.DataFrame) -> pd.DataFrame:
+        """Function to filter tha allpair_df for only where the carrier status = 1
+        Parameters
+        __________
+        allpair_df : pd.DataFrame
+            Dataframe that has the pair1 and pair2 and the carrier status
+        
+        Returns
+        _______
+        pd.DataFrame
+            returns a dataframe where the pair 1 is in the carrier list
+        """
 
         # making sure that second pair of grids are in the carrier list
         filtered_df: pd.DataFrame = allpair_df[allpair_df.carrier_status == 1]
 
         # making sure the first pair is in the carrier list
-        filtered_df = filtered_df[filtered_df.pair_1.isin(carrier_list)]
+        filtered_df = filtered_df[filtered_df.pair_1.isin(self.iid_list)]
 
         return filtered_df
 
-    ################################################################
+    def has_no_pairs(self, ind_in_networks_dict: Dict[str, List], output: str) -> Dict[str, List]:
+        """Function to add the individuals who have no pairs to the output dictionary
+        Parameters
+        __________
+        ind_in_networks_dict : Dict[str, List]
+            dictionary that will be used to keep track of the variant_id, what 
+            percentage of individuals are in the network, what number of carriers 
+            are genotyped, and how many carriers are confirmed carriers.
+        
+        output : str
+            string that list the filepath to the write the output 
+            files to
+        
+        Returns 
+        Dict[str, List]
+            returns a dictionary containing information about the 
+            variant and how many iids are confirmed carriers and 
+            what percentage of them are in networks
+        """
+        if self.analysis_type == "phenotype":
+            ind_in_networks_dict["variant_id"].append("N/A")
+            ind_in_networks_dict["gene_name"].append(self.identifier)
+            ind_in_networks_dict["percent_in_network"].append(0.00)
+            ind_in_networks_dict["genotyped_carriers_count"].append(0)
+            ind_in_networks_dict["confirmed_carrier_count"].append(0)
+        else:
+            ind_in_networks_dict["variant_id"].append(self.identifier)
+            ind_in_networks_dict["gene_name"].append("N/A")
+            ind_in_networks_dict["percent_in_network"].append(0.00)
+            ind_in_networks_dict["genotyped_carriers_count"].append(len(self.iid_list))
+            ind_in_networks_dict["confirmed_carrier_count"].append(0)
 
-    def carriers_in_network(self, iid_list: list, subset_df: pd.DataFrame,
-                            variant: str, ind_in_networks_dict: dict) -> dict:
+        # creating a dictionary to put information into
+        carriers_in_network_dict: Dict[str, List] = {
+            "IID": [],
+            "In Network": [],
+            "Network ID": [],
+            "gene_name":[],
+            "variant_id":[],
+            "chr_num":[]
+        }
+
+        # iterating through each iid in the iid_list so that
+        # we can record the iids that have no pairs and therefore 
+        # are not in a network
+        for iid in self.iid_list:
+            carriers_in_network_dict["IID"].append(iid)
+            carriers_in_network_dict["In Network"].append(0)
+            carriers_in_network_dict["Network ID"].append(NaN)
+            carriers_in_network_dict["gene_name"].append(self.identifier)
+            carriers_in_network_dict["variant_id"].append("N/A")
+            carriers_in_network_dict["chr_num"].append(self.chr_num[-2:])
+
+        # converting the above dictionary to a dataframe 
+        self.network_carriers = pd.DataFrame.from_dict(
+            carriers_in_network_dict)
+
+        # need to write these variants to a dataframe
+        # if the file already exist then need to append the new 
+        # information without adding a header
+        if os.path.exists(os.path.join(
+            output, "network_groups.csv")) and os.stat(os.path.join(
+                output, "network_groups.csv")) != 0:
+
+            self.network_carriers.to_csv(os.path.join(
+                output, "network_groups.csv"),
+                                         index=False,
+                                         mode="a",
+                                         header=None)
+        
+        # if the file doesn't exist already then you have to append
+        # the new information with a header
+        else:
+            self.network_carriers.to_csv(os.path.join(
+                output, "network_groups.csv"),
+                                         index=False,
+                                         mode="a")
+
+        return ind_in_networks_dict
+    
+    @staticmethod
+    def drop_empty_rows(filtered_df: pd.DataFrame) -> pd.DataFrame:
+        """Function to check if there are any nul values in the filtered allpair_df and if there are then those rows get dropped
+        Parameters
+        __________
+        filtered_df : pd.DataFrame
+            dataframe that has been been filtered for carriers
+        
+        Returns
+        _______
+        pd.DataFrame
+            dataframe that has no null values"""
+        # This just drops any empty rows in the dataframe
+        if filtered_df["pair_1"].isnull().any(
+        ) or filtered_df["pair_2"].isnull().any():
+            nan_value = float("NaN")
+            filtered_df.replace("", nan_value, inplace=True)
+            filtered_df.dropna(subset=["Pairs"], inplace=True)
+
+        return filtered_df
+                
+
+    def carriers_in_network(self, subset_df: pd.DataFrame,
+                            ind_in_networks_dict: dict) -> dict:
         '''This function tells the percent of carriers who are in these networks'''
 
         id1_set: set = set(subset_df.pair_1.values.tolist())
@@ -93,20 +272,28 @@ class Network_Img_Maker():
         total_carriers_set: set = id1_set | id2_set
 
         carriers_in_network: int = sum(item in total_carriers_set
-                                       for item in set(iid_list))
+                                       for item in set(self.iid_list))
 
-        # print(f"This is the carriers_in_network, {carriers_in_network}")
 
-        percent_in_networks: float = round(carriers_in_network / len(iid_list),
+        percent_in_networks: float = round(carriers_in_network / len(self.iid_list),
                                            3)
 
-        # adding values into the above dictionary
-        ind_in_networks_dict["variant_id"].append(variant)
-        ind_in_networks_dict["percent_in_network"].append(percent_in_networks)
-        ind_in_networks_dict["genotyped_carriers_count"].append(len(iid_list))
-        ind_in_networks_dict["confirmed_carrier_count"].append(
-            carriers_in_network)
-
+        if self.analysis_type == "phenotype":
+            ind_in_networks_dict["variant_id"].append("N/A")
+            ind_in_networks_dict["gene_name"].append(self.identifier)
+            ind_in_networks_dict["percent_in_network"].append(percent_in_networks)
+            ind_in_networks_dict["genotyped_carriers_count"].append(0)
+            ind_in_networks_dict["confirmed_carrier_count"].append(
+                carriers_in_network)
+        else:
+            # adding values into the above dictionary
+            ind_in_networks_dict["variant_id"].append(self.identifier)
+            ind_in_networks_dict["gene_name"].append("N/A")
+            ind_in_networks_dict["percent_in_network"].append(percent_in_networks)
+            ind_in_networks_dict["genotyped_carriers_count"].append(len(self.iid_list))
+            ind_in_networks_dict["confirmed_carrier_count"].append(
+                carriers_in_network)
+        
         # Need to make it so that there is a dataframe with the IID and then a 1 or 0 if it is in a network or not
         # figure out which carriers from the iid_list are in networks
         carriers_in_network_dict = {
@@ -117,7 +304,8 @@ class Network_Img_Maker():
 
         # This for loop checks to see if the iid in the iid_list shares a segemnt. It it will then return a 1 if
         # the iid is a carrier or a 0 if it is not avaliable
-        for iid in iid_list:
+        
+        for iid in self.iid_list:
 
             bool_int = int(iid in total_carriers_set)
 
@@ -130,79 +318,23 @@ class Network_Img_Maker():
         self.network_carriers = pd.DataFrame(
             carriers_in_network_dict,
             columns=["IID", "In Network", "Network ID"])
-
+        
         return ind_in_networks_dict
 
-    def making_pairs_df(self, subset_df: pd.DataFrame):
-        '''Making a dataframe of the pairs to be used later'''
-        id1_list: list = subset_df.pair_1.values.tolist()
-
-        id2_list: list = subset_df.pair_2.values.tolist()
-
-        pairs_dict: dict = {
-            "pair_1": [],
-            "pair_2": [],
-            "In Network": [],
-            "Network ID": []
-        }
-
-        total_carriers_set: set = set(id1_list) | set(id2_list)
-
-        for iid1, iid2 in zip(id1_list, id2_list):
-
-            bool_int = int(iid1 in total_carriers_set
-                           and iid2 in total_carriers_set)
-
-            pairs_dict["pair_1"].append(iid1)
-            pairs_dict["pair_2"].append(iid2)
-            pairs_dict["In Network"].append(bool_int)
-            pairs_dict["Network ID"].append(NaN)
-
-        self.pairs_df = pd.DataFrame(
-            pairs_dict,
-            columns=["pair_1", "pair_2", "In Network", "Network ID"])
-
-    ################################################################
-    @staticmethod
-    def get_chr_digit(chr_num: str) -> str:
-        '''This function takes the chr_num string, which has a format
-        chr**, where the ** are digits and returns just the digit'''
-
-        match = re.search(r'\d\d', chr_num)
-
-        # getting the chromosome digit
-        chr_digit: str = match.group(0)
-
-        return chr_digit
-
-    def add_columns(self, dataframe: pd.DataFrame, variant: str,
-                    chr_num: str) -> pd.DataFrame:
-        '''This function will take the carrier dataframe and add two columns for the variant id and the chr_num. It will then return the dataframe'''
-
-        # getting just the chromosome number
-        chr_num: str = self.get_chr_digit(chr_num)
-
-        # adding a column for the variant id
-        dataframe["variant_id"] = variant
-
-        # adding a column for the chromosome number
-        dataframe["chr_num"] = chr_num
-
-        return dataframe
-
-    def draw_networks(self, reformated_df: pd.DataFrame, variant: str,
-                      chr_num: str, allpairs_df: pd.DataFrame) -> tuple:
-        '''This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions. It will return the path to the output file'''
+    def draw_networks(self, reformated_df: pd.DataFrame, pairs_df: pd.DataFrame, output_path: str) -> tuple:
+        """This function actually draws the networks. It takes the reformated dataframe from the isolate_ids functions. It will return the path to the output file and a dataframe of pairs"""
 
         ##########################################################
 
         # getting a list of all unique IDs in the Pair_id1 column to iterate through
         id_list = reformated_df['pair_1'].unique().tolist()
 
+        # keeping a set of nodes that have already been visited
         nodes_visited_set = set()
-        edges_drawn = []
+        # Starting the network number at 1
         network_number = 1
         # Creating the nodes
+        # iterating through each id1
         for id1 in id_list:
 
             # Limit the passed dataframe to only those that have a relationship with id1. Only need to Pair_id1 and
@@ -226,8 +358,8 @@ class Network_Img_Maker():
 
                 # Subsetting the original dataframe for this full list
                 full_subset_df = reformated_df[
-                    (reformated_df.pair_1.isin(self.id_list)) |
-                    (reformated_df.pair_2.isin(self.id_list))][[
+                    (reformated_df.pair_1.isin(self.iid_list)) |
+                    (reformated_df.pair_2.isin(self.iid_list))][[
                         "pair_1", "pair_2"
                     ]]
 
@@ -240,8 +372,6 @@ class Network_Img_Maker():
                     # This if statements only makes Pair_id1 a node if it is not already constructed
                     if Pair_id1 not in nodes_constructed:
 
-                        # related_graph.node(Pair_id1, label=Pair_id1)
-
                         # Keeping track of what nodes have been made
                         nodes_visited_set.add(Pair_id1)
 
@@ -250,21 +380,12 @@ class Network_Img_Maker():
                     # This if statement only makes the second node of Pair_id2 if it has not been made yet
                     if Pair_id2 not in nodes_visited_set:
 
-                        # related_graph.node(Pair_id2, label=Pair_id2)
 
                         # Keeps track of what nodes have been made
                         nodes_visited_set.add(Pair_id2)
 
                         nodes_constructed.add(Pair_id2)
 
-                    # if (Pair_id1, Pair_id2) not in edges_drawn:
-
-                    #     related_graph.edge(Pair_id1, Pair_id2)
-
-                    #     # Keeping track of edges drawn and the inverse edge
-                    #     edges_drawn.append((Pair_id1, Pair_id2))
-
-                    #     edges_drawn.append((Pair_id2, Pair_id1))
 
                 ###########################################################################
                 # Next section is responsible for updating which IID is in which network
@@ -283,49 +404,58 @@ class Network_Img_Maker():
                         network_number)
 
                 ###########################################################################
-                # adding the network id to he above dataframe
-
-                # pair_idx1 = self.pairs_df.index[(self.pairs_df["pair_1"] == Pair_id1) & (
-                #     self.pairs_df["pair_2"] == Pair_id2)]
-
-                # self.pairs_df.loc[pair_idx1, [
-                #     "Network ID"]] = str(network_number)
 
                 # This updates which network is being created
                 network_number += 1
                 # Adding values to the pair dictionary
 
-                # Merging all the two pairs dataframe
-                # allpairs_df = pd.concat([allpairs_df, self.pairs_df])
 
         # Adding a column for the variant number and the chr number so that we can output just one file
-        self.network_carriers = self.add_columns(self.network_carriers,
-                                                 variant, chr_num)
+        self.network_carriers = self.add_columns(self.network_carriers)
 
         # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
-        if os.path.exists("".join(
-            [self.output_path, "network_groups", ".csv"])) and os.stat("".join(
-                [self.output_path, "network_groups", ".csv"])) != 0:
+        if os.path.exists(os.path.join(
+            output_path, "network_groups.csv")) and os.stat(os.path.join(
+                output_path, "network_groups.csv")) != 0:
 
-            self.network_carriers.to_csv("".join(
-                [self.output_path, "network_groups", ".csv"]),
+            self.network_carriers.to_csv(os.path.join(
+                output_path, "network_groups.csv"),
                                          index=False,
                                          mode="a",
                                          header=None)
         else:
 
-            self.network_carriers.to_csv("".join(
-                [self.output_path, "network_groups", ".csv"]),
+            self.network_carriers.to_csv(os.path.join(
+                output_path, "network_groups.csv"),
                                          index=False,
                                          mode="a")
         # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
-        return "".join([self.output_path, "network_groups",
-                        ".csv"]), allpairs_df
+        return os.path.join(output_path, "network_groups.csv"), pairs_df
 
+    def add_columns(self, dataframe: pd.DataFrame,
+                    ) -> pd.DataFrame:
+        '''This function will take the carrier dataframe and add two columns for the variant id and the chr_num. It will then return the dataframe'''
+
+        # getting just the chromosome number
+        chr_num: str = utility_scripts.match_chr([r'\d\d'], self.chr_num)
+        
+        if self.analysis_type == "phenotype":
+            dataframe["gene_name"] = self.identifier
+            dataframe["variant_id"] = "N/A"
+        else:
+            # adding a column for the variant id
+            dataframe["gene_name"] = "N/A"
+            dataframe["variant_id"] = self.identifier
+
+        # adding a column for the chromosome number
+        dataframe["chr_num"] = chr_num
+
+        return dataframe
+    
     def generate_pair_list(self, current_id_set: set, segment_df: pd.DataFrame,
-                           current_id1: str) -> set:
+                           current_id1: str):
         '''This function identifies all the potential pair ids for '''
 
         # First subset the dataframe for all the current ids
@@ -343,9 +473,9 @@ class Network_Img_Maker():
 
         # If the total_id_set equals the current_id_set then the function stops
         if total_id_set == current_id_set:
-            # print(f"found all ids connected to the grid {current_id1}")
+           
             # returns the set of ids
-            self.id_list = total_id_set
+            self.iid_list = total_id_set
             return
         # If the two sets are not equal then it recursively calls the function again
         else:

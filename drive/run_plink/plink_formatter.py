@@ -6,7 +6,7 @@ import glob
 import subprocess
 import pandas as pd
 
-import plink_initial_format_scripts
+from .check_missing_variants import check_for_missing_var
 import utility_scripts
 
 
@@ -66,7 +66,7 @@ class Analysis_Checker:
         analysis_handler[self.analysis_type]()
 
     def check_missing_var_count(self) -> int:
-        missing_var_count: int = plink_initial_format_scripts.check_for_missing_var(
+        missing_var_count: int = check_for_missing_var(
             self.plink_dir, self.var_file)
 
         self.logger.info(

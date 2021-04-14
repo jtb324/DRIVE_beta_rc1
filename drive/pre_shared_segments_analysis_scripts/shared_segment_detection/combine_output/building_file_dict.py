@@ -99,6 +99,26 @@ def determine_identifier(short_ibd_string: str, analysis_type) -> str:
 
     return identifier_handler[analysis_type=="phenotype"]
 
+def fix_chr_str(chr_num: str) -> str:
+    """Function that will check if the chromosome number obnly has 1 
+    digit and will change the format to chrXX where X is a digit
+    Parameters
+    __________
+    chr_num : str
+        chromosome number that will either be returned with a . on 
+        both sides or it will be fixed to the proper format
+    
+    Returns
+    _______
+    str
+        returns a string of the correctly formatted chromosome number
+    """
+    chr_num = chr_num.strip(".")
+    if len(chr_num) == 4:
+        chr_num: str = "".join([chr_num[:3], "0", chr_num[-1]]) 
+    
+    return "".join([".", chr_num, "."])
+
 def build_file_dict(ibd_file_list: list, program_list: list, analysis_type: str) -> dict:
     """This function gathers the necessary files per chromosome and variant/gene combo
     Parameters
@@ -123,12 +143,13 @@ def build_file_dict(ibd_file_list: list, program_list: list, analysis_type: str)
     # creating an empty dictionary to add values to 
     file_dict = dict()
 
-
     # iterate through the files to build the dictionary
     for ibd_file in ibd_file_list:
 
-        chr_num: str = utility_scripts.match_chr([r'.chr\d\d.', r'chr\d.'], 
+        chr_num: str = utility_scripts.match_chr([r'.chr\d\d.', r'.chr\d.'], 
                     ibd_file)
+
+        chr_num = fix_chr_str(chr_num)
 
         # Finding the variant id of the file. file names are built so that the
         # variant id sits between the first "_" and the first "."
@@ -149,7 +170,8 @@ def build_file_dict(ibd_file_list: list, program_list: list, analysis_type: str)
 
             # This goes through the three files in the filter_ibd_file_list
             for file in filter_ibd_file_list:
-
+                
+                chr_num = chr_num.strip(".")
                 # This checks to see if the variant id is in the dictionary
                 # and that the ibd program is in the file
                 if ibd_program in file and (

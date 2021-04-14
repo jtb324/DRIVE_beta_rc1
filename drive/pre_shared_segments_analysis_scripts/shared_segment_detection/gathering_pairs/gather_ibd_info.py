@@ -282,7 +282,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
 def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
              min_CM: str, var_info_dict: list, que_object, variant):
 
-    output_put: str = utility_scripts.check_dir(output_path, "collected_pairs/")
+    output_path: str = utility_scripts.check_dir(output_path, "collected_pairs/")
     variant_position: int = int(var_info_dict[variant]["base_pos"])
 
     print(f"running the variant {variant}")

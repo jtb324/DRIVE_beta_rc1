@@ -11,7 +11,6 @@ import parser_arguments
 import carrier_analysis_scripts
 import create_network_scripts
 import run_plink
-import haplotype_segments_analysis
 import pre_shared_segments_analysis_scripts
 import pre_shared_segments_analysis_scripts.shared_segment_detection
 import full_analysis
@@ -61,6 +60,7 @@ def run(args: list, **kwargs: dict):
     if ANALYSIS_TYPE == "phenotype":
         logger.info("Beginning phenotype based analysis")
         # loading all the necessary files into dataframes
+
         pheno_df, pheno_carriers_df = collect_phenotype_info.load_pheno_file(args.pheno_file, args.phenotype_carriers)
 
     else:
@@ -226,7 +226,7 @@ def run(args: list, **kwargs: dict):
 
         # Forming the file dictionary which is a file that contains the appropriate files for each chromosome
             file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.collect_files(parameter_dict=convert_ibd_func_param)
-            print(file_dict)
+
             # iterating over this dictionary so that we can get the 
             # variants for each chromosome
             pre_shared_segments_analysis_scripts.shared_segment_detection.iterate_file_dict(file_dict, IBD_search_output_files, THREADS, program, MIN_CM)
@@ -234,75 +234,81 @@ def run(args: list, **kwargs: dict):
     print("Identifying networks of pairs...")
 
     ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
-    # getting a dictionary of all the files
-    gathered_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.gather_files(
+
+    if ANALYSIS_TYPE == "phenotype":
+        gathered_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.gather_files(
         ibd_dir_dict,
-        os.path.join(IBD_search_output_files, "collected_pairs/"),
-         os.path.join(args.output, "plink_output_files/")
+        os.path.join(IBD_search_output_files, "collected_pairs/")
         )
+    else:
+    # getting a dictionary of all the files
+        gathered_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.gather_files(
+            ibd_dir_dict,
+            os.path.join(IBD_search_output_files, "collected_pairs/"),
+            map_file_dir=os.path.join(args.output, "plink_output_files/")
+            )
     # getting a dictionary of all the files with the ibd files
-    ibd_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.build_file_dict(gathered_file_dict["ibd_pair_file_list"], args.ibd_programs)
+    ibd_file_dict: dict = pre_shared_segments_analysis_scripts.shared_segment_detection.build_file_dict(gathered_file_dict["ibd_pair_file_list"], args.ibd_programs, ANALYSIS_TYPE)
+    
+    if ANALYSIS_TYPE == "phenotype":
+        pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
+            gathered_file_dict, ibd_file_dict, IBD_search_output_files, ANALYSIS_TYPE,
+            pheno_carrier_df=pheno_carriers_df, pheno_gmap_df=pheno_df)
+        
+        reformatter =  pre_shared_segments_analysis_scripts.shared_segment_detection.Pheno_Reformatter(
+            IBD_search_output_files, 
+            pheno_df,
+            pheno_carriers_df,
+            os.path.join(IBD_search_output_files, "pairs/")
+        )
 
-    pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
-        "".join([IBD_search_output_files, "collected_pairs/"]),
-        args.ibd_programs, IBD_search_output_files,
-        "".join([args.output, "carrier_analysis_output/reformatted/"]),
-        ibd_dir_dict, os.path.join(args.output, "plink_output_files/"))
+        reformatter.reformat()
+    else:
+        pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
+            gathered_file_dict, ibd_file_dict, IBD_search_output_files, ANALYSIS_TYPE,
+            car_file_dir=os.path.join(args.output, "carrier_analysis_output/"))
+        
+        reformatter = pre_shared_segments_analysis_scripts.shared_segment_detection.Gene_Reformatter(
+            os.path.join(args.output, "carrier_analysis_output/"),
+            os.path.join(IBD_search_output_files, "pairs/"),
+            os.path.join(args.output, "plink_output_files/"),
+            os.path.join(IBD_search_output_files, "nopairs-identified.txt"),
+            IBD_search_output_files
+        )
 
-    # pre_shared_segments_analysis_scripts.reformat_files(
-    #     "".join([args.output, "carrier_analysis_output/"]),
-    #     "".join([args.output, "plink_output_files/"]),
-    #     IBD_search_output_files,
-    #     IBD_search_output_files,
-    #     "".join([IBD_search_output_files, "no_carriers_in_file.txt"]),
-    # )
-    # logger.info(
-    #     f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
-    # )
+        reformatter.reformat()
+        
+   
+    logger.info(
+        f"Writing the results from the IBD conversion files to: {IBD_search_output_files}\n"
+    )
 
-    # print(
-    #     "generating pdf files of networks of individuals who share segments..."
-    # )
+    print(
+        "Identifying networks of individuals who share a segment"
+    )
 
-    # # This dictionaru keeps track of how many carriers are actually in the network. It needs to be a global variable so that it is just extended for each variant instead of recreated
+  
 
-    # if not path.exists("".join([args.output, "networks/"])):
-    #     os.mkdir("".join([args.output, "networks/"]))
+    # checking to make sure that the directory that the network files gets written to is real
+    network_dir: str = utility_scripts.check_dir(args.output, "networks")
 
     # # output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
 
     # network_dir: str = "".join([args.output, "networks/"])
 
-    # create_network_scripts.create_networks(
-    #     IBD_search_output_files,
-    #     "".join([args.output,
-    #              "carrier_analysis_output/"]), network_dir, network_dir)
+    create_network_scripts.create_networks(
+        os.path.join(IBD_search_output_files, "pairs/"), network_dir, ANALYSIS_TYPE, os.path.join(IBD_search_output_files, "confirmed_carriers.txt"))
 
-    # logger.info(
-    #     f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
-    # )
+    logger.info(
+        f"Writing the results of the network analysis to: {''.join([args.output, 'networks/'])}"
+    )
 
-    # print(
-    #     "getting information about the haplotypes for the confirmed carriers")
+   
 
     # if not path.exists("".join([args.output, "haplotype_analysis/"])):
 
     #     os.mkdir("".join([args.output, "haplotype_analysis/"]))
 
-    # haplotype_info_path: str = haplotype_segments_analysis.get_segment_lengths(
-    #     "".join([IBD_search_output_files, "confirmed_carriers.txt"]),
-    #     "".join([args.output, "haplotype_analysis/"]),
-    #     ILASH_PATH,
-    #     HAPIBD_PATH,
-    #     THREADS,
-    #     "".join([args.output, "plink_output_files/"]),
-    #     "".join([args.output, "carrier_analysis_output/", "reformatted/"]),
-    #     "".join([args.output, "networks/", "network_groups.csv"]),
-    #     IBD_search_output_files,
-    # )
-
-    # logger.info(
-    #     f"Writing the output of the haplotype analysis to: {''.join([args.output, 'haplotype_analysis/'])}"
     # )
     # print(
     #     "generating a file contain the genotypes for all IIDs in the provided file"
@@ -318,15 +324,7 @@ def run(args: list, **kwargs: dict):
     #     f"Writing the result of getting all the genotypes for all IIDs in the provided file to: {''.join([args.output, 'haplotype_analysis/'])}"
     # )
 
-    # # Add the function that gets the haplotype string to this
-    # logger.info(
-    #     f"Writing the most probable haplotypes for each network to the file 'network_haplotypes.txt' at {''.join([args.output, 'haplotype_analysis/'])}"
-    # )
-    # print("Finding the most probable haplotypes")
-
-    # haplotype_segments_analysis.gather_haplotypes(
-    #     haplotype_info_path, "".join([args.output, "haplotype_analysis/"]),
-    #     args.binary_file, args.pop_info, args.pop_code)
+    
 
     logger.info('Analysis finished...')
 

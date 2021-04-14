@@ -4,4 +4,4 @@ from .gathering_pairs.filtering_functions import filter_for_correct_base_pair, f
 from .gathering_pairs.find_IBD_phenotype import gather_shared_segments
 from .combine_output.combine_ibd_pairs import combine_output, gather_files
 from .combine_output.building_file_dict import build_file_dict
-from .pair_info.pair_info_class import Pair_Info_Class
+from .combine_output.reformat import Gene_Reformatter, Pheno_Reformatter

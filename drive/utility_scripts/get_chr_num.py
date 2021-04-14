@@ -46,3 +46,24 @@ def add_zero_to_chr_num(chr_num: str) -> str:
     chr_number: str = chr_num[-1:]
 
     return "".join([chr_str, "0", chr_number])
+
+def match_chr(search_list: list, string: str) -> str:
+    """Function that will find the chromosome number of the string
+    Parameters
+    __________
+    search_list : list
+        list of the different regular expressions to search for
+    
+    string : str
+        string to match a pattern against
+    Returns
+    ________
+    str
+        string containing the chromosome number that was matched"""
+    for search_term in search_list:
+
+        match = re.search(search_term, string)
+
+        if match:
+            
+            return match.group(0)

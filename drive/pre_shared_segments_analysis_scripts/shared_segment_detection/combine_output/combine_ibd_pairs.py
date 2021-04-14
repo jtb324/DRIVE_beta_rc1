@@ -124,6 +124,7 @@ def get_file(file_list: list, identifier: str = None, chr_num=None) -> str:
 
 def find_ibd_file(ibd_file_list: list, chr_num: str) -> str:
     """Function to return the correct ibd file for the chromosome"""
+    
     chr_num = chr_num.strip(".")
     ibd_file: str = [
         file for file in ibd_file_list if "".join(["_", chr_num, "."]) in file
@@ -245,7 +246,7 @@ def form_all_combinations(file_dict: dict, all_comb_dict: dict):
 def write_to_file(output_path: str, pair_list: list):
     """Function to write the pair string to a file 
     Parameters
-    __________
+    _________
     output_path : str
         string that has the filepath to write the output to
     
@@ -265,11 +266,34 @@ def write_to_file(output_path: str, pair_list: list):
         for pair_str in pair_list:
             allpair_new_file.write(pair_str)
 
+def fix_chr_num(chr_num: str) -> str:
+    """Function to convert the chromosome number into a single digit if it is a single digit chromosome so chr08 == chr8
+    Parameters
+    __________
+    chr_num : str
+        string that has the two digit chromosome number
+    
+    Returns
+    _______
+    str
+        returns a string that has the chromosome number formatted for comparison 
+        to the ibd files
+    """
+
+    if int(chr_num[-2:]) >= 10:
+
+        return chr_num
+    
+    else:
+
+        return "".join([chr_num[:3], chr_num[-1]])
+
+
 def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analysis_type: str, car_file_dir: str= None, pheno_carrier_df: pd.DataFrame=None, pheno_gmap_df: pd.DataFrame=None):
     
     
     for chr_num, identifier in file_dict.keys():
-        
+
         # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
         max_pairs: int = 0
 
@@ -281,10 +305,10 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analy
         # alt_chr_num: str = alternate_chr_num_format(chr_num)
         # getting the hapibd file that corresponds to the correct chromosome number
         # and loading it into a dataframe
-        hapibd_file: str = find_ibd_file(gathered_file_dict["hapibd_file_list"], chr_num)
+        hapibd_file: str = find_ibd_file(gathered_file_dict["hapibd_file_list"], fix_chr_num(chr_num))
         hapibd_df: pd.DataFrame = pd.read_csv(hapibd_file, sep="\t", header=None)
         # getting the ilash file that corresponds to the correct chromsome number and loading it into a dataframe
-        ilash_file: str = find_ibd_file(gathered_file_dict["ilash_file_list"], chr_num)
+        ilash_file: str = find_ibd_file(gathered_file_dict["ilash_file_list"], fix_chr_num(chr_num))
 
         ilash_df: pd.DataFrame = pd.read_csv(ilash_file, sep="\t", header=None)
 
@@ -307,8 +331,7 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analy
 
         output_dir: str = utility_scripts.check_dir(output, "pairs")
         # creating the output path for the file
-        out = os.path.join(output_dir, "".join(["IBD_", identifier, chr_num[:-1]]))
-        
+        out = os.path.join(output_dir, "".join(["IBD_", identifier, ".",chr_num]))
         # next line writes the file
         files = form_file_dict(file_list)
 
@@ -375,12 +398,7 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analy
                     newpos[f] = int(nextline.split('\t')[1])
                     newline[f] = nextline
 
-            # print('chr{0}:{1} from {2}'.format(CHR, str(pos), ' '.join(nowf)))
-
-            # sumrow: list = list(
-            #     map(lambda comb: len(allinter(comb, curr_pair)),
-            #         allcomb.values()))
-            # uniqrow = get_uniqrow(1, allcomb, curr_pair, combtab)
+            
             newallpair: list = all_agree_pair(curr_pair)
             
             max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
