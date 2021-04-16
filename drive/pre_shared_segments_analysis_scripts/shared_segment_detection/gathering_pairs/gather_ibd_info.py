@@ -1,8 +1,6 @@
 #!/usr/bin/python
 
 # THese are modules 
-import re
-import os
 from os import path
 import pandas as pd
 
@@ -184,7 +182,6 @@ def create_var_info_dict(var_info_dict: dict, var_iid_dict: dict, variant: str, 
     dict
         returns the filled in var_info_dict
     """
-    print(var_iid_dict)
     iid_list: list = var_iid_dict[variant]
 
     var_info_dict[variant] = {"base_pos": bp, "iid_list": iid_list}

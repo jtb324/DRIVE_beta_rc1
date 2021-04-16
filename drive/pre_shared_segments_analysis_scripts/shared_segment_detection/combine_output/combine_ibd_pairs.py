@@ -291,7 +291,7 @@ def fix_chr_num(chr_num: str) -> str:
 
 def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analysis_type: str, car_file_dir: str= None, pheno_carrier_df: pd.DataFrame=None, pheno_gmap_df: pd.DataFrame=None):
     
-    
+
     for chr_num, identifier in file_dict.keys():
 
         # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
@@ -320,10 +320,13 @@ def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analy
         # variant position along with the analysis type
         # If the analysis is the phenotype then it will get the gene 
         # positions from the pheno_gmap_df dictionary. 
+        
         if "map_file_list" in gathered_file_dict:
+
             map_file: str = [
-                file for file in gathered_file_dict["map_file_list"] if "".join([chr_num[:-1], "_"])
+                file for file in gathered_file_dict["map_file_list"] if "".join([chr_num, "_"]) in file
             ][0]
+
             analysis_type_dict: dict = get_analysis_files(analysis_type, identifier, map_file)
         else:
             analysis_type_dict: dict = get_analysis_files(analysis_type, identifier, pheno_gmap_df=pheno_gmap_df)

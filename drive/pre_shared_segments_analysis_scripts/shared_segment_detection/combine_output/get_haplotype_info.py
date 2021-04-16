@@ -127,17 +127,15 @@ class hapibd_info_finder(ibd_info_finder):
         hapibd_indices: Hapibd_Indices = Hapibd_Indices(self.ibd_format)
         # returning this base dict to be a class parameter
         self.indx_dict: dict = hapibd_indices.return_param_dict()
-    
-    def update_base_indx_dict(self):
-        """Function to update the indx_dict so that it has the appropriate indices.
-        Adds indices for the CM total length, and the phase information according to 
-        hapibd file column indices"""
+
         # generating the index for the cM total length
         self.indx_dict["cM_indx"] = 7
         # getting the phasing for pair 1
         self.indx_dict["phase_1"] = 1
         # getting the phasing for pair 2
         self.indx_dict["phase_2"] = 3
+    
+        
 
 
 class ilash_info_finder(ibd_info_finder):
@@ -153,14 +151,11 @@ class ilash_info_finder(ibd_info_finder):
         ilash_indices: Ilash_Indices = Ilash_Indices(self.ibd_format)
         # returning this base dict to be a class parameter
         self.indx_dict: dict = ilash_indices.return_param_dict()
-
-    def update_base_indx_dict(self):
-        """Function to update the indx_dict so that it has the appropriate indices
-        Adds indices for the CM total length, and the phase information according to 
-        ilash file column indices"""
         # generating the index for the cM total length
         self.indx_dict["cM_indx"] = 9
         # getting the phasing for pair 1
         self.indx_dict["phase_1"] = 1
         # getting the phasing for pair 2
         self.indx_dict["phase_2"] = 3
+
+        

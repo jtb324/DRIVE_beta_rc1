@@ -308,11 +308,6 @@ class Pair_Info_Class:
 
             ilash_info_object: ilash_info_finder = ilash_info_finder(ilash_file, pair_object.pair1, pair_object.pair2, "ilash")
             
-            # updating the base indx dictionary for the specific 
-            # values for each program
-            hapibd_info_object.update_base_indx_dict()
-
-            ilash_info_object.update_base_indx_dict()
             
             # if the analysis type is phenotype then have to use the 
             # gene start and end

@@ -292,9 +292,6 @@ def run(args: list, **kwargs: dict):
     # checking to make sure that the directory that the network files gets written to is real
     network_dir: str = utility_scripts.check_dir(args.output, "networks")
 
-    # # output = "".join(["".join([args.output, "networks/"]), "network_imgs"])
-
-    # network_dir: str = "".join([args.output, "networks/"])
 
     create_network_scripts.create_networks(
         os.path.join(IBD_search_output_files, "pairs/"), network_dir, ANALYSIS_TYPE, os.path.join(IBD_search_output_files, "confirmed_carriers.txt"))
