@@ -337,14 +337,14 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         # This will iterate through each row of the filtered chunk
         if not chunk.empty:
             # getting rid of an warning message that indicates that the resulting chunk is a pandas dataframe
-            chunk.is_copy = False
+            chunk_copy: pd.DataFrame = chunk.__deepcopy__()
 
 
             # creating a new column with the pair string for each pair
-            chunk["pair_string"] = chunk.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis=1)
+            chunk_copy.loc[:,"pair_string"] = chunk_copy.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis=1)
 
             
-            chr_num_series:pd.Series = chunk.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
+            chr_num_series:pd.Series = chunk_copy.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
 
             chr_num: str = list(set(chr_num_series.values))[0]
 

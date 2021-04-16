@@ -10,10 +10,12 @@ PYTHON = python3
 
 # The @ makes sure that the command itself isn't echoed in the terminal
 help:
-	@echo "---------------HELP-----------------"
+	@echo "------------------HELP------------------"
 	@echo "To test the project type make test"
 	@echo "To run the project type make run"
-	@echo "------------------------------------"
+	@echo "To build the project type make build"
+	@echo "To clean the __pycache__ type make clean"
+	@echo "----------------------------------------"
 
 unittest:
 	@echo "Running tests to ensure the integrity of all modules..."
@@ -29,3 +31,6 @@ build:
 clean:
 	@find . | grep -E "(__pycache__|\.pytest_cache)" | xargs rm -rf
 
+remove_prior_build:
+	@echo "removing the files from the prior build"
+	@rm -r build/ dist/ DRIVE.spec

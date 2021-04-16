@@ -86,8 +86,28 @@ class Network_Maker:
         self.identifier: str = identifier
         self.iid_list: List[str] = iid_list
         self.analysis_type: str = analysis_type
-        
     
+    @staticmethod
+    def fix_chr(chr_number: str) -> str:
+        """Function to make sure that the chromosome number if it is of the form chrX gets converted to 
+        chrXX and returns that and if the format is already correct then it just returns the string. The
+        X refers to a digit
+        Parameter
+        _________
+        chr_number : str
+            string that has the chromosome number
+        
+        Returns 
+        _______
+        str
+            returns the properly formatted chromosome number string
+        """
+        if len(chr_number) == 4:
+            return "".join([chr_number[:3], "0", chr_number[-1]])
+
+        else:
+            return chr_number
+
     def find_allpair_file(self, allpair_list: List[str]) -> str:
         """Function to find the specific allpair file that lines up with the chr number and the variant/gene name
         Parameters
@@ -105,7 +125,7 @@ class Network_Maker:
         try:
             allpair_file_path: str = [
                         file for file in allpair_list
-                        if self.chr_num.strip(".") in file and self.identifier in file
+                        if self.fix_chr(self.chr_num.strip(".")) in file and self.identifier in file
                     ][0]
 
         except IndexError:
@@ -113,6 +133,7 @@ class Network_Maker:
             print(
                     f"There was no allpair.txt file found for the variant, {self.identifier}"
                 )
+            # need to catch an error here
             return "None"
 
         return allpair_file_path
@@ -210,7 +231,7 @@ class Network_Maker:
             carriers_in_network_dict["Network ID"].append(NaN)
             carriers_in_network_dict["gene_name"].append(self.identifier)
             carriers_in_network_dict["variant_id"].append("N/A")
-            carriers_in_network_dict["chr_num"].append(self.chr_num[-2:])
+            carriers_in_network_dict["chr_num"].append(self.fix_chr(self.chr_num)[-2:])
 
         # converting the above dictionary to a dataframe 
         self.network_carriers = pd.DataFrame.from_dict(
@@ -220,22 +241,24 @@ class Network_Maker:
         # if the file already exist then need to append the new 
         # information without adding a header
         if os.path.exists(os.path.join(
-            output, "network_groups.csv")) and os.stat(os.path.join(
-                output, "network_groups.csv")) != 0:
+            output, "network_groups.txt")) and os.stat(os.path.join(
+                output, "network_groups.txt")) != 0:
 
             self.network_carriers.to_csv(os.path.join(
-                output, "network_groups.csv"),
-                                         index=False,
-                                         mode="a",
-                                         header=None)
+                output, "network_groups.txt"), 
+                                        sep="\t",
+                                        index=False,
+                                        mode="a",
+                                        header=None)
         
         # if the file doesn't exist already then you have to append
         # the new information with a header
         else:
             self.network_carriers.to_csv(os.path.join(
-                output, "network_groups.csv"),
-                                         index=False,
-                                         mode="a")
+                output, "network_groups.txt"),
+                                        sep="\t",
+                                        index=False,
+                                        mode="a")
 
         return ind_in_networks_dict
     
@@ -417,29 +440,29 @@ class Network_Maker:
 
         # Writing the dataframe to a csv file
         if os.path.exists(os.path.join(
-            output_path, "network_groups.csv")) and os.stat(os.path.join(
-                output_path, "network_groups.csv")) != 0:
+            output_path, "network_groups.txt")) and os.stat(os.path.join(
+                output_path, "network_groups.txt")) != 0:
 
             self.network_carriers.to_csv(os.path.join(
-                output_path, "network_groups.csv"),
-                                         index=False,
-                                         mode="a",
-                                         header=None)
+                output_path, "network_groups.txt"),
+                                        sep="\t",
+                                        index=False,
+                                        mode="a",
+                                        header=None)
         else:
 
             self.network_carriers.to_csv(os.path.join(
-                output_path, "network_groups.csv"),
-                                         index=False,
-                                         mode="a")
+                output_path, "network_groups.txt"),
+                                        sep="\t",
+                                        index=False,
+                                        mode="a")
         # the function returns the full path for the network_carriers dataframe and it also returnst eh allpairs_df
-        return os.path.join(output_path, "network_groups.csv"), pairs_df
+        return os.path.join(output_path, "network_groups.txt"), pairs_df
 
     def add_columns(self, dataframe: pd.DataFrame,
                     ) -> pd.DataFrame:
         '''This function will take the carrier dataframe and add two columns for the variant id and the chr_num. It will then return the dataframe'''
 
-        # getting just the chromosome number
-        chr_num: str = utility_scripts.match_chr([r'\d\d'], self.chr_num)
         
         if self.analysis_type == "phenotype":
             dataframe["gene_name"] = self.identifier
@@ -450,7 +473,8 @@ class Network_Maker:
             dataframe["variant_id"] = self.identifier
 
         # adding a column for the chromosome number
-        dataframe["chr_num"] = chr_num
+        print(self.chr_num)
+        dataframe["chr_num"] = self.fix_chr(self.chr_num)[-2:]
 
         return dataframe
     
