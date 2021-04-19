@@ -1,6 +1,7 @@
 import multiprocessing as mp
 from functools import partial
 from dataclasses import dataclass
+from typing import List, Dict
 import utility_scripts
 
 
@@ -126,90 +127,125 @@ class Segment_Parallel_Runner(Parallel_Runner):
 
         pool_object.map(func, variant_list)
 
+def parallelize_test(*args, combined_info_list: List,  output: str = None, que_object: bool = False):
 
-@dataclass
-class Haplotype_Parallel_Runner(Parallel_Runner):
-    """child dataclass for the parallelization of the haplotype.py script
+        func: object = args[0]
 
-    Parameters
-    __________
-    file_list_dict : dict 
-        dictionary that contains list of all the allpair files, the map files, 
-        the carrier_files (The reformated single_variant_list.csv files), the
-        ilash files, and the hapibd files.  This dictionary will have the keys 
-        "allpair_files", "map_files", "carrier_files", "ilash_files", 
-        "hapibd_files".
+        pool = mp.Pool(int(args[1]))
 
-    network_file_path : str
-        string that list the path to the network_groups.csv file
+        if que_object:
 
-    variant_list : list 
-        list of all the unique variants within the confirmed_carriers.txt files
+            file_name: str = args[1]
+            header_str: str = args[2]
 
-    confirmed_carrier_file : str
-        filepath to the confirmed_carriers.txt file
+            manager = mp.Manager()
 
-    """
-    file_list_dict: dict
-    network_file_path: str
-    variant_list: list
-    confirmed_carrier_file: str
+            que = manager.Queue()
+        
+            watcher = pool.apply_async(
+                utility_scripts.listener,
+                (que, "".join([output, file_name]), header_str))
 
-    @parallelize_decorator
-    def run_haplotypes_parallel(self,
-                                *args,
-                                que_object=None,
-                                pool_object=None,
-                                manager_object=None):
-        """function to run the process in parallel
-        Parameters
-        __________
-        file_name : str 
-            string containing the filename for the output file
+            pool.map()
+            func(
+                *args,
+                que_object=que,
+                pool_object=pool,
+                manager_object=manager)
+        
 
-        parallel_func : object
-            function that will be parallelized during the computation
+            que.put("kill")
+        else:
+            
 
-        header_str : str
-            string that will be the first row of the file at the file_name
+            pool.map(func, combined_info_list)
+        pool.close()
 
-        que_object : object
-            que created by manager.Queue that waits for a string to be passed 
-            to it and then passes that string to the listener function
+        pool.join()
 
-        pool_object : object
-            created by mp.Pool
+# @dataclass
+# class Haplotype_Parallel_Runner(Parallel_Runner):
+#     """child dataclass for the parallelization of the haplotype.py script
 
-        manager_object : object
-            que manager created by mp.Manager
+#     Parameters
+#     __________
+#     file_list_dict : dict 
+#         dictionary that contains list of all the allpair files, the map files, 
+#         the carrier_files (The reformated single_variant_list.csv files), the
+#         ilash files, and the hapibd files.  This dictionary will have the keys 
+#         "allpair_files", "map_files", "carrier_files", "ilash_files", 
+#         "hapibd_files".
 
-        """
+#     network_file_path : str
+#         string that list the path to the network_groups.csv file
 
-        # starting the second que object
-        variant_que = manager_object.Queue()
+#     variant_list : list 
+#         list of all the unique variants within the confirmed_carriers.txt files
 
-        variant_header: str = "variant\tchr\n"
+#     confirmed_carrier_file : str
+#         filepath to the confirmed_carriers.txt file
 
-        var_watcher = pool_object.apply_async(
-            utility_scripts.listener, (variant_que, "".join([
-                self.output, "nopairs_haplotype_analysis.txt"
-            ]), variant_header))
+#     """
+#     file_list_dict: dict
+#     network_file_path: str
+#     variant_list: list
+#     confirmed_carrier_file: str
 
-        # expanding the file_list_dict to get all the
-        allpair_file_list: list = self.file_list_dict["allpair_files"]
-        map_file_list: list = self.file_list_dict["map_files"]
-        carrier_file_list: list = self.file_list_dict["carrier_files"]
-        ilash_file_list: list = self.file_list_dict["ilash_files"]
-        hapibd_file_list: list = self.file_list_dict["hapibd_files"]
+#     @parallelize_decorator
+#     def run_haplotypes_parallel(self,
+#                                 *args,
+#                                 que_object=None,
+#                                 pool_object=None,
+#                                 manager_object=None):
+#         """function to run the process in parallel
+#         Parameters
+#         __________
+#         file_name : str 
+#             string containing the filename for the output file
 
-        # expanding the args[1] into the parallelized func
-        parallel_func: object = args[1]
+#         parallel_func : object
+#             function that will be parallelized during the computation
 
-        func = partial(parallel_func, allpair_file_list, carrier_file_list,
-                       map_file_list, ilash_file_list, hapibd_file_list,
-                       que_object, variant_que, self.network_file_path,
-                       self.confirmed_carrier_file)
+#         header_str : str
+#             string that will be the first row of the file at the file_name
 
-        pool_object.map(func, self.variant_list)
+#         que_object : object
+#             que created by manager.Queue that waits for a string to be passed 
+#             to it and then passes that string to the listener function
 
-        variant_que.put("kill")
+#         pool_object : object
+#             created by mp.Pool
+
+#         manager_object : object
+#             que manager created by mp.Manager
+
+#         """
+
+#         # starting the second que object
+#         variant_que = manager_object.Queue()
+
+#         variant_header: str = "variant\tchr\n"
+
+#         var_watcher = pool_object.apply_async(
+#             utility_scripts.listener, (variant_que, "".join([
+#                 self.output, "nopairs_haplotype_analysis.txt"
+#             ]), variant_header))
+
+#         # expanding the file_list_dict to get all the
+#         allpair_file_list: list = self.file_list_dict["allpair_files"]
+#         map_file_list: list = self.file_list_dict["map_files"]
+#         carrier_file_list: list = self.file_list_dict["carrier_files"]
+#         ilash_file_list: list = self.file_list_dict["ilash_files"]
+#         hapibd_file_list: list = self.file_list_dict["hapibd_files"]
+
+#         # expanding the args[1] into the parallelized func
+#         parallel_func: object = args[1]
+
+#         func = partial(parallel_func, allpair_file_list, carrier_file_list,
+#                        map_file_list, ilash_file_list, hapibd_file_list,
+#                        que_object, variant_que, self.network_file_path,
+#                        self.confirmed_carrier_file)
+
+#         pool_object.map(func, self.variant_list)
+
+#         variant_que.put("kill")

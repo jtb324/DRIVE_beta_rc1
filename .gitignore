@@ -23,6 +23,7 @@ MEGA_probes/
 build/
 dist/
 *.spec
+sandbox/
 # Don't ignore these files
 !requirements.txt
 orignal/

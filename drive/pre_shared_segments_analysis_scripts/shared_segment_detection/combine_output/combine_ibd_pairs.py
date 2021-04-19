@@ -5,6 +5,7 @@ import itertools
 import glob
 import os
 import re
+from typing import List, Dict
 
 
 
@@ -288,196 +289,289 @@ def fix_chr_num(chr_num: str) -> str:
 
         return "".join([chr_num[:3], chr_num[-1]])
 
+class Combine_Info:
+    """Class that will contain information about the files that need ot be combined"""
+    def __init__(self, chr_num: str, identifier: str, gathered_file_dict: Dict[str, List], analysis_type: str, ibd_pairs_file_list: List[str], output_dir: str,  analysis_files: Dict) -> None:
+        self.chr_num: str = chr_num
+        self.identifier: str = identifier
+        self.analysis_type: str = analysis_type
+        self.ibd_file_list: List[str] = ibd_pairs_file_list
+        self.output_dir: str = output_dir
+        self.gather_file_dict: Dict[str, List] = gathered_file_dict
+        # # getting the correct hapibd dataframe and the correct ilash
+        # # dataframe for the specified chromosome number and identifier
+        # TODO: it is too memory expensive to do this
+        # self.hapibd_df: pd.DataFrame = self.get_ibd_df(gathered_file_dict["hapibd_file_list"])
+        # self.ilash_df: pd.DataFrame = self.get_ibd_df(gathered_file_dict["ilash_file_list"])
 
-def combine_output(gathered_file_dict: dict, file_dict: dict, output: str, analysis_type: str, car_file_dir: str= None, pheno_carrier_df: pd.DataFrame=None, pheno_gmap_df: pd.DataFrame=None):
-    
-
-    for chr_num, identifier in file_dict.keys():
-
-        # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
-        max_pairs: int = 0
-
-        file_list: list = file_dict[(chr_num, identifier)]
-
-        if len(file_list) == 0:              
-            sys.exit(f"no files found for {identifier}")
-
-        # alt_chr_num: str = alternate_chr_num_format(chr_num)
-        # getting the hapibd file that corresponds to the correct chromosome number
-        # and loading it into a dataframe
-        hapibd_file: str = find_ibd_file(gathered_file_dict["hapibd_file_list"], fix_chr_num(chr_num))
-        hapibd_df: pd.DataFrame = pd.read_csv(hapibd_file, sep="\t", header=None)
-        # getting the ilash file that corresponds to the correct chromsome number and loading it into a dataframe
-        ilash_file: str = find_ibd_file(gathered_file_dict["ilash_file_list"], fix_chr_num(chr_num))
-
-        ilash_df: pd.DataFrame = pd.read_csv(ilash_file, sep="\t", header=None)
-
-        
-        # The next if/else statement will get the analysis type 
-        # dictionary depending on the analysis type
-        #If the map_file_list is a key in teh gathered_file_dict then
-        # the analysis type is not phenotype and the if statement will return the
-        # variant position along with the analysis type
-        # If the analysis is the phenotype then it will get the gene 
-        # positions from the pheno_gmap_df dictionary. 
-        
+        # if the gene analysis approach is being used then the map file 
+        # has to be gathered and the analysis type dict will use the map 
+        # file
         if "map_file_list" in gathered_file_dict:
+            self.map_file: str = self.get_map_file(gathered_file_dict["map_file_list"])
 
-            map_file: str = [
-                file for file in gathered_file_dict["map_file_list"] if "".join([chr_num, "_"]) in file
+            self.analysis_type_dict: dict = get_analysis_files(self.analysis_type, self.identifier, self.map_file)
+            self.carrier_dir: str = analysis_files["carrier_dir"]
+        # if the phenotype method is selected then the pheno_gmap_df 
+        # file has to be provided
+        else:
+            self.analysis_type_dict: dict = get_analysis_files(self.analysis_type, self.identifier, pheno_gmap_df=analysis_files["pheno_gmap_df"])
+            self.pheno_gmap_df: pd.DataFrame = analysis_files["pheno_gmap_df"]
+            self.pheno_carrier_df: pd.DataFrame = analysis_files["pheno_carrier_df"]
+
+        
+    
+    def get_ibd_df(self, ibd_file_key: str) -> pd.DataFrame:
+        """Method to get the ibd file dataframe from the list in the gathered_file_dict
+        Parameters
+        __________
+        ibd_file_key : str
+            dictionary key for the gathereD_file_dict to get the appropriate ibd_files
+        
+        key_value : str
+            This is the string of the key to get the files from
+        
+        Returns
+        _______
+        pd.DataFrame
+            returns a dataframe of the ibd_file
+        """
+        ibd_file: str = find_ibd_file(self.gather_file_dict[ibd_file_key], fix_chr_num(self.chr_num))
+
+        return  pd.read_csv(ibd_file, sep="\t", header=None)
+
+    def get_map_file(self, map_file_list: List[str]) -> str:
+        """Method to get the correct map file from the list of map files for the correct chromosome
+        Parameters
+        __________
+        map_file_list : List[str]
+            List of all of the map files
+        
+        Returns
+        _______
+        str
+            returns the map filepath"""
+        return [
+                file for file in map_file_list if "".join([self. chr_num, "_"]) in file
             ][0]
 
-            analysis_type_dict: dict = get_analysis_files(analysis_type, identifier, map_file)
-        else:
-            analysis_type_dict: dict = get_analysis_files(analysis_type, identifier, pheno_gmap_df=pheno_gmap_df)
-
-
-        output_dir: str = utility_scripts.check_dir(output, "pairs")
-        # creating the output path for the file
-        out = os.path.join(output_dir, "".join(["IBD_", identifier, ".",chr_num]))
-        # next line writes the file
-        files = form_file_dict(file_list)
-
-        # creating dictionaries that will be used in the rest of the 
-        # code
-        curr_pair = {}
-        curr_pos = {}
-        curr_ibd = {}
-        newpos = {}
-        newline = {}
-        openfile = {}
-        endtest = {}
-        endline = {}
-
-        # read first line for all input files
-        line1: str = read_first_line(files, openfile, endline, curr_pos, curr_ibd, curr_pair, newpos, newline, endtest)
-
-        #TODO: keep working on changing this into smaller functions
-        allcomb = {}
-
-        # creating all the combinations based on the file dict
-        form_all_combinations(files, allcomb)
-    
-
-        combtab = pd.DataFrame(0, columns=files.keys(), index=allcomb.keys())
-
-        for item in allcomb:
-            combtab.loc[item, allcomb[item]] = len(allcomb[item])
-
-        oldallpair = set([])
-
-
-        count: int = 0
+    def record_no_variant(self) -> int:
+        """Function to determine if the chromosome, identifier combo has no file associated with it then this will be written to a file
         
-        while sum(list(map(lambda f: endtest[f],
-                           endtest.keys()))) < len(endtest):
-            pos = min(newpos.values())
-            nowf = findkey(pos, newpos)
+        Returns
+        _______
+        int
+            returns 0 if the variant has ibd_files in the list or 1 if it doesn't
+        """
+        if len(self.ibd_file_list) == 0:  
 
-            for f in nowf:
+            with open((os.path.join(self.output_dir, "no_ibd_segments.txt")), "a+") as error_file:
+                error_file.write(f"no small.txt.gz files found for {self.identifier}")
 
-                CHR = str(newline[f].split('\t')[0])
-                if newline[f].split('\t')[4] != 'NA':
-                    addibd = set(newline[f].split('\t')[4].split(' '))
-                else:
-                    addibd = set([])
-                if newline[f].split('\t')[5] != 'NA':
-                    delibd = set(newline[f].split('\t')[5].split(' '))
-                else:
-                    delibd = set([])
-                curr_ibd[f] = set(set(curr_ibd[f] | addibd) - delibd)
-                if len(curr_ibd[f]) > 0:
-                    curr_pair[f] = set(
-                        map(lambda x: x.split(':')[1], curr_ibd[f]))
-                else:
-                    curr_pair[f] = set([])
-                nextline = openfile[f].readline()
-                nextline = nextline.strip()
-                if nextline == '' and openfile[f].tell() == endline[f]:
-                    endtest[f] = 1
-                    newpos[f] = float('inf')
-                else:
-                    #            nextline = nextline.strip()
-                    newpos[f] = int(nextline.split('\t')[1])
-                    newline[f] = nextline
+            return 0
+        else:
+            return 1
 
+def combine_output(gathered_file_dict: Dict, file_dict: Dict, output: str, analysis_type: str,threads: int, analysis_files: Dict):
+    """main function to run for this script"""
+
+    # making sure the output directory exist
+    output_dir: str = utility_scripts.check_dir(output, "pairs")
+
+    utility_scripts.check_file(os.path.join(output, "no_ibd_segments.txt"))
+
+    # Creating
+    file_info_list: List[Combine_Info] = []
+
+    # this step will create a list that contains objects that have all the necessary files for each chromosome/identifier combo
+
+    for chr_num, identifier in file_dict.keys():
+        combiner_info: Combine_Info = Combine_Info(chr_num, identifier, gathered_file_dict, analysis_type, file_dict[(chr_num, identifier)], output_dir, analysis_files)
+
+        # need to check the length of the combiner_info.
+        # ibd_file_list and if it is zero then write that 
+        # to a file and then move onto the next pair
+        if not combiner_info.record_no_variant():
             
-            newallpair: list = all_agree_pair(curr_pair)
-            
-            max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
+            continue
 
-            outpair: list = []
+        file_info_list.append(combiner_info)
 
-            for pp in newallpair:
-                tool = []
-                for f in curr_pair.keys():
-                    if pp in curr_pair[f]:
-                        tool.append(f)
-                outpair.append('{0}:{1}'.format(','.join(tool), pp))
+    utility_scripts.parallelize_test(run, threads, combined_info_list=file_info_list)
 
-            if len(outpair) == 0:
-                outpair = ['NA']
+    #TODO: Keep trying to parallelize this function
 
-            if max_pairs_int == 1:
 
-                # update the counter
-                count += 1
+def run(combined_info_object: Combine_Info):
+    """Function to be parallelized to combine the ibd pairs into the allpair.txt file
+    Parameters
+    __________
+    combined_info_object : Combine_Info
+        class object that has gathered specific files together with the chromsome number and the identifier"""    
 
-                # This will return a 0 if the max pairs == the len(newallpair) and a one if max_pairs is greater
-                after_max_pair: int = after_max_pair_found(
-                    max_pairs, len(newallpair))
+    # unpacking the object
+    file_list: List[str] = combined_info_object.ibd_file_list
+    identifier: str = combined_info_object.identifier
+    chr_num: str = combined_info_object.chr_num
+    output_dir: str = combined_info_object.output_dir
+    analysis_type: str = combined_info_object.analysis_type
+    hapibd_df: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
+    ilash_df: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
+    analysis_type_dict: Dict = combined_info_object.analysis_type_dict
 
-                if after_max_pair == 0 and count == 1:
+    # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
+    max_pairs: int = 0
 
-                    max_pairs_str: str = previous_row_str
+    
+    
+    # creating the output path for the file
+    out = os.path.join(output_dir, "".join(["IBD_", identifier, ".",chr_num]))
+    # next line writes the file
 
-                    # get the start base position which will be used later in the allpair path
-                    start_bp: str = previous_row_bp
+    # TODO:
+    # think about turning all of these into an object to group them together
+    files = form_file_dict(file_list)
 
-                end_bp: str = str(pos)
+    # creating dictionaries that will be used in the rest of the 
+    # code
+    curr_pair = {}
+    curr_pos = {}
+    curr_ibd = {}
+    newpos = {}
+    newline = {}
+    openfile = {}
+    endtest = {}
+    endline = {}
 
-                if after_max_pair == 1:
-                    # creating an output path that just has the allpair.txt files and
+    # read first line for all input files
+    line1: str = read_first_line(files, openfile, endline, curr_pos, curr_ibd, curr_pair, newpos, newline, endtest)
 
-                    allagree_path = "".join(
-                        [out, ".", start_bp, "-", end_bp, ".allpair.txt"])
+    #TODO: keep working on changing this into smaller functions
+    allcomb = {}
 
-                    # deleting the file if it is there from a previous run
-                    utility_scripts.check_file(allagree_path)
+    # creating all the combinations based on the file dict
+    form_all_combinations(files, allcomb)
 
-                    # Entering into the get_max_pairs function
-                    # TODO: Make a pairs object that can contain the information about the pair object such as the string of pairs, the identifier which is the variant_id or gene name, the chromosome number, the output_path, and the analysis type
-                    pair_info_object = Pair_Info_Class(
-                        max_pairs_str, identifier, chr_num, allagree_path, analysis_type)
 
-                    # forming a list of iids that that are identified as carrying 
-                    # the variant. This list becomes an attribute of the 
-                    # pair_info_object called self.iid_list
-                    # will check if the pheno_carrier_df exists and if it doesn't
-                    # then it will use the car_file_dir
+    combtab = pd.DataFrame(0, columns=files.keys(), index=allcomb.keys())
 
-                    if analysis_type == "phenotype":
-                        pair_info_object.iid_list_handler(pheno_carriers=pheno_carrier_df)
-                    else:
-                        
-                        pair_info_object.iid_list_handler(carrier_dir=car_file_dir, pheno_carriers=None)
-                    #
-                    # Next line will actually generate a string with all the necesary information in it
-                    pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_df, ilash_df, analysis_type_dict)
+    for item in allcomb:
+        combtab.loc[item, allcomb[item]] = len(allcomb[item])
 
-                    write_to_file(pair_info_object.output_path, pair_info_list)
+    oldallpair = set([])
 
-                    break
 
-            if max_pairs_int == 0:
-                # This if statement is made to reset the counter if the max_pair integer goes from being 1 back to 0
+    count: int = 0
+    
+    while sum(list(map(lambda f: endtest[f],
+                        endtest.keys()))) < len(endtest):
+        pos = min(newpos.values())
+        nowf = findkey(pos, newpos)
 
-                # Reseting the counter
-                count = 0
+        for f in nowf:
 
-            max_pairs = len(newallpair)
-            # keeping track of the previous row so that it can be used if necessary
-            previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
+            CHR = str(newline[f].split('\t')[0])
+            if newline[f].split('\t')[4] != 'NA':
+                addibd = set(newline[f].split('\t')[4].split(' '))
+            else:
+                addibd = set([])
+            if newline[f].split('\t')[5] != 'NA':
+                delibd = set(newline[f].split('\t')[5].split(' '))
+            else:
+                delibd = set([])
+            curr_ibd[f] = set(set(curr_ibd[f] | addibd) - delibd)
+            if len(curr_ibd[f]) > 0:
+                curr_pair[f] = set(
+                    map(lambda x: x.split(':')[1], curr_ibd[f]))
+            else:
+                curr_pair[f] = set([])
+            nextline = openfile[f].readline()
+            nextline = nextline.strip()
+            if nextline == '' and openfile[f].tell() == endline[f]:
+                endtest[f] = 1
+                newpos[f] = float('inf')
+            else:
+                #            nextline = nextline.strip()
+                newpos[f] = int(nextline.split('\t')[1])
+                newline[f] = nextline
 
-            # Also keeping track of the base position
-            previous_row_bp: str = str(pos)
+        
+        newallpair: list = all_agree_pair(curr_pair)
+        
+        max_pairs_int: int = is_max_pairs_found(max_pairs, len(newallpair))
+
+        outpair: list = []
+
+        for pp in newallpair:
+            tool = []
+            for f in curr_pair.keys():
+                if pp in curr_pair[f]:
+                    tool.append(f)
+            outpair.append('{0}:{1}'.format(','.join(tool), pp))
+
+        if len(outpair) == 0:
+            outpair = ['NA']
+
+        if max_pairs_int == 1:
+
+            # update the counter
+            count += 1
+
+            # This will return a 0 if the max pairs == the len(newallpair) and a one if max_pairs is greater
+            after_max_pair: int = after_max_pair_found(
+                max_pairs, len(newallpair))
+
+            if after_max_pair == 0 and count == 1:
+
+                max_pairs_str: str = previous_row_str
+
+                # get the start base position which will be used later in the allpair path
+                start_bp: str = previous_row_bp
+
+            end_bp: str = str(pos)
+
+            if after_max_pair == 1:
+                # creating an output path that just has the allpair.txt files and
+
+                allagree_path = "".join(
+                    [out, ".", start_bp, "-", end_bp, ".allpair.txt"])
+
+                # deleting the file if it is there from a previous run
+                utility_scripts.check_file(allagree_path)
+
+                # Entering into the get_max_pairs function
+                # TODO: Make a pairs object that can contain the information about the pair object such as the string of pairs, the identifier which is the variant_id or gene name, the chromosome number, the output_path, and the analysis type
+                pair_info_object = Pair_Info_Class(
+                    max_pairs_str, identifier, chr_num, allagree_path, analysis_type)
+
+                # forming a list of iids that that are identified as carrying 
+                # the variant. This list becomes an attribute of the 
+                # pair_info_object called self.iid_list
+                # will check if the pheno_carrier_df exists and if it doesn't
+                # then it will use the car_file_dir
+
+                if analysis_type == "phenotype":
+                    pair_info_object.iid_list_handler(pheno_carriers=combined_info_object.pheno_carrier_df)
+                else:
+                    
+                    pair_info_object.iid_list_handler(carrier_dir=combined_info_object.carrier_dir, pheno_carriers=None)
+                #
+                # Next line will actually generate a string with all the necesary information in it
+                pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_df, ilash_df, analysis_type_dict)
+
+                write_to_file(pair_info_object.output_path, pair_info_list)
+
+                break
+
+        if max_pairs_int == 0:
+            # This if statement is made to reset the counter if the max_pair integer goes from being 1 back to 0
+
+            # Reseting the counter
+            count = 0
+
+        max_pairs = len(newallpair)
+        # keeping track of the previous row so that it can be used if necessary
+        previous_row_str: str = f"{str(CHR)}\t{str(pos)}\tNA\t{len(newallpair)}\t{' '.join(outpair)}\n"
+
+        # Also keeping track of the base position
+        previous_row_bp: str = str(pos)
