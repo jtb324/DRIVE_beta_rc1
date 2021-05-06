@@ -3,7 +3,7 @@ import utility_scripts
 from .get_haplotype_info import hapibd_info_finder, ilash_info_finder
 # This script keeps some of the functions that are used for determining if pairs are found
 
-def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
+def is_max_pairs_found(int curr_max_pairs, int new_max_pairs) -> int:
     """Function to determine if the max number of pairs was found.
     It checks to see if the max pair from the previous row is largeer or not
     Parameters
@@ -20,12 +20,12 @@ def is_max_pairs_found(curr_max_pairs: int, new_max_pairs: int) -> int:
         integer of either 1 or 0 where 1 means that the max pair was found in the previous row and 0 if the new max pairs is larger than the previous row
     """
 
-    pair_handler_dict = {False: 0, True: 1}
+    cdef dict pair_handler_dict = {False: 0, True: 1}
 
     # This function will return either 1 or zero from the pair handler_dict based on whether or not curr_max_pair from the previous row is less than or greater than the max pairs from the current row
     return pair_handler_dict[curr_max_pairs >= new_max_pairs]
 
-def after_max_pair_found(curr_max_pair: int, new_max_pair: int) -> int:
+def after_max_pair_found(int curr_max_pair, int new_max_pair) -> int:
     '''This function will break out of the loop if a max pair is found and then the size of the pair list starts decreasing'''
 
     # If the previous rows max number of pairs is higher than the current row then this function will return a one
@@ -44,8 +44,8 @@ class Pairs:
     pair_str : str
         string that has all the pairs with there ibd program
     """
-    def __init__(self, pair_str: str):
-        self.program: str = pair_str.split(":")[0]
+    def __init__(self,  str pair_str):
+        self.program = pair_str.split(":")[0]
         self.pair1: str = pair_str.split(":")[1].split("-")[0].strip("\n")
         self.pair2: str = pair_str.split(":")[1].split("-")[1].strip("\n")
 
@@ -68,7 +68,7 @@ class Pair_Info_Class:
         string containing the filepath that the allpair file will be output to
     """
 
-    def __init__(self, pair_string: str, identifier: str, chromo_num: str, allpair_filepath: str, analysis_type: str):
+    def __init__(self, str pair_string, str identifier, str chromo_num, str allpair_filepath, str analysis_type):
         self.pair_list: list = self.split_pair_str(pair_string)
         self.identifier: str = identifier
         self.chromo_num: str = chromo_num
@@ -77,7 +77,7 @@ class Pair_Info_Class:
 
     
     @staticmethod
-    def split_pair_str(pair_string: str) -> list:
+    def split_pair_str(str pair_string) -> list:
         """Function to split the string of pairs 
         Parameters
         __________
@@ -89,15 +89,16 @@ class Pair_Info_Class:
             list containing the id for pair 1 and pair 2
         """
         # getting the string of just the two pairs
+        cdef str pairs_str
         pairs_str: str = pair_string.split("\t")[4]
 
         # splitting the above string into a list with pair 1 and
         # pair 2
-        pairs_list: list = pairs_str.split(" ")
+        cdef list pairs_list = pairs_str.split(" ")
 
         return pairs_list
 
-    def iid_list_handler(self, carrier_dir: str = None, pheno_carriers: pd.DataFrame = None):
+    def iid_list_handler(self, carrier_dir: str = None,pheno_carriers: pd.DataFrame = None):
         """Function to handle which iid list method will be formed.
 
         Parameters
@@ -150,7 +151,8 @@ class Pair_Info_Class:
         # carriers for a specific gene
 
         if self.analysis_type == "phenotype":
-            
+    
+
             # pulling out the iid_list from the pheno carriers for the specific gene that you have
             iid_list: list = pheno_carriers[pheno_carriers["gene"] == self.identifier]["IID"].values.tolist()
 
@@ -190,10 +192,20 @@ class Pair_Info_Class:
             returns an integer that is the number of carriers that the pair 2 is connected to 
         """
         # get a list of all strings that contain the pair2 value
+        cdef list pair2_in_str
+
         pair2_in_str: list = [string for string in self.pair_list if pair_object.pair2 in string]
 
         # getting a list of connected carriers that can be summed at the end
+        cdef list connected_carriers_list
+
         connected_carriers_list: list = []
+
+        cdef char* pair 
+        cdef list pair_iids
+
+        cdef char* pair_1
+        cdef char* pair_2 
 
         # iterating through each pair
         for pair in pair2_in_str:
@@ -209,7 +221,7 @@ class Pair_Info_Class:
 
         return int(len(connected_carriers_list))
 
-    def set_missed_carrier_status_null(self, pairs_dict: dict, pairs_object: Pairs):
+    def set_missed_carrier_status_null(self, dict pairs_dict: dict, pairs_object: Pairs):
         """Function to provide values to the dictionary when the pair2 is a confirmed carrier and then the connected carriers value doesn't matter
         
         Parameters
@@ -228,7 +240,7 @@ class Pair_Info_Class:
         # carrier since it is a confirmed carrier
         pairs_dict[(pairs_object.pair1, pairs_object.pair2)]["missed_carrier"] = 0
 
-    def set_missed_carrier_status(self, pairs_dict: dict, connected_carriers: int, pairs_object: Pairs):
+    def set_missed_carrier_status(self, dict pairs_dict: dict, connected_carriers: int, pairs_object: Pairs):
         """Function to determine if the pair_2 may be a missed carrier based on the 
         number of connected_carriers
         
@@ -252,28 +264,40 @@ class Pair_Info_Class:
         else:
             pairs_dict[(pairs_object.pair1, pairs_object.pair2)]["missed_carrier"] = 0
         
-    def generate_pairs_dict(self, hapibd_file: pd.DataFrame, ilash_file: pd.DataFrame, analysis_type_info: dict) -> str:
+    def generate_pairs_dict(self, hapibd_file: str, ilash_file: str, dict analysis_type_info: dict) -> str:
         """Function that generates a dictionary of all the pairs and information
         
         Parameters
         __________
-        hapibd_file : pd.DataFrame
-            dataframe of the hapibd output file for the specific chromosome
+        hapibd_file : str
+            hapibd output file for the specific chromosome
         
-        ilash_file : pd.DataFrame
-            dataframe of the ilash output file for the specific chromosome
+        ilash_file : str
+            ilash output file for the specific chromosome
         
         analysis_type_info : dict
             dictionary containing the analysis type, the variant position or the gene start and end. These will be under these respective keys
+
         Returns
         _______
         list 
             returns a list that has information about the for each 
             pair as the values"""
         # creating an empty dictionary to put the pairs into
+        cdef dict pairs_dict
+        cdef list pairs_list
+
         pairs_dict: dict = {}
 
         pairs_list: list = []
+
+        cdef char* pair
+
+        cdef int connected_carriers
+        cdef dict hapibd_info_dict
+        cdef dict ilash_info_dict
+        cdef str pair_str
+
         # iterating through each pair in the pair list
         for pair in self.pair_list:
             

@@ -24,6 +24,9 @@ build/
 dist/
 *.spec
 sandbox/
+*c
+*.so
+*.prof
 # Don't ignore these files
 !requirements.txt
 orignal/

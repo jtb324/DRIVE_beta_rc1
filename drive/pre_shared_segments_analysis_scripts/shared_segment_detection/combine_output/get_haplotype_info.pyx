@@ -7,7 +7,7 @@ from ..generate_indx_dict.generate_dict import Ilash_Indices, Hapibd_Indices
 # output such as start and end point, length, phase1, and phase2
 class ibd_info_finder:
     """base class to get information from the ibd_files of interest"""
-    def __init__(self, ibd_file: str, pair_1: str, pair_2: str, ibd_format: str) -> None:
+    def __init__(self,ibd_file: pd.DataFrame,str pair_1,str pair_2, str ibd_format) -> None:
         """base class that will be used to get information about the ibd segment.
         Parameters
         __________
@@ -30,7 +30,7 @@ class ibd_info_finder:
         self.ibd_format: str = ibd_format
         self.indx_dict: Dict[str, int] = {}
     
-    def get_len_info(self, var_position: int=None, gene_start: int=None, gene_end: int = None) -> dict:
+    def get_len_info(self, var_position: int=None, gene_start: int =None, gene_end: int = None) -> dict:
         """Function to get the shared segment lengths for each pair
         Parameters
         __________
@@ -119,7 +119,7 @@ class ibd_info_finder:
 
 class hapibd_info_finder(ibd_info_finder):
     """class to find the appropriate information for hapibd files"""
-    def __init__(self, ibd_file: str, pair_1: str, pair_2: str, ibd_format: str):
+    def __init__(self, ibd_file: pd.DataFrame, str pair_1: str, str pair_2: str, str ibd_format: str):
         super().__init__(ibd_file, pair_1, pair_2, ibd_format)
         self.get_base_indices()
 
@@ -143,7 +143,7 @@ class hapibd_info_finder(ibd_info_finder):
 
 class ilash_info_finder(ibd_info_finder):
     """class to find the appropriate information for ilash files"""
-    def __init__(self, ibd_file: str, pair_1: str, pair_2: str, ibd_format: str):
+    def __init__(self, ibd_file: pd.DataFrame, str pair_1, str pair_2, str ibd_format):
         super().__init__(ibd_file, pair_1, pair_2, ibd_format)
         self.get_base_indices()
 

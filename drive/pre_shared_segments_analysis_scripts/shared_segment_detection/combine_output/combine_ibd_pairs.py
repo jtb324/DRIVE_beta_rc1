@@ -321,7 +321,7 @@ class Combine_Info:
 
         
     
-    def get_ibd_df(self, ibd_file_key: str) -> pd.DataFrame:
+    def get_ibd_df(self, ibd_file_key: str) -> List:
         """Method to get the ibd file dataframe from the list in the gathered_file_dict
         Parameters
         __________
@@ -336,8 +336,8 @@ class Combine_Info:
         pd.DataFrame
             returns a dataframe of the ibd_file
         """
-        ibd_file: str = find_ibd_file(self.gather_file_dict[ibd_file_key], fix_chr_num(self.chr_num))
-
+        ibd_file = find_ibd_file(self.gather_file_dict[ibd_file_key], fix_chr_num(self.chr_num))
+        
         return  pd.read_csv(ibd_file, sep="\t", header=None)
 
     def get_map_file(self, map_file_list: List[str]) -> str:
@@ -415,8 +415,8 @@ def run(combined_info_object: Combine_Info):
     chr_num: str = combined_info_object.chr_num
     output_dir: str = combined_info_object.output_dir
     analysis_type: str = combined_info_object.analysis_type
-    hapibd_df: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
-    ilash_df: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
+    hapibd_file: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
+    ilash_file: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
     analysis_type_dict: Dict = combined_info_object.analysis_type_dict
 
     # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
@@ -557,7 +557,7 @@ def run(combined_info_object: Combine_Info):
                     pair_info_object.iid_list_handler(carrier_dir=combined_info_object.carrier_dir, pheno_carriers=None)
                 #
                 # Next line will actually generate a string with all the necesary information in it
-                pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_df, ilash_df, analysis_type_dict)
+                pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_file, ilash_file, analysis_type_dict)
 
                 write_to_file(pair_info_object.output_path, pair_info_list)
 
