@@ -7,6 +7,8 @@ import pandas as pd
 import os
 from os import path
 import glob
+import re
+from typing import List, Dict
 
 
 def get_raw_files(plink_output_files: str) -> list:
@@ -38,11 +40,12 @@ def get_plink_var(raw_filepath: str) -> list:
 
     #  getting the column titles from the dataframe
     variant_list: list = raw_df.columns.tolist()[6:]
-
+    print(len(variant_list))
     return variant_list
 
 
-def get_full_var_list(input_var_filepath: str) -> list:
+
+def get_full_var_list(input_var_filepath: str) -> List[str]:
     '''This function will get a list of all the variants in the
     input variant file'''
 
@@ -56,6 +59,7 @@ def get_full_var_list(input_var_filepath: str) -> list:
 
     variant_list: list = var_df["SNP"].values.tolist()
 
+    
     return variant_list
 
 
@@ -84,20 +88,12 @@ def write_to_file(missing_var_list: list, output: str):
 
     with open(full_fileName, "w+") as missing_var_file:
 
-        if os.path.getsize(full_fileName) == 0:
-
-            missing_var_file.write("This file list the variants that were\
-missing from the original input file after the plink gene analysis.\n")
-
         for variant in missing_var_list:
 
             missing_var_file.write(f"{variant}\n")
 
 
-def check_for_missing_var(
-    plink_file_path: str,
-    input_var_filepath: str,
-) -> int:
+def check_for_missing_var(plink_file_path: str, input_var_filepath: str) -> int:
     '''This is the main function that will be run to generate a file
     of all variants that were missing after the initial plink run'''
     output_path: str = plink_file_path

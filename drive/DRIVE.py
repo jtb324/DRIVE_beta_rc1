@@ -13,6 +13,7 @@ import create_network_scripts
 import run_plink
 import pre_shared_segments_analysis_scripts
 import pre_shared_segments_analysis_scripts.shared_segment_detection
+from pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output.combine_ibd_pairs import combine_output
 import utility_scripts
 import collect_phenotype_info
 
@@ -254,7 +255,7 @@ def run(args: list, **kwargs: dict):
             "pheno_gmap_df": pheno_df, 
             "pheno_carrier_df": pheno_carriers_df
         }
-        pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
+        combine_output(
             gathered_file_dict, ibd_file_dict, IBD_search_output_files, ANALYSIS_TYPE, THREADS,
             analysis_files)
         
@@ -271,7 +272,7 @@ def run(args: list, **kwargs: dict):
             "carrier_dir": os.path.join(args.output, "carrier_analysis_output/"), 
         }
 
-        pre_shared_segments_analysis_scripts.shared_segment_detection.combine_output(
+        combine_output(
             gathered_file_dict, ibd_file_dict, IBD_search_output_files, ANALYSIS_TYPE,THREADS, analysis_files)
         
         reformatter = pre_shared_segments_analysis_scripts.shared_segment_detection.Gene_Reformatter(

@@ -1,10 +1,12 @@
 import os
-from os import path
+from os import path, stat
 import logging
 import sys
+import re
 import glob
 import subprocess
 import pandas as pd
+from typing import List, Dict
 
 from .check_missing_variants import check_for_missing_var
 import utility_scripts
@@ -49,8 +51,8 @@ class Analysis_Checker:
         """Function to check the analysis type and then run the corresponding plink steps
         """
         # setting initial parameters for the range
-        self.START_RS: str = None
-        self.END_RS: str = None
+        self.START_RS: str = "N/A"
+        self.END_RS: str = "N/A"
 
         # overwriting the values of START_RS and END_RS if values are present
         if "range" in name:
@@ -159,32 +161,31 @@ class Analysis_Checker:
         Input_handler.split_input_file(self.plink_dir)
         variant_file_list: list = Input_handler.generate_file_list(
             self.plink_dir)
-        for variant_file in variant_file_list:
-            with open("".join([self.plink_dir, "plink_log.log"]),
-                      "a+") as plink_log:
+        with open("".join([self.plink_dir, "plink_log.log"]),
+                    "a+") as plink_log:
 
-                for var_file in variant_file_list:
+            for var_file in variant_file_list:
 
-                    for option in self.recode_flags:
-                        output_file_name = var_file[:-4]
+                for option in self.recode_flags:
+                    output_file_name = var_file[:-4]
 
-                        subprocess.run([
-                            "plink",
-                            "--bfile",
-                            self.binary_file,
-                            "--max-maf",
-                            self.maf,
-                            "--extract",
-                            var_file,
-                            "--out",
-                            output_file_name,
-                            "".join(["--", option]),
-                        ],
-                                       check=False,
-                                       stdout=plink_log,
-                                       stderr=plink_log)
+                    subprocess.run([
+                        "plink",
+                        "--bfile",
+                        self.binary_file,
+                        "--max-maf",
+                        self.maf,
+                        "--extract",
+                        var_file,
+                        "--out",
+                        output_file_name,
+                        "".join(["--", option]),
+                    ],
+                                    check=False,
+                                    stdout=plink_log,
+                                    stderr=plink_log)
 
-                plink_log.close()
+            plink_log.close()
         self.logger.info(f"PLINK output files written to: {self.plink_dir}")
 
 
@@ -262,13 +263,92 @@ class Input_Splitter:
 
             self.write_variants_to_file(variant_df_subset, str(chromo),
                                         plink_dir)
+    @staticmethod
+    def convert_digit(variant_id: str) -> str:
+        """function to convert the variant probe names that have the a digit
+        Parameters
+        __________
+        variant_id : str
+            string that contains the variant probe id that begins with a digit
+        
+        Returns
+        _______
+        str
+            returns a string for the correctly formated probe
+        """
+        variant_str= None
+        # this should match values that begin with a number and then 
+        # have a -G* within the value where G is any letter
+        variant_str= re.match(r"\d.*-[a-zA-Z]-[a-zA-Z]", variant_id)
+        
+        # if the first match is found then we can return that else you have to check for
+        # -GG and return that
+        if variant_str:
+
+            variant_str = variant_str.group()
+
+            return variant_str
+        else:
+            return re.match(r"\d.*-[a-zA-Z][a-zA-Z]", variant_id).group()
+
+    @staticmethod
+    def convert_string(variant_id: str) -> str:
+        """function that makes sure the variant id is properly formated
+        Parameters
+        __________
+        variant_id : str
+            string that has the variant probe id if it begins with a letter
+        
+        Returns
+        _______
+        str
+            returns a string that has the properly formatted probe
+        """
+        variant_str = None
+
+        variant_str = re.match(r"\w.*-\w*", variant_id)
+
+
+        if variant_str:
+            variant_str = variant_str.group()
+            # finding the index of the first -
+            dash_indx: int = variant_str.find("-")
+
+            return variant_str[:dash_indx]
+
+        else:
+
+            return variant_id
+
+    
+    def convert_variant_names(self, variant_id: str) -> str:
+        """function to make the variant probe names match what the mega array wants
+        Parameters
+        __________
+        variant_id : str
+            string that has the variant probe id
+        
+        Returns
+        _______
+        str
+            returns a strings where the variant probe ids are properly 
+            formatted for the plink command
+        """
+
+        # check if the first character of the variant_id is a letter or number
+        regex_handler: Dict[bool, object] = {
+            True: self.convert_digit,
+            False: self.convert_string
+        }
+
+        return regex_handler[variant_id[0].isdigit()](variant_id)
 
     def write_variants_to_file(self, variant_df_subset: pd.DataFrame,
                                chromosome: str, plink_dir: str):
         # Now create a list of just the variants for that chromosome
         # Need to isolate the SNP column for the subset df
-        variant_list = variant_df_subset.SNP.values.tolist()
-
+        variant_list: List[str] = [self.convert_variant_names(variant) for variant in variant_df_subset.SNP.values.tolist()]
+        print(variant_list)
         # write the variant_list to a file
         # Open a file at the out
         MyFile = open(
