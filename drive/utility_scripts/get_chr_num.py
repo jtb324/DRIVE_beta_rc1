@@ -15,17 +15,27 @@ def get_chr_num(file: str, pattern: str) -> str:
     Returns
     _______
     str
-        returns a string of the chromosome number. Should be of 
-        the format chrXX where X is a number 
+        returns a string of the chromosome number. Should be of the format chrXX where X is a 
+        number. If the regular expression matches 
+        nothing then an AttributeError is raised and 
+        "0" is return as a string 
     """
 
     match = re.search(pattern, file)
 
-    chr_num = match.group(0)
+    try:
+        chr_num = match.group(0)
 
-    chr_num = chr_num.strip(".").strip("_")
+        chr_num = chr_num.strip(".").strip("_")
 
-    return chr_num
+        return chr_num
+
+    # if there is no match then line 27 will raise
+    # an AttributeError. This section catches that
+    except AttributeError:
+
+        return "0"
+    
 
 
 def get_alt_chr_num(chr_num: str) -> str:
