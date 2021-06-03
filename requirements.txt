@@ -9,3 +9,4 @@ sidetable==0.7.0
 snakeviz==2.0.1
 pylint==2.7.2
 coverage==5.5
+tqdm==4.42.1
