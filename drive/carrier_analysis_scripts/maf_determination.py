@@ -3,59 +3,37 @@ import glob
 import os
 from os import path
 import re
+from typing import Dict, List
 import population_filter_scripts
 import utility_scripts
 # need to gather all of the single var list
 
+def get_allele_frq(carrier_dict: Dict, raw_dir: str, pop_info_file: str, pop_code: str, output: str) -> None:
+    """Function to determine the minor allele frequency within the MEGA array dataset
+    Parameters
+    __________
+    carrier_dict : Dict
+        Dictionary of dictionaries that has the carriers for each variant for each chromosome
 
-def get_var_files(directory: str, file_id: str) -> list:
+    raw_dir : str
+        string that list the directory that the raw files from PLINK 
+        are in
 
-    cur_dir = os.getcwd()
+    pop_info_file : str
+        file that contains information about the ethinicity of each GRID ID within the dataset
+    
+    pop_code : str
+        string that tells what ethnicity the user wishes to filter for
 
-    os.chdir(directory)
+    output : str
+        string that list the root output directory for the program to output to
 
-    file_list = []
-
-    for file in glob.glob(file_id):
-
-        full_file_path = "".join([directory, file])
-
-        file_list.append(full_file_path)
-
-    os.chdir(cur_dir)
-
-    return file_list
-
-
-def get_chr_num(carrier_file: str) -> str:
-
-    match = re.search(r'chr\d_', carrier_file)
-
-    if match:
-        chr_num = match.group(0)
-
-        # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num) - 1]
-
-    else:
-        match = re.search(r'chr\d\d.', carrier_file)
-
-        chr_num = match.group(0)
-
-        # removing the _ in the file name
-        chr_num = chr_num[:len(chr_num) - 1]
-
-    return chr_num
-
-
-def get_allele_frq(*args: list, output: str):
-    '''This is the function that determines the minor allele frequency of the 
-    variants and then writes it to a file'''
-    # parsing through inputs
-    carrier_file_list: list = args[0]
-    raw_file_list: list = args[1]
-    pop_info_filepath: str = args[2]
-    pop_code: str = args[3]
+    Returns
+    _______
+    Dict[str, Dict[str, float]]
+        Dictionary that has the minor allele frequency for each variant for each chromosome
+    """
+    raw_file_list: List[str] = utility_scripts.get_file_list(raw_dir, "*.raw")
 
     # checking if the output file does exist and removing it if it 
     # does
@@ -65,60 +43,71 @@ def get_allele_frq(*args: list, output: str):
     with open(os.path.join(
         output, "carrier_analysis_output/allele_frequencies.txt"), "a+") as myFile:
 
+        # writing a header line
         myFile.write("chr\tvariant_id\tallele_freq\n")
 
-        for file in carrier_file_list:
+        # creating a dictionary that will be used as a datastructure to 
+        # return the maf for each variant
+        maf_dict: Dict[str, Dict[str, float]] = {}
 
-            chr_num = get_chr_num(file)
+        for chr_num, variant_dict in carrier_dict.items():
+            
+            # adding the chromosome number into the maf_dict
+            maf_dict.setdefault(chr_num, {})
 
-            alt_chr: str = "".join([chr_num, "."])
+            # adding a _ to the chromosome number to match the raw_file
             chr_num = "".join([chr_num, "_"])
 
-            car_raw_file_tuple = [
-                (carrier_file, raw_file) for carrier_file in carrier_file_list
-                for raw_file in raw_file_list
-                if alt_chr in carrier_file and chr_num in raw_file
-            ]
-
-            carrier_file = car_raw_file_tuple[0][0]
-
-            raw_file = car_raw_file_tuple[0][1]
-
-            # getting all the variants in a list
-            carrier_file_df = pd.read_csv(carrier_file, sep=",")
-
-            variant_list = list(
-                set(carrier_file_df["Variant ID"].values.tolist()))
+            # selecting the correct raw file based on the chromosome 
+            # number
+            raw_file: str = [
+                raw_file for raw_file in raw_file_list
+                if chr_num in raw_file
+            ][0]
 
             # loading in the raw file into a dataframe and filtering it just for the desired population code using the Pop_Filter code
-            raw_file_df: pd.DataFrame = population_filter_scripts.run_pop_filter(pop_info_filepath, raw_file,
+            raw_file_df: pd.DataFrame = population_filter_scripts.run_pop_filter(pop_info_file, raw_file,
                                                     pop_code)
-        
+            
+            # iterating through all the variants
+            for variant, iid_list in variant_dict.items():
+            
+                # determining the total number of alleles by just 
+                # multipling the number of rows by two
+                total_allele_count: int = raw_file_df.shape[0] * 2
 
-            for variant in variant_list:
-                # get all rows for that variant in the raw-file_df
+                # subsetting the raw_file_df for the carriers for a specific variant
+                carry_allele_df: pd.Series = raw_file_df[raw_file_df.   IID.isin(iid_list)][variant]
 
-                total_allele_count = len(raw_file_df) * 2
+                # all of the iids are carriers. This line determines 
+                # how many are coded as 1 and how many are coded as 2
+                minor_allele_counts: pd.Series = carry_allele_df.value_counts()
 
-                carry_allele_df = raw_file_df[raw_file_df[variant].isin(
-                    [1, 2])][variant]
-
-                minor_allele_count = carry_allele_df.count()
-
-                allele_frq = minor_allele_count / total_allele_count
+                # setting an initial counter for the minor_allele_count
+                minor_allele_count: int = 0
+                
+                # iterating through the value counts which will be
+                # either 1.0 or 2.0. This allows the minor allele count
+                # to be determined
+                for index, counts in minor_allele_counts.iteritems():
+                    
+                    # creating a handler that will either return the 
+                    # counts or double the allele counts value if the 
+                    # the index represents homozygous recessive counts
+                    index_handler: Dict = {
+                        True : counts,
+                        False : 2 * counts
+                    }
+                    
+                    minor_allele_count += index_handler[index == 1.0] 
+                    
+                minor_allele_frq: float = minor_allele_count / total_allele_count
 
                 myFile.write(
-                    f"{chr_num[:len(chr_num)-1]}\t{variant}\t{allele_frq}\n")
+                    f"{chr_num[:len(chr_num)-1]}\t{variant}\t{minor_allele_frq}\n")
 
-        myFile.close()
+                # adding the allele frequency for each variant into the 
+                # maf_dict
+                maf_dict[chr_num[:len(chr_num)-1]].setdefault(variant, minor_allele_frq)
 
-
-def determine_maf(car_dir: str, raw_dir: str, pop_file: str, pop_code: str,
-                  output: str):
-    "function to run"
-    carrier_file_list = get_var_files(car_dir, "*.single_variant_carrier.csv")
-
-    raw_file_list = get_var_files(raw_dir, "*.raw")
-
-    get_allele_frq(carrier_file_list, raw_file_list, pop_file, pop_code,
-                   output=output)
+    return maf_dict
