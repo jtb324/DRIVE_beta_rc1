@@ -1,45 +1,60 @@
 import sys
 import pandas as pd
 import os
+from typing import Dict, Tuple, List
+from functools import partial
 
 
-def load_frequency_file(file_path: str) -> pd.DataFrame:
-    '''This function loads the provided file into a pandas dataframe'''
-    try:
-        return pd.read_csv(file_path, sep="\t")
-    except FileNotFoundError:
-        raise Exception("file was not found")
+def check_frequencies(threshold: int, variant_freq: Tuple) -> bool:
+    """function to check if a variant allele frequency exceeds the provided threshold
+    Parameters
+    __________
+    threshold : int
+        integer value for the threshold. This is provided intially by 
+        the user
+    
+    variant_freq : Tuple
+        tuple where the first value is the variant id and the second 
+        value is the frequency
 
+    Returns
+    _______
+    bool
+        returns true or false based on whether the variant is <= to the 
+        threshold
+    """
+    freq: float = variant_freq[1]
 
-def filter_for_higher_maf(frequency_df: pd.DataFrame,
-                          threshold: int) -> pd.DataFrame:
-    '''This function filters the provided dataframe for values where the
-    allele frequency is greater than the threshold'''
+    return freq > threshold
 
-    return frequency_df[frequency_df.allele_freq > threshold]
-
-
-def get_filtered_var_list(df_subset: pd.DataFrame) -> list:
-    '''This function will return a list of all the variants that exceeded 
-    the threshold'''
-
-    return df_subset.variant_id.values.tolist()
-
-
-def check_mafs(file_path: str, threshold: int) -> tuple:
+def check_mafs(maf_dict: Dict, threshold: int) -> tuple:
     '''This function will check to see if any variants exceed a threshold
     the provided population file'''
 
-    frequencies_df: pd.DataFrame = load_frequency_file(file_path)
+    # creating a list to keep all of the variant names above the 
+    # threshold
+    variant_list: List[str] = []
 
-    df_subset: pd.DataFrame = filter_for_higher_maf(frequencies_df, threshold)
+    # iterating through all the variants to determine which of the 
+    # allele frequencies are higher than the threshold. These variants 
+    # are added to teh variant_list function
+    for _, variant_maf_dict in maf_dict.items():
 
-    variant_list: list = get_filtered_var_list(df_subset)
+        var_above_threshold: List[Tuple] = list(filter(partial(check_frequencies, threshold), variant_maf_dict))
+
+        var_names: List[str] = [var_tuple[0] for var_tuple in var_above_threshold] 
+
+        variant_list = variant_list + var_names
+
 
     escape_char_pressed: bool = False
 
     program_end_code: int = 1
-    # if the variant_list is not empty
+
+    # if the variant_list is not empty then the program suggest that 
+    # the user pause the program and remove these. If the user wants to
+    # continue then they can user can enter y but the runtime my 
+    # increase
     if variant_list:
 
         print(
@@ -57,6 +72,7 @@ def check_mafs(file_path: str, threshold: int) -> tuple:
                 program_end_code = 1
 
                 escape_char_pressed = True
+
             elif user_input == "n":
 
                 program_end_code = 0

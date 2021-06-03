@@ -47,6 +47,10 @@
     - Also made the function accept the string of the directory that has the raw files instead of the list of the raw files. The function will now create the list within the function
     - Adjusted the function so that it iterates through the variants for each chromosome and uses the value_counts() from the pandas series to count the number of heterozygous and homozygous carriers.
         - These value counts are used to determine the allele count for the minor allele which is then used to determine the minor allele frequency.
+* Changed the check_maf_range.py file. Now it only has two functions: check_maf and check_frequencies. check_maf function is the main one used by the program
+    - Now the function utilizes the maf_dict to get the allele frequencies for each variant and check them against the threshold. This way the program does not have to open up unnecessary files.
+    - Also was able to just take advantage of the filter function to filter the variants instead of using the three other functions.
+    - The function still returns a tuple where the first value is a list of variants above the threshold and the second value is the "program_end_code" where a 1 means the user wishes to terminate the program and a 0 means the user wishes to continue with the program or none of the variants exceed the threshold.
 
 ### ##Removed:
 
@@ -62,3 +66,4 @@
 
 - Need to fix the unit test for the determine_maf.py script
 - Need to move on the check_maf function to refactor it to use the maf_dict to check for minor allele frequencies thresholds
+___
