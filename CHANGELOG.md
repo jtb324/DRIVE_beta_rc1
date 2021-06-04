@@ -31,6 +31,7 @@
 
 - added a function called write_to_file in the identify_single_var_carriers.py file. This function iterates through the dictionary to pull out the iids that carry the variant of interest for each variant for each chromosome.
 - Added a change to the get_allele_freq function that returns a dictionary that has the minor allele frequency for each variant for each chromosome. This dictionary is the maf_dict
+- Added logging to the load_pheno_file so that if the file is not found then it will log a message to the log file
 
 ### ##Changed:
 
