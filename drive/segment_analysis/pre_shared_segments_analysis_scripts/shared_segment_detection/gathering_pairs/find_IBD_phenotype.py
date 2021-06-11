@@ -36,7 +36,7 @@ def get_carriers(phenotype_carriers_df: pd.DataFrame) -> list:
         raise KeyError("Column IID not found in the phenotype carriers file.")
 
     if len(iid_list) == 0:
-        raise EmptyList("Expected at least grid to be in the provided phenotype carriers file","len(iid_list) == 0")
+        raise EmptyList("Expected at least one grid to be in the provided phenotype carriers file","len(iid_list) == 0")
 
     return iid_list
 

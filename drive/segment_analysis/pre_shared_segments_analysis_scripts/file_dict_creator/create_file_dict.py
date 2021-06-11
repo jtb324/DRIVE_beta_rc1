@@ -45,7 +45,6 @@ def find_match(file_list: list, chr_num: str, file_type: str) -> str:
     # list comprehension for each file type
     file_handler = {
             "map": [file for file in file_list if "".join([chr_num, "_"]) in file],
-            "carrier":[file for file in file_list if "".join([chr_num, "."]) in file],
             "ibd": [file for file in file_list if "".join([alt_chr_num, "."]) in file]
             }
     
@@ -59,15 +58,12 @@ def find_match(file_list: list, chr_num: str, file_type: str) -> str:
     
     return file
 
-def get_file_dict(map_file_list: list, carrier_file_list: list, ibd_file_list: list) -> dict:
+def get_file_dict(map_file_list: list,  ibd_file_list: list) -> dict:
     """Function to match up all of the files for the correct chromosome into a dictionary
     Parameters
     __________
     map_file_list : list
         a list of all the map files per chromosome as a result of running Plink
-
-    carrier_file_list : list
-        a list pf all the files that have the identified carriers per chromosome
         
     ibd_file_list : list
         a list of all the files output by the specified ibd programs
@@ -85,7 +81,6 @@ def get_file_dict(map_file_list: list, carrier_file_list: list, ibd_file_list: l
     # get the files from each list
     for key in file_dict:
 
-        file_dict[key].setdefault("carrier", find_match(carrier_file_list, key, "carrier"))
         file_dict[key].setdefault("map", find_match(map_file_list, key, "map"))
         file_dict[key].setdefault("ibd", find_match(ibd_file_list, key, "ibd"))
         

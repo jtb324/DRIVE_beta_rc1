@@ -60,6 +60,7 @@ def single_variant_analysis(parameter_dict: dict) -> Dict:
         returns a dictionary of dictionaries that contains the carriers of each variant for each chromosome
     """
 
+    
     # getting the main logger
     logger = logging.getLogger(__name__)
     # expanding parameters from the kwargs dictionary

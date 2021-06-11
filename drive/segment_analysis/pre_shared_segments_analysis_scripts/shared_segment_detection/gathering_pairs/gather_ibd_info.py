@@ -3,9 +3,10 @@
 # THese are modules 
 from os import path
 import pandas as pd
+from typing import List, Dict, Tuple
 
 import utility_scripts
-import pre_shared_segments_analysis_scripts.file_dict_creator as file_dict_creator
+from pre_shared_segments_analysis_scripts.shared_segment_detection.file_dict_creator.create_file_dict import get_file_dict, filter_empty_dictionaries
 from .collect_shared_segments import gather_pairs, generate_parameters, build_unique_id_dict, create_ibd_arrays, write_to_file
 
 ####################################################################################################
@@ -31,20 +32,21 @@ def create_no_carriers_file(variant_id: str, chr_num: str, output_path: str):
         no_carrier_file.write(f"{variant_id}\t")
         no_carrier_file.write(f"{chr_num[-2:]}\n")
 
-def create_iid_dict(variant_list: list, iid_dict: dict, carrier_df: pd.DataFrame) -> dict:
+def create_iid_dict(variant_list: list, iid_dict: dict, carrier_dict: Dict[str, List[str]]) -> dict:
     """Function to create a dictionary containing a list of IIDs that are identified as carrying the variants
     Parameters
     __________
-    variant : list
+    variant_list : List[str]
         list containing the variant ids
     
     iid_dict : dict
-        empty dictionary where the keys will be the variants and the values will be 
-        the list of carriers that were identified as carriers on the MEGA array
+        empty dictionary where the keys will be the variants and the values will be the list of carriers that were identified as carriers on the 
+        MEGA array
     
-    carrier_df : pd.DataFrame
-        dataframe formed from the single_var_carriers.csv file
-    
+    carrier_dict: Dict[str, List[str]]
+        Dictionary where the keys are the variant probes and the values are
+        lists of the IIDs who carry the variant
+
     Returns
     _______
     dict
@@ -54,7 +56,7 @@ def create_iid_dict(variant_list: list, iid_dict: dict, carrier_df: pd.DataFrame
     
     for variant in variant_list:
         
-        iid_dict[variant] = carrier_df[carrier_df["Variant ID"] == variant]["IID"].values.tolist()
+        iid_dict[variant] = carrier_dict[variant]
 
     return iid_dict
 
@@ -85,13 +87,15 @@ def create_dict_with_var_pos(variant_list: list,  var_pos_dict: dict, map_file_d
     return var_pos_dict
 
 #TODO: Need to write the unit test for this section
-def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
+def create_var_dict(carrier_dict: Dict[str, List[str]], map_file: str) -> Tuple[Dict, Dict]:
     """function that will create a dictionary of the variants and all of 
     the corresponding information 
     Parameters
     __________
-    chromo_var_file : str
-        file path to the single_var_carriers.csv file 
+    carrier_dict: Dict[str, List[str]]
+        Dictionary where the keys are strings of each variant probe 
+        id and the values are list of individuals that are identified as 
+        carrying the variant
     
     map_file : str
         filepath to the map file that was output by plink
@@ -105,9 +109,6 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
     iid_var_dict: dict = {}
     var_pos_dict: dict = {}
 
-    # load in the csv file that list the IIDs of grids per variant on a 
-    # specific chromosome
-    carrier_df = pd.read_csv(chromo_var_file, sep=",")
 
     # reading in the map file
     map_file_df = pd.read_csv(map_file,
@@ -116,14 +117,17 @@ def create_var_dict(chromo_var_file: str, map_file: str) -> tuple:
                                 names=["chr", "variant id", "cM", "site"])
     
     # get the specific list of variants
-    carrier_df_var_list: list = list(set(carrier_df["Variant ID"].values.tolist()))
+    # carrier_df_var_list: list = list(set(carrier_df["Variant ID"].values.tolist()))
 
+    # getting a list of all the variants in the dictionary
+    variant_list: List[str] = list(carrier_dict.keys())
+    
     # These next two lines create a dictionary that has all the variants as keys and then all the iids that carry that variant as values
 
-    iid_dict = create_iid_dict(carrier_df_var_list, iid_var_dict, carrier_df)
+    iid_dict = create_iid_dict(variant_list, iid_var_dict, carrier_dict)
 
 
-    var_pos_dict = create_dict_with_var_pos(carrier_df_var_list, var_pos_dict, map_file_df)
+    var_pos_dict = create_dict_with_var_pos(variant_list, var_pos_dict, map_file_df)
 
     return var_pos_dict, iid_dict
 
@@ -136,7 +140,6 @@ def collect_files(parameter_dict: dict) -> dict:
     # checking the kwargs dictionary for specific
     # parameters
     ibd_files: str = parameter_dict.get("ibd_file_path")
-    carrier_file: str = parameter_dict.get("carrier_file")
     map_file_dir: str = parameter_dict.get("map_files")
     file_suffix: str = parameter_dict.get("ibd_file_suffix")
     ###########################################################
@@ -145,16 +148,16 @@ def collect_files(parameter_dict: dict) -> dict:
     
     segment_file_list: list = utility_scripts.get_file_list(ibd_files, file_suffix)
    
-    chr_var_file_list: list = utility_scripts.get_file_list(carrier_file, "*.single_variant_carrier.csv")
+    # chr_var_file_list: list = utility_scripts.get_file_list(carrier_file, "*.single_variant_carrier.csv")
 
     # getting the list of map files
     map_file_list: list = utility_scripts.get_file_list(map_file_dir, "*.map")
 
     # creating a dictionary that contains the correct map, carrier, and ibd files for the correct chromosome
-    file_dict: dict = file_dict_creator.get_file_dict(map_file_list, chr_var_file_list, segment_file_list)
+    file_dict: dict = get_file_dict(map_file_list, segment_file_list)
     
     # filter the file dict to only the keys with values for each chromosome key
-    file_dict = file_dict_creator.filter_empty_dictionaries(file_dict)
+    file_dict = filter_empty_dictionaries(file_dict)
 
     return file_dict
 
@@ -223,7 +226,7 @@ def filter_no_carriers(var_iid_dict: dict, output_path: str, chr_num: str) -> di
 
 #TODO: refactor to make this function testable
 # This function is not testable at the moment
-def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: str, min_CM: str):
+def iterate_file_dict(file_dict: dict, carrier_info_dict: Dict, output: str, threads: str, ibd_program: str, min_CM: str):
     """Function will iterate through the file dictionary which has paired the chromosome number with the appropriate files 
     Parameters
     __________
@@ -231,7 +234,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
         dictionary of dictionaries where outer dictionaries keys 
         are the chromosome number and the values are dictionaries
         where the inner key is the file type and the value is the 
-        filepath 
+        filepath. This has files for the map files and the ibd files from hapibd and ilash
     
     output : str
         string that list directory to output files at
@@ -241,15 +244,17 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
     
         if "None" not in file_dict[key].values():
             
-            chromo_file: str = file_dict[key]["carrier"]
+            # chromo_file: str = file_dict[key]["carrier"]
             map_file: str = file_dict[key]["map"]
             ibd_file: str = file_dict[key]["ibd"]
 
+            carrier_dict: Dict[str, List[str]] = carrier_info_dict[key]
+            # getting a list of variants for the corresponding chromosome
             # In the var_pos_dict the keys are the variant and values 
             # are the base position of the variant and in the 
             # var_iid_dict, the keys are the variants and the values 
             # are the IID's that carry the variants
-            var_pos_dict, var_iid_dict = create_var_dict(chromo_file, map_file)
+            var_pos_dict, var_iid_dict = create_var_dict(carrier_dict, map_file)
             
             # need to create a function that will check if there are no carriers for a 
             # specific file. If there are no carriers it will write that to a file. It

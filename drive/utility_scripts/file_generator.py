@@ -3,8 +3,9 @@ import os
 from os import path
 import getpass
 import logging
-from typing import Dict
+from typing import Dict, Union, List
 from datetime import datetime
+from dataclasses import dataclass
 
 # This is the base class for creating documentation
 
@@ -15,6 +16,9 @@ class Documentation:
     def __init__(self, file_name: str, output_path: str):
 
         self.file_name = "".join([output_path, file_name])
+        # removing the previous file if it exist
+        self.rm_previous_file()
+
         current_time = datetime.now()
         self.day = current_time.strftime("%b %d, %Y")
         self.time = current_time.strftime("%H:%M:%S")
@@ -52,6 +56,8 @@ class Readme(Documentation):
 
         super().__init__(file_name, output_path)
 
+        self.write_header(output_path)
+
     def write_header(self, directory_name: str):
         '''This function will write a fairly genetic header for the file'''
 
@@ -60,14 +66,35 @@ class Readme(Documentation):
             readme_file.write(
                 f"# README for the {directory_name} directory:\n\n")
 
-    def add_line(self, info_str: str):
+    def add_line(self, info: Union[str, List[str]]):
         '''This function will the info_str to a new line in the document'''
 
-        with open(
-                self.file_name,
-                "a+",
-        ) as readme_file:
-            readme_file.write(info_str + "\n")
+        with open(self.file_name, "a+") as readme_file:
+
+            if type(info) == str:
+                readme_file.write(info + "\n")
+            else:
+                for line in info:
+                    readme_file.write(line + "\n")
+
+@dataclass
+class Readme_Info:
+    """dataclass that will hold the README body text and the readme_info
+    Parameters
+    __________
+    readme_output_path : str
+        string object that contains the filepath that the readme will be written to
+     
+     readme_body_text : str or List[str]
+        string or list of strings that contains all the text that will be written to the readme body"""
+    readme_output_path: str
+    readme_body_text: Union[str, List[str]]
+
+    readme: Readme = Readme("carrier_identification_README.md", readme_output_path)
+
+    readme.add_line(readme_body_text)
+
+
 
 def create_logger(output: str, name: str) -> object:
     """function to create a root logger object
@@ -129,5 +156,29 @@ def record_user_arguments(logger: object, user_input: Dict[str, str]):
 
     """
     for key, value in user_input:
-        logger.info(f"{key} : {value}")
+
+        if value == None:
+            logger.info(f"{key} : {value}")
+
+def create_readmes(readme_text_list: list, output_path: str):
+    """Function to create a readme
+    Parameters
+    __________
+    readme_text_list : list
+        list that contains all of the readme information
+
+    output_path : str
+        string that contains the output path to write the readme to
+    """
+    # creating a readme object using the Readme class
+    readme = Readme("_README.md", output_path)
+    # removing the previous file if it is there
+    readme.rm_previous_file()
+    # writing the output path to the log file
+    readme.write_header(output_path)
+    # creating a date tag
+    readme.create_date_info()
+    # adding all the text in the readme_text-list
+    for readme_text in readme_text_list:
+        readme.add_line(readme_text)
     

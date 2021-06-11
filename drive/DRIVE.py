@@ -7,7 +7,7 @@ from os import path
 import typer
 import sys
 from datetime import datetime
-from collections import namedtuple
+
 
 import carrier_analysis_scripts
 import create_network_scripts
@@ -20,11 +20,15 @@ from pre_shared_segments_analysis_scripts.shared_segment_detection.combine_outpu
 import utility_scripts
 import collect_phenotype_info
 
+from carrier_identification import carrier_id_main
+
 # creating a cli object
 cli = typer.Typer(
     add_completion=False,
-    help="This identifies networks of individuals who share an IBD segment around a genomic region of interest",
+    help="Tool identifies networks of individuals who share an IBD segment around a genomic region of interest",
 )
+# create a subcommand for the carrier identification step
+cli.add_typer(carrier_id_main.carrier_id_app, name="carrier_identification")
 
 # setting parameters for the ilash file paths and the hapibd file paths
 ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
@@ -56,7 +60,7 @@ def gene_analysis(
     ),
     variant_file: Optional[str] = typer.Argument(
         None,
-        help="This is the file that list wariants of interest and there genomic information",
+        help="This is the file that list variants of interest and there genomic information",
     ),
     range_end: Optional[str] = typer.Argument(
         None,
@@ -86,30 +90,8 @@ def gene_analysis(
         prompt=True,
     ),
 ):
-    # remove files from a prior run
-    utility_scripts.remove_dir(output)
 
-    logger: object = utility_scripts.create_logger(output, __name__)
-
-    recode_flags: List[str] = ["recode", "recodeAD"]
-
-    utility_scripts.record_user_arguments(
-        logger,
-        {
-            "genotype_input_file": binary_file,
-            "output_directory": output,
-            "variants_of_interest_file": variant_file,
-            "demographic info file": pop_info_file,
-            "population code used": pop_code,
-            "gene range start position": range_str,
-            "gene range end position": range_end,
-            "minimum centimorgan threshold": MIN_CM,
-            "Minor Allele Frequency Threshold": MAF_THRESHOLD,
-            "Thread count": THREADS,
-            "IBD program output used": IBD_programs,
-            "recode flags used": " ".join(recode_flags),
-        },
-    )
+   
 
     logger.info(f"iLASH files directory: {ILASH_PATH}")
 
@@ -146,7 +128,7 @@ def gene_analysis(
         )
 
         analysis_type_checker.check_analysis(
-            range=[range_str, range_e4nd],
+            range=[range_str, range_end],
             readme_txt=utility_scripts.plink_readme_body_text,
             output=plink_file_path,
         )
@@ -218,6 +200,7 @@ def gene_analysis(
 
     IBD_search_output_files: str = os.path.join(output, "formatted_ibd_output/")
 
+    #This section is going through each program
     for program in IBD_programs.split(" "):
 
         suffix_dict: dict = {
@@ -230,19 +213,17 @@ def gene_analysis(
         # getting the correct ibd_file_path
         ibd_file: str = [file for file in IBD_PATHS_LIST if program in file.lower()][0]
 
+        # TODO: consider adding a readme class since the readme_output and readme_text show up in several spots
         convert_ibd_func_param: dict = {
             "ibd_file_path": ibd_file,
-            "carrier_file": os.path.join([output, "carrier_analysis_output/"]),
-            "ibd_program": program,
-            "output": IBD_search_output_files,
             "map_files": os.path.join([output, "plink_output_files/"]),
             "ibd_file_suffix": file_suffix,
-            "min_CM_threshold": MIN_CM,
-            "threads": THREADS,
-            "readme_output": IBD_search_output_files,
-            "readme_text": utility_scripts.formatted_ibd_dir_body_text_1,
         }
-        # Forming the file dictionary which is a file that contains the appropriate files for each chromosome
+
+        ibd_readme_info: utility_scripts.Readme_Info = utility_scripts.Readme_Info(IBD_search_output_files, utility_scripts.formatted_ibd_dir_body_text_1)
+
+        # Forming the file dictionary which is a file that 
+        # contains the appropriate files for each chromosome
         file_dict: dict = (
             pre_shared_segments_analysis_scripts.shared_segment_detection.collect_files(
                 parameter_dict=convert_ibd_func_param
@@ -420,7 +401,7 @@ def phenotype_analysis(
         # getting the correct ibd_file_path
         ibd_file: str = [file for file in IBD_PATHS_LIST if program in file.lower()][0]
 
-        pre_shared_segments_analysis_scripts.shared_segment_detection.gather_shared_segments(
+        pre_shared_segments_analysis_scripts.shared_segment_detection(
             ibd_file,
             pheno_df,
             pheno_carriers_df,
