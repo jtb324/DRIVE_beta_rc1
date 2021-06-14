@@ -153,4 +153,36 @@ ___
 ### ##TODO:
 
 - Need to fix the readmes for each section
--
+___
+## [beta 1.0.0 rc1] - 2021-06-14:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+
+- Added the segment_analysis_app into the main cli in the [DRIVE.py](http://drive.py) file. This way the user can select this analysis type as an option
+    - It has the name segment_analysis in the user choices
+- Added The main command function main into the segment_analysis_main.py file. This will have all the arguments that the user can enter such as:
+    - output
+    - pheno_gmap
+    - pheno_carriers
+    - MIN_CM
+    - THREADS
+    - MAF_THRESHOLD
+    - IBD_programs
+
+### ##Changed:
+
+- moved the collect_phenotype_info module into the segment_analysis module  instead of in the carrier_identification module because it is used in the segment_analysis module.
+- Changed the program so there will be a log file for the carrier_detection part and a log file for the segment_analysis_main.py part
+
+### ##Removed:
+
+- Started to remove the individual lines in the [DRIVE.py](http://drive.py) file that are being replaced in the segment_analysis_main.py file
+
+### ##TODO:
+
+- Need to fix the readmes for each section
+- Need to branch the mainn function in the segment_analysis_main.py file so that it does one analysis for the phenotype side and one for the gene based analysis

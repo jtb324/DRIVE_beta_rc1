@@ -21,6 +21,7 @@ import utility_scripts
 import collect_phenotype_info
 
 from carrier_identification import carrier_id_main
+from segment_analysis import segment_analysis_main
 
 # creating a cli object
 cli = typer.Typer(
@@ -30,12 +31,9 @@ cli = typer.Typer(
 # create a subcommand for the carrier identification step
 cli.add_typer(carrier_id_main.carrier_id_app, name="carrier_identification")
 
-# setting parameters for the ilash file paths and the hapibd file paths
-ILASH_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/iLash/min100gmap/"
+cli.add_typer(segment_analysis_main.segment_analysis_app, name="segment_analysis")
 
-HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
-# This list groups the ibd files together and they will be used later in the program
-IBD_PATHS_LIST: list = [ILASH_PATH, HAPIBD_PATH]
+
 
 
 @cli.command()
@@ -66,135 +64,11 @@ def gene_analysis(
         None,
         help="Genomic end position to extract a range of snps from. This is used for a gene approach",
     ),
-    MIN_CM: int = typer.Option(
-        3,
-        help="minimum centimorgan threshold that will be used to find the minimum size of shared IBD segments between pairs",
-        prompt=True,
-        callback=utility_scripts.check_provided_integer,
-    ),
-    THREADS: int = typer.Option(
-        3,
-        help="number of threads to parallelize the process to. This value has to be at least 3",
-        prompt=True,
-        callback=utility_scripts.check_provided_integer,
-    ),
-    MAF_THRESHOLD: float = typer.Option(
-        0.05,
-        help="maf frequency threshold where only variants below the threshold will be kept",
-        prompt=True,
-        callback=utility_scripts.check_provided_maf,
-    ),
-    IBD_programs: str = typer.Option(
-        ...,
-        help="Enter the ibd programs whose output was used in the analysis. Enter each program separated by a space",
-        prompt=True,
-    ),
 ):
 
-   
 
-    logger.info(f"iLASH files directory: {ILASH_PATH}")
 
-    logger.info(f"Hapibd files directory: {HAPIBD_PATH}")
-
-    # output path that all the plink files will output to
-    plink_file_path = os.path.join(output, "plink_output_files/")
-
-    if variant_file:
-        analysis_type_checker: object = run_plink.Analysis_Checker(
-            "gene",
-            recode_flags,
-            binary_file,
-            output,
-            plink_file_path,
-            var_file=variant_file,
-            maf_filter=MAF_THRESHOLD,
-        )
-
-        analysis_type_checker.check_analysis(
-            readme_txt=utility_scripts.plink_readme_body_text, output=plink_file_path
-        )
-
-        analysis_type_checker.check_missing_var_count()
-
-    else:
-        analysis_type_checker: object = run_plink.Analysis_Checker(
-            "gene",
-            recode_flags,
-            binary_file,
-            output,
-            plink_file_path,
-            maf_filter=MAF_THRESHOLD,
-        )
-
-        analysis_type_checker.check_analysis(
-            range=[range_str, range_end],
-            readme_txt=utility_scripts.plink_readme_body_text,
-            output=plink_file_path,
-        )
-
-    print("generating list of individuals genotyped ...")
-
-    # determining all GRID ids that carrier a specific variant. Pass a dictionary of all the parameters
-    #TODO: Need to return a data structure that has the variants that are have carriers
-    carrier_dict: Dict = carrier_analysis_scripts.single_variant_analysis(
-        parameter_dict={
-            "recode_filepath": plink_file_path,
-            "output": output,
-            "pop_info": pop_info_file,
-            "pop_code": pop_code,
-            "readme_output": "".join([output, "carrier_analysis_output/"]),
-            "readme_text": utility_scripts.carrier_analysis_body_text,
-        }
-    )
-
-    logger.info(
-        f"Writing the results of which individuals are called as carrying a variant of interest to the directory at: {''.join([output, 'carrier_analysis_output/'])}"
-    )
-
-    print("determining the minor allele frequency within the provided binary file...")
-    maf_dict: Dict = carrier_analysis_scripts.get_allele_frq(
-        carrier_dict,
-        "".join([output, "plink_output_files/"]),
-        pop_info_file,
-        pop_code,
-        output,
-    )
-
-    THRESHOLD: float = 0.10
-
-    print(
-        f"checking the variant minor allele frequencies again against an arbitrary threshold of {THRESHOLD}"
-    )
-
-    # This next function will check to see if variants are above a specified threshold
-    # If they are then the user has an option to end the program and remove the
-    # variants or just continue on with the program. The function will return a tuple
-    # where the first value is a list containing variants that are above a specified
-    # threshold and the second value is either 0 or 1 where 0 quits the program and 1
-    # continues
-
-    variants_above_threshold_tuple: tuple = carrier_analysis_scripts.check_mafs(
-        maf_dict,
-        THRESHOLD,
-    )
-
-    variants_above_threshold: list = variants_above_threshold_tuple[0]
-
-    program_end_code: int = variants_above_threshold_tuple[1]
-
-    if program_end_code == 0:
-        logger.warning(
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
-        )
-
-        logger.warning("Ending program so that the user can remove the above variants")
-        sys.exit(1)
-
-    elif program_end_code == 1 and variants_above_threshold:
-        logger.warning(
-            f"The variants {', '.join(variants_above_threshold)} were above the arbitrary threshold of {THRESHOLD}"
-        )
+    
 
     print("identifying pairs within region that shared IBD segments...")
 
