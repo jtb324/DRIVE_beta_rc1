@@ -40,4 +40,20 @@ def load_pheno_file(pheno_filepath: str, carriers_file: str) -> tuple:
 
     return pheno_df, carriers_df
 
-        
+def check_carrier_format(carriers_df: pd.DataFrame, logger) -> None:
+    """Function to check if the provided file with carriers of the phenotype has two columns called IID and gene
+    Parameters
+    __________
+    carriers_df : pd.DataFrame
+        dataframe that list the carriers for a specific 
+        phenotype and what gene to associate each 
+        carrier with
+    
+    logger = logging.Logger
+        logger object to record error messages
+    """
+    if "gene" not in carriers_df.columns or "IID" not in carriers_df.columns:
+        print("The provided file of carriers does not have the correct columns. The file needs to have the columns 'IID' and the column 'gene'")
+        logger.error("The provided file of carriers does not have the correct columns. The file needs to have the columns 'IID' and the column 'gene'")
+    
+        sys.exit(1)

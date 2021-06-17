@@ -14,6 +14,12 @@ class Base_Reformatter:
         """This is the base reformatter that will hold attributes that the other classes have in common"""
         self.output_path: str = os.path.join(output_path, "confirmed_carriers.txt")
     
+    @staticmethod
+    def remove_duplicates(dataframe: pd.DataFrame) -> pd.DataFrame:
+        """Function to remove duplicate rows from a dataframe before writing it to a file"""
+
+        return dataframe.drop_duplicates()
+
     def write_to_file(self, dataframe: pd.DataFrame):
         """This function will write the dataframe to a file
         Parameters
@@ -22,9 +28,11 @@ class Base_Reformatter:
             dataframe that contains information about the iid, the variant or gene name, the genotype, the confirmed carrier status, and the chromosome number
         """
 
+        # removing any duplicate rows
+        filtered_dataframe: pd.DataFrame = self.remove_duplicates(dataframe)
         # writing the dataframe to a file
 
-        dataframe.to_csv(self.output_path, sep="\t", index=None)
+        filtered_dataframe.to_csv(self.output_path, sep="\t", index=None)
 
     @staticmethod
     def get_file(file_list: list, identifier: str) -> str:

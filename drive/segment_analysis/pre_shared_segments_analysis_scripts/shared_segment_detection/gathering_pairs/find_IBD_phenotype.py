@@ -62,7 +62,6 @@ def gather_gene_info(gmap_df: str) -> dict:
         values are the chromosome number, the start position, and 
         end position
     """
-
     gene_dict: dict = {}
 
     gmap_df.apply(lambda row: create_dictionary(row, gene_dict), axis=1)
@@ -155,7 +154,7 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
         This is the ibd program used to get the shared segment data. Should be either ilash or hapibd"""
     
     # checking to make sure the output directory subdirectory "collected_pairs" exists
-    output_path: str = utility_scripts.check_dir(output_path, "collected_pairs/")
+    ibd_output_path: str = utility_scripts.check_dir(output_path, "collected_pairs/")
 
     # getting a list of ibd_files
     ibd_file_list: list = utility_scripts.get_file_list(ibd_file_list, ibd_suffix)
@@ -166,5 +165,5 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
     # need to generate a dictionary of all chromosomes, with their start and end point
     gene_dict: dict = gather_gene_info(pheno_gmap_df)
 
-    run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, output_path, carrier_list)
+    run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, ibd_output_path, carrier_list)
 

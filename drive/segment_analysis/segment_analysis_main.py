@@ -1,6 +1,6 @@
 import typer
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 import pandas as pd
 
@@ -12,7 +12,7 @@ from segment_analysis import create_network_scripts
 
 segment_analysis_app = typer.Typer()
 
-def determine_segments(output: str, carrier_file_dir: str, IBD_dir_dict: Dict[str, str], IBD_programs: str, pheno_gmap: str, pheno_carriers: str, MIN_CM: int, THREADS: int, logger) -> str:
+def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dict: Dict[str, str], IBD_programs: str, pheno_gmap: Optional[str], pheno_carriers: Optional[str], MIN_CM: int, THREADS: int, plink_file_path: Optional[str], logger) -> str:
     """Function to determine the shared segments between pairs
     Parameters
     __________
@@ -64,7 +64,7 @@ def determine_segments(output: str, carrier_file_dir: str, IBD_dir_dict: Dict[st
             ibd_file,
             pheno_df,
             pheno_carriers_df,
-            output,
+            IBD_search_output_files,
             program,
             MIN_CM,
             file_suffix,
@@ -73,7 +73,7 @@ def determine_segments(output: str, carrier_file_dir: str, IBD_dir_dict: Dict[st
         else: 
             convert_ibd_func_param: Dict = {
             "ibd_file_path": ibd_file, 
-            "map_files": os.path.join(output, "plink_output_files/"),
+            "map_files": plink_file_path,
             "ibd_file_suffix": file_suffix,
             }
 
@@ -117,7 +117,7 @@ def determine_segments(output: str, carrier_file_dir: str, IBD_dir_dict: Dict[st
         shared_segment_detection.combine_output(
             gathered_file_dict,
             ibd_file_dict,
-            output,
+            IBD_search_output_files,
             "phenotype",
             THREADS,
             analysis_files,
@@ -183,7 +183,6 @@ def determine_segments(output: str, carrier_file_dir: str, IBD_dir_dict: Dict[st
 def determine_networks(output: str, ibd_file_dir: str, is_phenotype_analysis: bool, logger):
     print("Identifying networks of individuals who share a segment")
 
-    print(ibd_file_dir)
     # checking to make sure that the directory that the network files gets written to is real
     network_dir: str = utility_scripts.check_dir(output, "networks")
     
@@ -293,6 +292,6 @@ def main(
     print("identifying pairs within region that shared IBD segments...")
 
 
-    IBD_search_output_files: str = determine_segments(output, carrier_files, ibd_dir_dict, IBD_programs, pheno_gmap, pheno_carriers, MIN_CM, THREADS, logger)
+    IBD_search_output_files: str = determine_segments(output, carrier_files, ibd_dir_dict, IBD_programs, pheno_gmap, pheno_carriers, MIN_CM, THREADS, ped_file_path, logger)
 
     determine_networks(output, IBD_search_output_files, pheno_carriers!=None and pheno_gmap!=None, logger)

@@ -219,12 +219,21 @@ ___
 ### ##Added:
 
 ***What was done:***
-
+* Added a check to maKe sure that the inputs were correct and that the program checks the columns for the carrier file for the phenotype analysis
 ### ##Changed:
 
-- Made sure the alignment of the allpair.txt files were correct and adjusted the header.
-    - This correction allowed for the pairs to be identified and now it fixed the previous days to do
+- Fixed the phenotype based analysis
+
+* check all the logic for the phenotype based analysis and compared its output to the dcm output
+    * The expected five carriers were identified in both the gene based analysis and the phenotype based analysis
+
 
 ### ##Removed:
 
 ### ##TODO:
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail

@@ -2,7 +2,6 @@ pandas==1.0.5
 numpy==1.18.5
 xlrd==1.2.0
 pytest==6.2.1
-cython==0.29.23
 matplotlib==3.2.2
 pytest-cov==2.11.1
 sidetable==0.7.0

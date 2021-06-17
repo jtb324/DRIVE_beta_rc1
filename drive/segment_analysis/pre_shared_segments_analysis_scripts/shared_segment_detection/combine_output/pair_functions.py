@@ -128,14 +128,14 @@ class Pair_Info_Class:
 
         # iid_option_handler[self.analysis_type == "phenotype"]
 
-    def carrier_iid_list(self, carrier_analysis_df: Optional[pd.DataFrame] = None, pheno_carriers: pd.DataFrame = None):
+    def carrier_iid_list(self, carrier_analysis_df: Optional[pd.DataFrame] = None, pheno_carriers: Optional[pd.DataFrame] = None):
         """Function to determine the iid list based on the analysis 
         method. Assigns this list to an attribute called iid_list of 
         the Pair_Info_Class object   
 
         Parameters
         __________
-        carrier_analysis_dir : str
+        carrier_analysis_dir : Optional[pd_dataframe]
             directory that specifies where the 
             single_variant_carrier.csv files are that list which
             iid carries which variant
@@ -154,21 +154,13 @@ class Pair_Info_Class:
         if self.analysis_type == "phenotype":
             
             # pulling out the iid_list from the pheno carriers for the specific gene that you have
-            iid_list: list = pheno_carriers[pheno_carriers["gene"] == self.identifier]["IID"].values.tolist()
+            iid_list: List[str] = pheno_carriers[pheno_carriers["gene"] == self.identifier]["IID"].values.tolist()
+
 
         # If the analysis is not the phenotype analysis then need to 
         # gather the carrier files from the specified directory
         # This will find individuals that carry a specific variant
         else:
-
-            # car_file_list: list = utility_scripts.get_file_list(carrier_analysis_dir, "*single_variant_carrier.csv")
-            
-            # using list comprehension to get the file that has the specific chromosome number
-            # carrier_file = [file for file in car_file_list 
-            #     if self.chromo_num.strip(".") in file][0]
-            
-            # loading the carrier_file into a dataframe
-            # carrier_df: pd.DataFrame = pd.read_csv(carrier_file)
 
             # filter dataframe for those individuals carrying the variant
             iid_list: List[str] = carrier_analysis_df["iid"].values.tolist()
@@ -296,7 +288,6 @@ class Pair_Info_Class:
                 # assigning values for the missed carriers
                 self.set_missed_carrier_status_null(pairs_dict, pair_object)
 
-                print(pairs_dict)
                  # need to 
             else:
                 # if the pair is not carrier than the carrier status will be set to 0
@@ -337,7 +328,7 @@ class Pair_Info_Class:
                 # pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_s tatus']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_info_dict['phase1']}\t{hapibd_info_dict['phase2']}\t{ilash_info_dict['phase1']}\t{ilash_info_dict['phase2']}\t{hapibd_info_dict['start']}\t{hapibd_info_dict['end']}\t{hapibd_info_dict['length']}\t{ilash_info_dict['start']}\t{ilash_info_dict['end']}\t{ilash_info_dict['length']}\n"
 
                 pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\n"
-            print(pair_str)
+
             pairs_list.append(pair_str)
 
         return pairs_list

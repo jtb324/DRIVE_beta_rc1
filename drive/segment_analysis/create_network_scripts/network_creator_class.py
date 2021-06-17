@@ -473,7 +473,7 @@ class Network_Maker:
             dataframe["variant_id"] = self.identifier
 
         # adding a column for the chromosome number
-        print(self.chr_num)
+
         dataframe["chr_num"] = self.fix_chr(self.chr_num)[-2:]
 
         return dataframe

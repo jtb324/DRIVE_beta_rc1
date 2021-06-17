@@ -433,7 +433,6 @@ def run(combined_info_object: Combine_Info):
     max_pairs: int = 0
 
     
-    
     # creating the output path for the file
     out = os.path.join(output_dir, "".join(["IBD_", identifier, ".",chr_num]))
     # next line writes the file
@@ -567,7 +566,7 @@ def run(combined_info_object: Combine_Info):
                     pair_info_object.iid_list_handler(carrier_df=combined_info_object.carrier_df, pheno_carriers=None)
                 #
                 # Next line will actually generate a string with all the necesary information in it
-                pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_file, ilash_file, analysis_type_dict)
+                pair_info_list: List[str] = pair_info_object.generate_pairs_dict(hapibd_file, ilash_file, analysis_type_dict)
 
                 write_to_file(pair_info_object.output_path, pair_info_list)
 
