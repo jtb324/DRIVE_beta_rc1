@@ -23,13 +23,14 @@ unittest:
 
 
 build:
-	@echo "Building the executable file"
-	@echo "Make sure to have activated the conda environment"
-	@echo please delete any previous build or dist directories you may have and the *.spec file
-	@pyinstaller --onefile ./drive/DRIVE.py
+	@echo "Building the required C extensions"
+	@echo "Make sure to have activated the appropriate conda environment"
+	@echo "please delete any previous build or dist directories you may have and any .c or .so files file"
+	@echo "running make clean should remove the above mentioned files"
+	@python3 setup.py build_ext --inplace
 
 clean:
-	@find . | grep -E "(__pycache__|\.pytest_cache)" | xargs rm -rf
+	@find . | grep -E "(__pycache__|\.pytest_cache|\*.c|\*.so|\build)" | xargs rm -rf
 
 remove_prior_build:
 	@echo "removing the files from the prior build"

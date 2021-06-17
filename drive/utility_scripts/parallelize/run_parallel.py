@@ -146,12 +146,11 @@ def parallelize_test(*args, combined_info_list: List,  output: str = None, que_o
                 utility_scripts.listener,
                 (que, "".join([output, file_name]), header_str))
 
-            pool.map()
-            func(
+            pool.map(func(
                 *args,
                 que_object=que,
                 pool_object=pool,
-                manager_object=manager)
+                manager_object=manager))
         
 
             que.put("kill")
