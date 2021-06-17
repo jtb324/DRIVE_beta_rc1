@@ -9,4 +9,6 @@ sidetable==0.7.0
 snakeviz==2.0.1
 pylint==2.7.2
 coverage==5.5
-tqdm==4.42.1
+typer==0.3.2
+click==7.1.2
+tqdm==4.59.0

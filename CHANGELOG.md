@@ -186,3 +186,45 @@ ___
 
 - Need to fix the readmes for each section
 - Need to branch the mainn function in the segment_analysis_main.py file so that it does one analysis for the phenotype side and one for the gene based analysis
+
+___
+## [beta 1.0.0 rc1] - 2021-06-16:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+
+- Added back in the file_dict_creator  because that script was actually used through the program
+
+### ##Changed:
+
+- 
+
+### ##Removed:
+
+- Started to remove the individual lines in the [DRIVE.py](http://drive.py) file that are being replaced in the segment_analysis_main.py file
+
+### ##TODO:
+
+- The program is no longer identifying the test set. This needs to be fixed
+
+---
+
+## [beta 1.0.0 rc1] - 2021-06-17:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+
+### ##Changed:
+
+- Made sure the alignment of the allpair.txt files were correct and adjusted the header.
+    - This correction allowed for the pairs to be identified and now it fixed the previous days to do
+
+### ##Removed:
+
+### ##TODO:
