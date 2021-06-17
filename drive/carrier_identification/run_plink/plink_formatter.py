@@ -7,6 +7,7 @@ import glob
 import subprocess
 import pandas as pd
 from typing import List, Dict
+import tqdm
 
 from .check_missing_variants import check_for_missing_var
 import utility_scripts
@@ -28,6 +29,7 @@ class Analysis_Checker:
         if "maf_filter" in name:
 
             self.maf = name["maf_filter"]
+
         self.check_if_path_exists()
 
     def check_if_path_exists(self):
@@ -46,7 +48,6 @@ class Analysis_Checker:
         """
         return logging.getLogger("__main__")
 
-    @utility_scripts.class_readme_generator
     def check_analysis(self, **name):
         """Function to check the analysis type and then run the corresponding plink steps
         """
@@ -161,11 +162,12 @@ class Analysis_Checker:
         Input_handler.split_input_file(self.plink_dir)
         variant_file_list: list = Input_handler.generate_file_list(
             self.plink_dir)
+
         with open("".join([self.plink_dir, "plink_log.log"]),
                     "a+") as plink_log:
-
-            for var_file in variant_file_list:
-
+            for incremnet in tqdm.tqdm(range(len(variant_file_list))):
+            
+                var_file: str = variant_file_list[incremnet]
                 for option in self.recode_flags:
                     output_file_name = var_file[:-4]
 
@@ -174,7 +176,7 @@ class Analysis_Checker:
                         "--bfile",
                         self.binary_file,
                         "--max-maf",
-                        self.maf,
+                        str(self.maf),
                         "--extract",
                         var_file,
                         "--out",
@@ -348,7 +350,7 @@ class Input_Splitter:
         # Now create a list of just the variants for that chromosome
         # Need to isolate the SNP column for the subset df
         variant_list: List[str] = [self.convert_variant_names(variant) for variant in variant_df_subset.SNP.values.tolist()]
-        print(variant_list)
+
         # write the variant_list to a file
         # Open a file at the out
         MyFile = open(

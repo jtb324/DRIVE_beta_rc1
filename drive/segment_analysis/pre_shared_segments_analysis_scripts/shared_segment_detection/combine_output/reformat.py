@@ -126,7 +126,7 @@ class Base_Reformatter:
 
 class Gene_Reformatter(Base_Reformatter):
 
-    def __init__(self,carrier_file_dir: str, allpair_file_dir: str, plink_file_dir:str, no_carrier_file: str, output_path: str) -> None:
+    def __init__(self,carrier_df: pd.DataFrame, allpair_file_dir: str, plink_file_dir:str, no_carrier_file: str, output_path: str) -> None:
         """Function to reformat the allpair.txt files for the genotype approach
         Parameters
         __________
@@ -145,7 +145,7 @@ class Gene_Reformatter(Base_Reformatter):
         
         output_path : str
             This is the path to write the output files to"""
-        self.carrier_files: str = carrier_file_dir
+        self.carrier_df: pd.DataFrame = carrier_df
         self.allpair_files: str = allpair_file_dir
         self.plink_files: str = plink_file_dir
         self.no_carrier_file: str = no_carrier_file
@@ -214,6 +214,7 @@ class Gene_Reformatter(Base_Reformatter):
         genotype_df = pd.DataFrame.from_dict(genotype_dict)
 
         return genotype_df
+
     @staticmethod
     def check_no_carrier(no_carrier_file: str, variant_id: str) -> int:
         """function that will check if the variant_id has no carriers"""
@@ -271,7 +272,7 @@ class Gene_Reformatter(Base_Reformatter):
         """
         # Getting list of the carrier files, the map files, the ped 
         # files and the allpair_files
-        carrier_files_list: list = utility_scripts.get_file_list(self.carrier_files, "*single_variant_carrier.csv")
+        # carrier_files_list: list = utility_scripts.get_file_list(self.carrier_files, "*single_variant_carrier.csv")
 
         map_files_list: list = utility_scripts.get_file_list(self.plink_files, "*.map")
 
@@ -281,7 +282,7 @@ class Gene_Reformatter(Base_Reformatter):
 
         # returning the output as a dictionary
         self.file_dict: dict = {
-            "carrier_files": carrier_files_list,
+            "carrier_df": self.carrier_df,
             "map_files": map_files_list,
             "ped_files": ped_files_list,
             "allpair_files": allpair_files_list
@@ -344,21 +345,22 @@ class Gene_Reformatter(Base_Reformatter):
 
             genotype_df: pd.DataFrame = self.form_genotype_df(map_file, file)
 
-            # getting the correct carrier file based off of the chromosome
-            car_file: str = Base_Reformatter.get_file(self.file_dict["carrier_files"], chr_num)
+            # getting the correct carrier_df subset based on chromosome based off of the chromosome
+            car_df: pd.DataFrame = self.file_dict["carrier_df"]
+            
+            car_df_subset: pd.DataFrame = car_df[car_df.chr == chr_num]
 
-            # load the car_file into a dataframe
-            car_df: pd.DataFrame = pd.read_csv(car_file, sep=",")
+
 
             # getting a list of all the unique variants in the dataframe
-            variant_list: list = list(set(car_df["Variant ID"].values.tolist()))
+            variant_list: list = list(set(car_df_subset["variant_id"].values.tolist()))
 
             # Iterating through each variant and then getting a list of carriers
             # for each variant
             for variant in variant_list:
                 
                 # getting a list of carriers from the carrier_df for the specific variant
-                iid_list: list = car_df[car_df["Variant ID"] == variant ]["IID"].values.tolist()
+                iid_list: list = car_df_subset[car_df_subset["variant_id"] == variant ]["iid"].values.tolist()
 
                 # using list comprehension to get the allpair file for a specific chromosome and variant
 

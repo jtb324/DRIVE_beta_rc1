@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from typing import List, Dict
-from tqdm import tqdm
+import tqdm
 
 ###################################################################################
 # importing necessary functions from other files
@@ -88,7 +88,7 @@ def single_variant_analysis(parameter_dict: dict) -> Dict:
     carrier_dict: Dict[str, Dict[str, List[str]]] = {}
 
     # creating a progress bar to show how the program is iterating through the program
-    for increment in tqdm(range(len(recode_file_list))):
+    for increment in tqdm.tqdm(range(len(recode_file_list))):
 
         # getting the file string from the list based on 
         # the increment

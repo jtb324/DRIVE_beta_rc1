@@ -1,7 +1,6 @@
 # This file will be a way to form the small.txt.gz file for all pairs within the provided ibd file for a certain range
 import pandas as pd
-import sys
-import os
+
 import multiprocessing as mp
 from functools import partial
 

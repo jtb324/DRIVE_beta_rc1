@@ -10,7 +10,7 @@ from typing import List, Dict
 
 
 # Getting all the ibd files that end in .small.txt.gz
-import pre_shared_segments_analysis_scripts
+import segment_analysis.pre_shared_segments_analysis_scripts as pre_shared_segments_analysis_scripts
 from .pair_functions import is_max_pairs_found, after_max_pair_found, Pair_Info_Class
 from .build_analysis_dict import get_analysis_files
 import utility_scripts
@@ -261,7 +261,9 @@ def write_to_file(output_path: str, pair_list: list):
         if os.path.getsize(output_path) == 0:
             # creating a header_line
             allpair_new_file.write(
-                "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\thapibd_phase1\thapibd_phase2\tilash_phase1\tilash_phase2\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
+            #     "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\thapibd_phase1\thapibd_phase2\tilash_phase1\tilash_phase2\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
+            # )
+                "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n"
             )
         # writing the pairs strings to the output file
         for pair_str in pair_list:
@@ -311,12 +313,20 @@ class Combine_Info:
             self.map_file: str = self.get_map_file(gathered_file_dict["map_file_list"])
 
             self.analysis_type_dict: dict = get_analysis_files(self.analysis_type, self.identifier, self.map_file)
-            self.carrier_dir: str = analysis_files["carrier_dir"]
+
+            # loading the dataframe and then filtering it for the 
+            carrier_df: pd.DataFrame = analysis_files["carrier_df"]
+
+            # subsetting the dataframe for the specific variant
+            self.carrier_df: pd.DataFrame= carrier_df[carrier_df.variant_id == self.identifier]
+
         # if the phenotype method is selected then the pheno_gmap_df 
         # file has to be provided
         else:
             self.analysis_type_dict: dict = get_analysis_files(self.analysis_type, self.identifier, pheno_gmap_df=analysis_files["pheno_gmap_df"])
+
             self.pheno_gmap_df: pd.DataFrame = analysis_files["pheno_gmap_df"]
+
             self.pheno_carrier_df: pd.DataFrame = analysis_files["pheno_carrier_df"]
 
         
@@ -554,7 +564,7 @@ def run(combined_info_object: Combine_Info):
                     pair_info_object.iid_list_handler(pheno_carriers=combined_info_object.pheno_carrier_df)
                 else:
                     
-                    pair_info_object.iid_list_handler(carrier_dir=combined_info_object.carrier_dir, pheno_carriers=None)
+                    pair_info_object.iid_list_handler(carrier_df=combined_info_object.carrier_df, pheno_carriers=None)
                 #
                 # Next line will actually generate a string with all the necesary information in it
                 pair_info_list: list = pair_info_object.generate_pairs_dict(hapibd_file, ilash_file, analysis_type_dict)

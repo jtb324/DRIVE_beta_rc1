@@ -3,6 +3,7 @@ import os
 import sys
 from typing import List, Optional, Dict
 
+
 import utility_scripts
 import carrier_identification.run_plink as plink
 from carrier_identification import carrier_analysis_scripts
@@ -35,8 +36,9 @@ def main(recode_filepath: str, output: str, pop_info_file: Optional[str], pop_co
     Dict[str, Dict[str, List[str]]]
         returns a dictionary of dictionaries that contains the carriers of each variant for each chromosome
     """
+    carrier_dir: str = utility_scripts.check_dir(output, "carrier_analysis_output/")
     # creating a readme that will provide info about the single variant analysis
-    _ = utility_scripts.Readme_Info(os.path.join(output, "carrier_analysis_output/"), utility_scripts.carrier_analysis_body_text)
+    _ = utility_scripts.Readme_Info(carrier_dir, utility_scripts.carrier_analysis_body_text)
 
     # running the single_variant_analysis function to 
     # determine individuals who carrier a variant of interest
@@ -53,7 +55,7 @@ def main(recode_filepath: str, output: str, pop_info_file: Optional[str], pop_co
         f"Writing the results of which individuals are called as carrying a variant of interest to the directory at: {''.join([output, 'carrier_analysis_output/'])}"
     )
 
-    print("determining the minor allele frequency within the provided binary file...")
+    print("\ndetermining the minor allele frequency within the provided binary file...")
     maf_dict: Dict = carrier_analysis_scripts.get_allele_frq(
         carrier_dict,
         "".join([output, "plink_output_files/"]),
@@ -139,7 +141,7 @@ def plink_runner(variant_file: str, recode_flags: List[str], binary_file: str, o
             recode_flags,
             binary_file,
             output,
-            plink_file_path,
+            plink_output_path,
             var_file=variant_file,
             maf_filter=MAF_THRESHOLD,
         )
@@ -171,8 +173,8 @@ def plink_runner(variant_file: str, recode_flags: List[str], binary_file: str, o
 
 @carrier_id_app.command()
 def determine_carriers(
-    output: str = typer.Argument(
-        "./", help="file directory to output all output files into"
+    output: str = typer.Option(
+        ..., help="file directory to output all output files into"
     ),
     pop_info_file: Optional[str] = typer.Option(
         None,
@@ -201,7 +203,7 @@ def determine_carriers(
         None,
         help="Genomic start position to extract a range of snps from. This is used for a gene approach",
     ),
-    RANGE_END: Optional[int] = typer.Argument(
+    RANGE_END: Optional[int] = typer.Option(
         None,
         help="Genomic end position to extract a range of snps from. This is used for a gene approach",
     )):
@@ -209,7 +211,8 @@ def determine_carriers(
     
     # Setting a constant for the recode_flags used to run plink
     # removing any files from a previous run
-    utility_scripts.remove_dir(output)
+
+    utility_scripts.remove_dir(os.path.join(output, "carrier_analysis_output"))
 
     # next two lines will create the logger and record initial parameters
     logger: object = utility_scripts.create_logger(output, __name__)
@@ -228,12 +231,13 @@ def determine_carriers(
     # Need to create a block that will run plink
     if run_plink:
         
-        print("running plink")
         # asking the user to input a maf_threshold
-        MAF_THRESHOLD: float = float(typer.prompt("Enter a minor allele frequency threshold to filter variants above the threshold:"))
+        MAF_THRESHOLD: float = float(typer.prompt("Enter a minor allele frequency threshold to filter variants above the threshold"))
+
+        print("running plink\n")
 
         # creating a constant for the recode flags passed to PLINK
-        RECODE_FLAGS: List[str] = ["recode", "recodeAD"]
+        RECODE_FLAGS: List[str] = ["recode", "recodeA"]
         
         # recording the above two parameters
         user_arg_dict["Minor Allele Frequency Threshold"] = MAF_THRESHOLD
@@ -244,7 +248,7 @@ def determine_carriers(
         ped_directory = plink_runner(variant_file, RECODE_FLAGS, binary_file, output, ped_directory,MAF_THRESHOLD, [RANGE_STR, RANGE_END])
     
 
-    print("generating list of individuals genotyped as carrying a variant of interest...")
+    print("\ngenerating list of individuals genotyped as carrying a variant of interest...\n")
 
     #running the main function that will determine if the 
     _ = main(ped_directory, output, pop_info_file, pop_code, logger)

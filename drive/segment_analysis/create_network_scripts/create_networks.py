@@ -1,10 +1,11 @@
-from create_network_scripts.network_creator_class import Network_Prep, Network_Maker
+
 import logging
 import re
 import os
 import pandas as pd
 from typing import List, Dict
 
+from segment_analysis.create_network_scripts.network_creator_class import Network_Maker, Network_Prep
 import utility_scripts
 
 def create_readme(output_path: str):

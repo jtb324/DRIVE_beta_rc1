@@ -1,6 +1,7 @@
 # this script helps build the dictionary that contains keys of unique information like the chromosome number and the variant id/gene name (depends on the analysis type) and then the values are the .small.txt.gz files that are lined up with the correct ibd program
 
 import utility_scripts
+
 def get_variant_id(ibd_file: str) -> str:
     """This function will get the proper variant_id
     Parameters

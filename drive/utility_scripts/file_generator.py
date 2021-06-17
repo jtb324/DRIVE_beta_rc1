@@ -61,7 +61,7 @@ class Readme(Documentation):
     def write_header(self, directory_name: str):
         '''This function will write a fairly genetic header for the file'''
 
-        with open(self.file_name, "a+") as readme_file:
+        with open(self.file_name, "w+") as readme_file:
 
             readme_file.write(
                 f"# README for the {directory_name} directory:\n\n")
@@ -90,9 +90,10 @@ class Readme_Info:
     readme_output_path: str
     readme_body_text: Union[str, List[str]]
 
-    readme: Readme = Readme("carrier_identification_README.md", readme_output_path)
+    def __post_init__(self): 
+        readme: Readme = Readme("carrier_identification_README.md", self.readme_output_path)
 
-    readme.add_line(readme_body_text)
+        readme.add_line(self.readme_body_text)
 
 
 
@@ -155,10 +156,12 @@ def record_user_arguments(logger: object, user_input: Dict[str, str]):
         this is the object that contains all of the arguments passed by the user
 
     """
-    for key, value in user_input:
-
-        if value == None:
+    for key, value in user_input.items():
+        
+        if value != None:
             logger.info(f"{key} : {value}")
+        else:
+            logger.info(f"{key} : N/A")
 
 def create_readmes(readme_text_list: list, output_path: str):
     """Function to create a readme

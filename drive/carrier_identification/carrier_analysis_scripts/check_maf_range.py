@@ -23,7 +23,8 @@ def check_frequencies(threshold: int, variant_freq: Tuple) -> bool:
         returns true or false based on whether the variant is <= to the 
         threshold
     """
-    freq: float = variant_freq[1]
+
+    freq: float = float(variant_freq[1])
 
     return freq > threshold
 
@@ -40,7 +41,8 @@ def check_mafs(maf_dict: Dict, threshold: int) -> tuple:
     # are added to teh variant_list function
     for _, variant_maf_dict in maf_dict.items():
 
-        var_above_threshold: List[Tuple] = list(filter(partial(check_frequencies, threshold), variant_maf_dict))
+
+        var_above_threshold: List[Tuple] = list(filter(partial(check_frequencies, threshold), variant_maf_dict.items()))
 
         var_names: List[str] = [var_tuple[0] for var_tuple in var_above_threshold] 
 

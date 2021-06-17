@@ -5,13 +5,11 @@
 
 import pandas as pd
 import os
-from os import path
 import glob
-import re
 from typing import List, Dict
 
 
-def get_raw_files(plink_output_files: str) -> list:
+def get_raw_files(plink_output_files: str) -> List[str]:
     '''This function will get the raw files and return a list'''
 
     current_dir: str = os.getcwd()
@@ -31,7 +29,7 @@ def get_raw_files(plink_output_files: str) -> list:
     return raw_file_list
 
 
-def get_plink_var(raw_filepath: str) -> list:
+def get_plink_var(raw_filepath: str) -> List[str]:
     '''This function will load the raw file into a pandas
     dataframe and will get a list of all the variants in the dataframe'''
 
@@ -40,7 +38,7 @@ def get_plink_var(raw_filepath: str) -> list:
 
     #  getting the column titles from the dataframe
     variant_list: list = raw_df.columns.tolist()[6:]
-    print(len(variant_list))
+
     return variant_list
 
 
@@ -63,7 +61,7 @@ def get_full_var_list(input_var_filepath: str) -> List[str]:
     return variant_list
 
 
-def find_missing_variants(raw_var_list: list, input_var_list: list) -> list:
+def find_missing_variants(raw_var_list: List[str], input_var_list: List[str]) -> List[str]:
     '''This function will return a list of all variants that are in the
     input_var_list but not in the raw_var_list'''
 
@@ -77,7 +75,7 @@ def find_missing_variants(raw_var_list: list, input_var_list: list) -> list:
     return missing_var_list
 
 
-def write_to_file(missing_var_list: list, output: str):
+def write_to_file(missing_var_list: list, output: str) -> None:
     '''This function will write the missing variants to a file'''
 
     full_fileName: str = "".join([output, "plink_missing_variants.txt"])
