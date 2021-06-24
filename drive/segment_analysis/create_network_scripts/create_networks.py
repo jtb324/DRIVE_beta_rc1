@@ -73,9 +73,11 @@ def create_networks(allpair_file_dir: str, networks_dir: str, analysis_type: str
 
         # TODO: At this point the network_drawer has an attribute iid_dict that has the carriers for each variant/gene in for the chromosome 
         # iterating through each variant and getting the list of carriers
+    
     for chromo_num in network_drawer.iid_dict.keys():
         
         inner_dict: Dict[str, List[str]] = network_drawer.iid_dict[chromo_num]
+
         # creating an object that has the chromosome number, the variant id/gene 
         # name, and the iid list as attributes
 
@@ -114,7 +116,7 @@ def create_networks(allpair_file_dir: str, networks_dir: str, analysis_type: str
                 no_pair_carry_var_list.append(network_maker.identifier)
 
                 # adding the variants/gene that has no pairs to the ind_in_networks_dict
-                ind_in_networks_dict = network_maker.has_no_pairs(ind_in_networks_dict, networks_dir)
+                ind_in_networks_dict = network_maker.has_no_pairs(ind_in_networks_dict, networks_dir, analysis_type)
                 # prints the message and then moves onto the next iteration
                 continue
 

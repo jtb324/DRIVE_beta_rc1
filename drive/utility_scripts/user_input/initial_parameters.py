@@ -1,7 +1,3 @@
-import sys
-import logging
-import os
-from os import path
 import typer
 
 # This script will ask for the user to input certain initial parameters

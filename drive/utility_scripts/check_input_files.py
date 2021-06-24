@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+
 
 
 def check_file_extension(file: str, file_extension_list: list) -> int:

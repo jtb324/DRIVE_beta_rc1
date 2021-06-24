@@ -237,3 +237,52 @@ ___
 * work on reimplementing the part that gets the segment lengths
 * fix unit test
     * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-23:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+
+### ##Changed:
+
+- Fixed a bug where one one variant was working per chromosome for the gene based analysis. The dictionary was being created wrong so it was overwritting the dictionary every time
+
+
+
+### ##Removed:
+
+### ##TODO:
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
+* Need to understand why for the phenotype null set that there are pairs where both iids are the same
+
+## [beta 1.0.0 rc1] - 2021-06-24:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+* Added a function called filter_for_matches to the filter_functions.py file. This function removes rows where pair 1 ID == pair 2 id.
+
+### ##Changed:
+
+- Determined that there was actually no bug that was cause pair 1 and pair 2 iid to be the same for certain pairs. Instead iLASH was actually identifying these pairs and the program was doing what it was suppose to. 
+
+
+### ##Removed:
+
+### ##TODO:
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail

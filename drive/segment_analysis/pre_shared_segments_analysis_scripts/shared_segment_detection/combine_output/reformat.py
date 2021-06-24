@@ -2,6 +2,7 @@
 import utility_scripts
 import pandas as pd
 import os
+from typing import List, Dict, Optional
 
 # Next three classes will be involved in reformatting the information in the allpair.
 # txt file to the expected format in the confirmed_carriers.txt files
@@ -13,6 +14,7 @@ class Base_Reformatter:
     def __init__(self, output_path: str) -> None:
         """This is the base reformatter that will hold attributes that the other classes have in common"""
         self.output_path: str = os.path.join(output_path, "confirmed_carriers.txt")
+        self.output_dir: str = output_path
     
     @staticmethod
     def remove_duplicates(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -20,7 +22,7 @@ class Base_Reformatter:
 
         return dataframe.drop_duplicates()
 
-    def write_to_file(self, dataframe: pd.DataFrame):
+    def write_to_file(self, dataframe: pd.DataFrame) -> None:
         """This function will write the dataframe to a file
         Parameters
         __________
@@ -78,7 +80,7 @@ class Base_Reformatter:
         return utility_scripts.match_chr(pattern_list, file)
     
     @staticmethod
-    def get_confirmed_carriers(allpair_file: str, carrier_list: list) -> list:
+    def get_confirmed_carriers(allpair_file: str, carrier_list: List[str]) -> List[str]:
         """Function to get the list of confirmed carriers from the allpairs.txt file
         Parameters
         __________
@@ -101,10 +103,10 @@ class Base_Reformatter:
             & (allpair_df.pair_2.isin(carrier_list))]
 
         # getting all the grids for pair one
-        pair_1_list: list = allpair_df_carriers.pair_1.values.tolist()
+        pair_1_list: List[str] = allpair_df_carriers.pair_1.values.tolist()
 
         # getting all the grids for pair two into a list
-        pair_2_list: list = allpair_df_carriers.pair_2.values.tolist()
+        pair_2_list: List[str] = allpair_df_carriers.pair_2.values.tolist()
 
         # combining the two pair list into a set so that repeating values get dropped
         confirmed_carrier_set: set = set(pair_1_list + pair_2_list)
@@ -113,7 +115,7 @@ class Base_Reformatter:
         return list(confirmed_carrier_set)
     
     @staticmethod
-    def get_confirmed_status(iid: str, confirmed_carriers: list) -> int:
+    def get_confirmed_status(iid: str, confirmed_carriers: List[str]) -> int:
         """Function that will return either a 1 or a zero depending on whether the iid is a confirmed carrier or not
         Parameters
         __________
@@ -165,9 +167,9 @@ class Gene_Reformatter(Base_Reformatter):
         the inner key is the variant and the inner value is the genotype string """
 
         # form three list for the iid, the variant, and the genotype string
-        iid_list: list = []
-        variant_list: list = []
-        geno_list: list = []
+        iid_list: List[Optional[str]] = []
+        variant_list: List[Optional[str]] = []
+        geno_list: List[Optional[str]] = []
 
         # opening the ped file
         with open(ped_file_path, "r") as ped_file:
@@ -176,11 +178,11 @@ class Gene_Reformatter(Base_Reformatter):
             for row in ped_file:
 
                 # split row
-                row: list = row.split(" ")
+                row: List[str] = row.split(" ")
 
                 # getting only the genotype portion of the row
 
-                geno_row: list = row[6:]
+                geno_row: List[str] = row[6:]
 
                 # getting the iid
                 iid: str = row[1]
@@ -297,8 +299,8 @@ class Gene_Reformatter(Base_Reformatter):
             }
 
     @staticmethod
-    def get_genotype_list(geno_df: pd.DataFrame, carrier_list: list,
-                    variant_id: str) -> list:
+    def get_genotype_list(geno_df: pd.DataFrame, carrier_list: List[str],
+                    variant_id: str) -> List[str]:
         """This function will get the genotypes out for each variant
         Parameters
         __________
@@ -323,12 +325,12 @@ class Gene_Reformatter(Base_Reformatter):
 
         return geno_list
 
-    def reformat(self):
+    def reformat(self) -> None:
         """Function that will write the information from the allpairs.txt file about 
         the confirmed carriers to the confirmed_carriers.txt file"""
 
         # creating a dictionary to keep track of parameters
-        output_dict: dict = {
+        output_dict: Dict[str, Optional[str]] = {
                 "IID":[],
                 "variant_id": [],
                 "gene_name": [],
@@ -361,18 +363,19 @@ class Gene_Reformatter(Base_Reformatter):
 
 
             # getting a list of all the unique variants in the dataframe
-            variant_list: list = list(set(car_df_subset["variant_id"].values.tolist()))
+            variant_list: List[str] = list(set(car_df_subset["variant_id"].values.tolist()))
 
             # Iterating through each variant and then getting a list of carriers
             # for each variant
             for variant in variant_list:
                 
                 # getting a list of carriers from the carrier_df for the specific variant
-                iid_list: list = car_df_subset[car_df_subset["variant_id"] == variant ]["iid"].values.tolist()
+                iid_list: List[str] = car_df_subset[car_df_subset["variant_id"] == variant ]["iid"].values.tolist()
 
                 # using list comprehension to get the allpair file for a specific chromosome and variant
 
                 # There is an error if it does not find an allpair_file. Some of these files don't exist because there are no carriers
+           
                 try:
                     allpair_file: str = [
                         file for file in self.file_dict["allpair_files"]
@@ -396,7 +399,7 @@ class Gene_Reformatter(Base_Reformatter):
                         print(f"The variant, {variant}, failed")
 
                         # writing the variant that failed to a file
-                        with open("".join([self.output_path, "failed_variants.txt"]),
+                        with open(os.path.join(self.output_dir, "failed_variants.txt"),
                                 "a+") as file:
 
                             file.write(f"{variant}\n")
@@ -405,14 +408,14 @@ class Gene_Reformatter(Base_Reformatter):
 
                 # getting a list of carriers that share segments and therefore are "confirmed"
 
-                confirmed_carrier_list: list = Base_Reformatter.get_confirmed_carriers(allpair_file, iid_list)
+                confirmed_carrier_list: List[str] = Base_Reformatter.get_confirmed_carriers(allpair_file, iid_list)
 
                 # need to get the genotype for each carrier_list
 
                 # This will subset the dataframe for the carriers
-                genotype_list: list = self.get_genotype_list(genotype_df,
+                genotype_list: List[str] = self.get_genotype_list(genotype_df,
                                     iid_list, variant[:-2])
-                
+
                 output_dict["IID"].extend(iid_list)
                 output_dict["variant_id"].extend([variant]*len(iid_list))
                 output_dict["gene_name"].extend(["N/A"]*len(iid_list))
@@ -421,7 +424,7 @@ class Gene_Reformatter(Base_Reformatter):
                 output_dict["chr"].extend([chr_num.strip(".")[-2:]]*len(iid_list))
 
         output_df: pd.DataFrame = pd.DataFrame.from_dict(output_dict)
-        
+
         # Combining the dataframes
         self.write_to_file(output_df)
             
@@ -452,7 +455,7 @@ class Pheno_Reformatter(Base_Reformatter):
         super(Pheno_Reformatter, self).__init__(output_path)
     
     
-    def get_iids(self, gene_name: str) -> list:
+    def get_iids(self, gene_name: str) -> List[str]:
         """method to get the list of identified carriers for a certain gene
         Parameters
         __________
@@ -470,21 +473,26 @@ class Pheno_Reformatter(Base_Reformatter):
         # returning the list of suscepted carriers for that gene
         return filtered_df.IID.values.tolist()
     
-    def get_gene_list(self):
-        """Function to get the list of genes in the pheno_gmap file"""
+    def get_gene_list(self) -> List[str]:
+        """Function to get the list of genes in the pheno_gmap file
+        
+        Returns
+        _______
+        List[str]
+            returns a list of the genes in the pheno_gmap file
+        """
 
         return self.pheno_gmap[0].values.tolist()
     
     
-
-    def reformat(self):
+    def reformat(self) -> None:
         """Function that will reformat the allpair.txt file to the confimed_carriers.
         txt"""
         # getting a list of genes to iterate through
-        gene_list: list = self.get_gene_list()
+        gene_list: List[str] = self.get_gene_list()
 
         # creating a dictionary to keep track of parameters
-        output_dict: dict = {
+        output_dict: Dict[str, Optional[str]] = {
                 "IID":[],
                 "variant_id": [],
                 "gene_name": [],
@@ -496,17 +504,17 @@ class Pheno_Reformatter(Base_Reformatter):
         for gene in gene_list:
 
             # getting the list of supposed carriers for that gene
-            iid_list: list = self.get_iids(gene)
+            iid_list: List[str] = self.get_iids(gene)
 
             # get the allpair files from allpair file directory
-            allpair_file_list: list = utility_scripts.get_file_list(self.allpair_files, "*allpair.txt")
+            allpair_file_list: List[str] = utility_scripts.get_file_list(self.allpair_files, "*allpair.txt")
 
             # getting the allpair.txt file
             allpair_file: str = Base_Reformatter.get_file(allpair_file_list, gene)
 
             # getting a list carriers which means that the iid is paired with
             # another iid that is in the iid_list
-            confirmed_carriers: list = Base_Reformatter.get_confirmed_carriers(allpair_file, iid_list)
+            confirmed_carriers: List[str] = Base_Reformatter.get_confirmed_carriers(allpair_file, iid_list)
             
             chr_num: str = self.get_chr_num([r'chr\d\d.', r'chr\d.'], allpair_file)
 
