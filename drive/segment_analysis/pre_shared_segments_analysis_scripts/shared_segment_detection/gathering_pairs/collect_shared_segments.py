@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Union, Tuple, Dict
 
 from ..generate_indx_dict.generate_dict import Germline_Indices, Ilash_Indices, Hapibd_Indices
-from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site
+from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site, filter_for_matches
 
 
 ####################################################################################################
@@ -223,7 +223,9 @@ def write_to_file(IBDdata: dict, IBDindex: dict, output: str, CHR: str, que_obje
             nseg = str(len(allibd))
 
             for cM_pair in allibd:
+                
                 pair = cM_pair.split(':')[1]
+
                 cM = cM_pair.split(':')[0]
 
                 if pair in allibdpair:
@@ -307,13 +309,13 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
 
 
         # Checking to see if the ids are in the uniqID dictionary
-        chunk_in_uniqID = filter_to_individual_in_uniqID(chunk, uniqID, id1_indx, id2_indx)
+        chunk_in_uniqID: pd.DataFrame = filter_to_individual_in_uniqID(chunk, uniqID, id1_indx, id2_indx)
 
-
+        
         # This is filtering the dataframe to only pairs greater than min_cM threshold
         if unit:
             # If germline files are used then you have to use this
-            chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM, unit)
+            chunk_greater_than_3_cm: pd.DataFrame = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM, unit)
         else:
             chunk_greater_than_3_cm = filter_to_greater_than_3_cm(chunk_in_uniqID, cM_indx, min_cM)
         
@@ -322,7 +324,7 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         # This method will only be done if the user is using a gene 
         # driving approach
         if var_position:
-            chunk = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, var_position)
+            chunk: pd.DataFrame = filter_for_correct_base_pair(chunk_greater_than_3_cm, str_indx, end_indx, var_position)
 
         # looking for segments where the start or end of the segment 
         # is within the gene or the 
@@ -330,11 +332,13 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
 
             chunk = filter_for_gene_site(chunk_greater_than_3_cm, str_indx, end_indx, gene_start, gene_end)
             
-        # This will iterate through each row of the filtered chunk
+        # filter to make sure that the pair 1 id and pair 2 id are not the same
+        chunk = filter_for_matches(chunk)
+
         if not chunk.empty:
+            
             # getting rid of an warning message that indicates that the resulting chunk is a pandas dataframe
             chunk_copy: pd.DataFrame = chunk.__deepcopy__()
-
 
             # creating a new column with the pair string for each pair
             chunk_copy.loc[:,"pair_string"] = chunk_copy.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis=1)

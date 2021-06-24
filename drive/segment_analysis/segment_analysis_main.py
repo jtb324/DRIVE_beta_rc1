@@ -96,45 +96,45 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
 
 
     if pheno_gmap and pheno_carriers:
-        print("Hello")
-        # gathered_file_dict: dict = (
-        # shared_segment_detection.gather_files(
-        #     IBD_dir_dict, os.path.join(IBD_search_output_files, "collected_pairs/")
-        #     )
-        # )
 
-        # ibd_file_dict: dict = (
-        #     shared_segment_detection.build_file_dict(
-        #         gathered_file_dict["ibd_pair_file_list"],
-        #         IBD_programs.split(" "),
-        #         "phenotype",
-        #     )
-        # )
+        gathered_file_dict: dict = (
+        shared_segment_detection.gather_files(
+            IBD_dir_dict, os.path.join(IBD_search_output_files, "collected_pairs/")
+            )
+        )
 
-        # analysis_files: dict = {
-        #     "pheno_gmap_df": pheno_df,
-        #     "pheno_carrier_df": pheno_carriers_df,
-        # }
+        ibd_file_dict: dict = (
+            shared_segment_detection.build_file_dict(
+                gathered_file_dict["ibd_pair_file_list"],
+                IBD_programs.split(" "),
+                "phenotype",
+            )
+        )
 
-        # shared_segment_detection.combine_output(
-        #     gathered_file_dict,
-        #     ibd_file_dict,
-        #     IBD_search_output_files,
-        #     "phenotype",
-        #     THREADS,
-        #     analysis_files,
-        # )
+        analysis_files: dict = {
+            "pheno_gmap_df": pheno_df,
+            "pheno_carrier_df": pheno_carriers_df,
+        }
 
-        # reformatter = (
-        #     shared_segment_detection.Pheno_Reformatter(
-        #         IBD_search_output_files,
-        #         pheno_df,
-        #         pheno_carriers_df,
-        #         os.path.join(IBD_search_output_files, "pairs/"),
-        #     )
-        # )
+        shared_segment_detection.combine_output(
+            gathered_file_dict,
+            ibd_file_dict,
+            IBD_search_output_files,
+            "phenotype",
+            THREADS,
+            analysis_files,
+        )
 
-        # reformatter.reformat()
+        reformatter = (
+            shared_segment_detection.Pheno_Reformatter(
+                IBD_search_output_files,
+                pheno_df,
+                pheno_carriers_df,
+                os.path.join(IBD_search_output_files, "pairs/"),
+            )
+        )
+
+        reformatter.reformat()
     else:
         # getting a dictionary of all the files
         gathered_file_dict: dict = (
@@ -259,10 +259,9 @@ def main(
     )):
 
     #removing all files from a previous run
-    # remove files from a prior run
-    # utility_scripts.remove_dir(os.path.join(output, "formatted_ibd_output"))
+    utility_scripts.remove_dir(os.path.join(output, "formatted_ibd_output"))
 
-    # utility_scripts.remove_dir(os.path.join(output, "networks"))
+    utility_scripts.remove_dir(os.path.join(output, "networks"))
 
     # creating a logger object
     logger: object = utility_scripts.create_logger(output, __name__)
@@ -294,8 +293,8 @@ def main(
     print("identifying pairs within region that shared IBD segments...")
 
 
-    # IBD_search_output_files: str = determine_segments(output, carrier_files, ibd_dir_dict, IBD_programs, pheno_gmap, pheno_carriers, MIN_CM, THREADS, ped_file_path, logger)
+    IBD_search_output_files: str = determine_segments(output, carrier_files, ibd_dir_dict, IBD_programs, pheno_gmap, pheno_carriers, MIN_CM, THREADS, ped_file_path, logger)
 
-    IBD_search_output_files: str = utility_scripts.check_dir(output, "formatted_ibd_output/")
+    # IBD_search_output_files: str = utility_scripts.check_dir(output, "formatted_ibd_output/")
 
     determine_networks(output, IBD_search_output_files, pheno_carriers!=None and pheno_gmap!=None, logger)
