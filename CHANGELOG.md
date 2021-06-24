@@ -237,3 +237,28 @@ ___
 * work on reimplementing the part that gets the segment lengths
 * fix unit test
     * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-23:
+
+### ##[Unreleased]
+
+### ##Added:
+
+***What was done:***
+
+### ##Changed:
+
+- Fixed a bug where one one variant was working per chromosome for the gene based analysis. The dictionary was being created wrong so it was overwritting the dictionary every time
+
+
+
+### ##Removed:
+
+### ##TODO:
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
+* Need to understand why for the phenotype null set that there are pairs where both iids are the same

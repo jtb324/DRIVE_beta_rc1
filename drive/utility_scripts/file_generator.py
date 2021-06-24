@@ -5,7 +5,6 @@ import getpass
 import logging
 from typing import Dict, Union, List
 from datetime import datetime
-from dataclasses import dataclass
 
 # This is the base class for creating documentation
 
@@ -13,9 +12,10 @@ from dataclasses import dataclass
 class Documentation:
     '''This class will be the parent class for the documentation throughout
     the program'''
-    def __init__(self, file_name: str, output_path: str):
+    def __init__(self, file_name: str, output_path: str) -> None:
 
-        self.file_name = "".join([output_path, file_name])
+        self.file_name = os.path.join(output_path, file_name)
+
         # removing the previous file if it exist
         self.rm_previous_file()
 
@@ -24,15 +24,15 @@ class Documentation:
         self.time = current_time.strftime("%H:%M:%S")
         self.user = getpass.getuser()
 
-    def rm_previous_file(self):
-        '''This function will remove the readme from a previous run'''
+    def rm_previous_file(self) -> None:
+        """This function will remove the readme from a previous run"""
 
         if path.exists(self.file_name):
 
             os.remove(self.file_name)
 
-    def create_date_info(self):
-        '''This function will create a file with a header'''
+    def create_date_info(self) -> None:
+        """This function will create a file with a header"""
 
         with open(self.file_name, "a+") as file:
 
@@ -52,13 +52,13 @@ class Documentation:
 
 class Readme(Documentation):
     '''This class will extend the Documentation class'''
-    def __init__(self, file_name: str, output_path: str):
+    def __init__(self, file_name: str, output_path: str) -> None:
 
         super().__init__(file_name, output_path)
 
         self.write_header(output_path)
 
-    def write_header(self, directory_name: str):
+    def write_header(self, directory_name: str) -> None:
         '''This function will write a fairly genetic header for the file'''
 
         with open(self.file_name, "w+") as readme_file:
@@ -66,7 +66,7 @@ class Readme(Documentation):
             readme_file.write(
                 f"# README for the {directory_name} directory:\n\n")
 
-    def add_line(self, info: Union[str, List[str]]):
+    def add_line(self, info: Union[str, List[str]]) -> None:
         '''This function will the info_str to a new line in the document'''
 
         with open(self.file_name, "a+") as readme_file:
@@ -77,7 +77,6 @@ class Readme(Documentation):
                 for line in info:
                     readme_file.write(line + "\n")
 
-@dataclass
 class Readme_Info:
     """dataclass that will hold the README body text and the readme_info
     Parameters
@@ -87,15 +86,12 @@ class Readme_Info:
      
      readme_body_text : str or List[str]
         string or list of strings that contains all the text that will be written to the readme body"""
-    readme_output_path: str
-    readme_body_text: Union[str, List[str]]
 
-    def __post_init__(self): 
-        readme: Readme = Readme("carrier_identification_README.md", self.readme_output_path)
+    def __init__(self, readme_output_path: str, readme_body_text: Union[str, List[str]], readme_title: str) -> None:
+        
+        readme: Readme = Readme(readme_title, readme_output_path)
 
-        readme.add_line(self.readme_body_text)
-
-
+        readme.add_line(readme_body_text)
 
 def create_logger(output: str, name: str) -> object:
     """function to create a root logger object

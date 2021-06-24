@@ -69,10 +69,8 @@ def pop_filter_decorator(func):
 
         for line in ped_recode_file:
 
-            print(line)
             split_line: list = line.split(line, 6)
 
-            print(split_line)
             fid: str = split_line[0]
 
             haplotype_str: str = split_line[5]

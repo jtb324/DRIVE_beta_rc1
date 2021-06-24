@@ -1,15 +1,11 @@
 #!/usr/bin/python
-import sys  # THese are modules used
 import gzip
 import multiprocessing as mp
-import re
-import glob
 import os
 import utility_scripts
 import pandas as pd
-from dataclasses import dataclass
-import shutil
-from typing import Union
+
+from typing import Union, Tuple, Dict
 
 from ..generate_indx_dict.generate_dict import Germline_Indices, Ilash_Indices, Hapibd_Indices
 from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site
@@ -35,7 +31,7 @@ def generate_parameters(ibd_program: str) -> dict:
         This value should be ilash, hapibd, or germline
     """
     # using a dictionary to determine 
-    ibd_handler_dict: dict = {
+    ibd_handler_dict: Dict = {
         "hapibd": Hapibd_Indices(ibd_program),
         "ilash": Ilash_Indices(ibd_program),
         "germine": Germline_Indices(ibd_program)
@@ -49,7 +45,7 @@ def generate_parameters(ibd_program: str) -> dict:
     return param_class.return_param_dict()
 
 
-def build_unique_id_dict(iid_list: list) -> dict:
+def build_unique_id_dict(iid_list: list) -> Dict:
     """Function to build a dictionary of unique carriers
     Parameters
     __________
@@ -78,7 +74,7 @@ def build_unique_id_dict(iid_list: list) -> dict:
 
     return uniqID
 
-def create_ibd_arrays() -> tuple:
+def create_ibd_arrays() -> Tuple:
     '''This creates two IBD arrays that will be used later'''
 
     # creating a dictionary with 22 key slots and 22 empty dictionaries

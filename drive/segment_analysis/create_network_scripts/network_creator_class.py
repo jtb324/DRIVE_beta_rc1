@@ -1,11 +1,8 @@
 import numpy as np
 from numpy.core.numeric import NaN
 import pandas as pd
-import re
 import os.path
 from os import path
-import glob
-import gzip
 from typing import List, Dict
 
 import utility_scripts
@@ -61,7 +58,7 @@ class Network_Prep:
             # getting a list of all the variants from the carriers_df
 
             variant_list: List[str] = list(set(carriers_df["variant_id"].values.tolist()))
-        
+
             for variant in variant_list:
 
                 # getting the chromosome number for the specific variant
@@ -70,8 +67,11 @@ class Network_Prep:
                 # getting the list of iids associated with that variant and chromosome
                 iid_list: List[str] = carriers_df[carriers_df["variant_id"] == variant].IID.values.tolist()
 
+                # set a default value for the dictionary 
+                iid_dict.setdefault("".join(["chr",str(chr_num)]), {})
+
                 # writing this list ot a dictionary
-                iid_dict["".join(["chr",str(chr_num)])] = {variant: iid_list}
+                iid_dict["".join(["chr",str(chr_num)])][variant] = iid_list
 
         # creating an attribute that keeps track of these values
         self.iid_dict : Dict[str, Dict[str, List[str]]] = iid_dict
@@ -180,7 +180,7 @@ class Network_Maker:
 
         return filtered_df
 
-    def has_no_pairs(self, ind_in_networks_dict: Dict[str, List], output: str) -> Dict[str, List]:
+    def has_no_pairs(self, ind_in_networks_dict: Dict[str, List], output: str, analysis_type: str) -> Dict[str, List]:
         """Function to add the individuals who have no pairs to the output dictionary
         Parameters
         __________
@@ -225,18 +225,28 @@ class Network_Maker:
         # iterating through each iid in the iid_list so that
         # we can record the iids that have no pairs and therefore 
         # are not in a network
-        for iid in self.iid_list:
-            carriers_in_network_dict["IID"].append(iid)
-            carriers_in_network_dict["In Network"].append(0)
-            carriers_in_network_dict["Network ID"].append(NaN)
-            carriers_in_network_dict["gene_name"].append(self.identifier)
-            carriers_in_network_dict["variant_id"].append("N/A")
-            carriers_in_network_dict["chr_num"].append(self.fix_chr(self.chr_num)[-2:])
+        if analysis_type == "phenotype":
+            for iid in self.iid_list:
+                carriers_in_network_dict["IID"].append(iid)
+                carriers_in_network_dict["In Network"].append(0)
+                carriers_in_network_dict["Network ID"].append("N/A")
+                carriers_in_network_dict["gene_name"].append(self.identifier)
+                carriers_in_network_dict["variant_id"].append("N/A")
+                carriers_in_network_dict["chr_num"].append(self.fix_chr(self.chr_num)[-2:])
+        else:
+            for iid in self.iid_list:
+                carriers_in_network_dict["IID"].append(iid)
+                carriers_in_network_dict["In Network"].append(0)
+                carriers_in_network_dict["Network ID"].append("N/A")
+                carriers_in_network_dict["gene_name"].append("N/A")
+                carriers_in_network_dict["variant_id"].append(self.identifier)
+                carriers_in_network_dict["chr_num"].append(self.fix_chr(self.chr_num)[-2:])
 
         # converting the above dictionary to a dataframe 
         self.network_carriers = pd.DataFrame.from_dict(
             carriers_in_network_dict)
-
+        print("self.network_carriers")
+        print(self.network_carriers)
         # need to write these variants to a dataframe
         # if the file already exist then need to append the new 
         # information without adding a header
@@ -334,7 +344,7 @@ class Network_Maker:
 
             carriers_in_network_dict["IID"].append(iid)
             carriers_in_network_dict["In Network"].append(bool_int)
-            carriers_in_network_dict["Network ID"].append(NaN)
+            carriers_in_network_dict["Network ID"].append("N/A")
 
         # convert dictionary to Dataframe
 
@@ -435,7 +445,7 @@ class Network_Maker:
 
         # Adding a column for the variant number and the chr number so that we can output just one file
         self.network_carriers = self.add_columns(self.network_carriers)
-
+        print(self.network_carriers)
         # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
@@ -447,7 +457,7 @@ class Network_Maker:
                 output_path, "network_groups.txt"),
                                         sep="\t",
                                         index=False,
-                                        mode="a",
+                                        mode="a+",
                                         header=None)
         else:
 
@@ -483,15 +493,15 @@ class Network_Maker:
         '''This function identifies all the potential pair ids for '''
 
         # First subset the dataframe for all the current ids
-        new_df_subset = segment_df[
+        new_df_subset:pd.DataFrame = segment_df[
             (segment_df['pair_1'].isin(current_id_set)) |
             (segment_df['pair_2'].isin(current_id_set))][["pair_1", "pair_2"]]
 
         # These next three lines use sets to avoid duplicate values
         # This gets all ids from the pair one column
-        id1_set = set(new_df_subset.pair_1.values.tolist())
+        id1_set: set = set(new_df_subset.pair_1.values.tolist())
         # This gets all ids from the Pair two column
-        id2_set = set(new_df_subset.pair_2.values.tolist())
+        id2_set: set  = set(new_df_subset.pair_2.values.tolist())
         # this line takes teh union of each set to get all unique values
         total_id_set = id1_set | id2_set
 
@@ -499,7 +509,8 @@ class Network_Maker:
         if total_id_set == current_id_set:
            
             # returns the set of ids
-            self.iid_list = total_id_set
+            self.iid_list: set = total_id_set
+            
             return
         # If the two sets are not equal then it recursively calls the function again
         else:
