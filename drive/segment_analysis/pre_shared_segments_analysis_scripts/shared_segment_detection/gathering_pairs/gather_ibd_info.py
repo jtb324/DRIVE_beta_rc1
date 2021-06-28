@@ -145,9 +145,6 @@ def collect_files(parameter_dict: dict, carrier_file: str) -> dict:
     # getting the segment file list
     
     segment_file_list: List[str] = utility_scripts.get_file_list(ibd_files, file_suffix)
-    
-    # print(carrier_file)
-    # chr_var_file_list: List[str] = utility_scripts.get_file_list(carrier_file, "*.single_variant_carrier.csv")
    
 
     # getting the list of map files
@@ -309,11 +306,11 @@ def gather_shared_segments(variant: str, segment_file: str, output_path: str, ib
 
     print(f"running the variant {variant}")
 
-    carrier_list: list = var_info_dict[variant]["iid_list"]
+    carrier_list: List = var_info_dict[variant]["iid_list"]
 
-    parameter_dict: dict = generate_parameters(ibd_format)
+    parameter_dict: Dict = generate_parameters(ibd_format)
     
-    uniqID: dict = build_unique_id_dict(carrier_list)
+    uniqID: Dict = build_unique_id_dict(carrier_list)
 
     IBDdata, IBDindex = create_ibd_arrays()
 

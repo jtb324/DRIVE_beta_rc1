@@ -275,7 +275,6 @@ class Pair_Info_Class:
         pairs_dict: dict = {}
 
         pairs_list: list = []
-        print(identifier)
         # iterating through each pair in the pair list
         for pair in self.pair_list:
             
@@ -322,6 +321,7 @@ class Pair_Info_Class:
             # ilash_info_object: ilash_info_finder = ilash_info_finder(ilash_file, pair_object.pair1, pair_object.pair2, "ilash")
             
             # getting the ilash and hapibd objects with all the information for the pair
+
             try:
                 hapibd_pair_object = pair_info_dict["hapibd"][identifier][pair_str]
             

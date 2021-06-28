@@ -106,7 +106,7 @@ def collect_IBD_segments(carrier_list: list, ibd_program:str, min_CM: str, ibd_f
 
     gather_pairs(IBDdata, IBDindex, parameter_dict, ibd_file, uniqID, min_CM, que_object, output_path, ibd_program, pair_info_dict, gene_start=gene_info["start"], gene_end=gene_info["end"], gene_name=key) 
 
-def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM: str, ibd_program: str, output: str, carrier_list: list, pair_info_dict: Dict[str, Dict]):
+def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM: str, ibd_program: str, output: str, carrier_list: list, ) -> Dict:
     """function to run through the genes in parallel"""
     
 
@@ -115,6 +115,9 @@ def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM:
     que = manager.Queue()
 
     pool = mp.Pool(int(THREADS))
+
+    pair_info_dict: Dict[str, Dict] = manager.dict()
+
     header:str = "gene\n"
 
     watcher = pool.apply_async(
@@ -130,6 +133,8 @@ def run_parallel(gene_info_dict: dict, ibd_file_list: list,THREADS: int, min_CM:
     pool.close()
 
     pool.join()
+
+    return pair_info_dict
 
 
 def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phenotype_carriers_df: pd.DataFrame, output_path: str, ibd_program: str, min_CM: str, ibd_suffix: str, THREADS, pair_info_dict) -> Dict[str, Dict]:
@@ -153,6 +158,9 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
     
     ibd_program : str
         This is the ibd program used to get the shared segment data. Should be either ilash or hapibd"""
+
+    # adding the ibd program as a key to the dictionary
+    pair_info_dict.setdefault(ibd_program, {})
     
     # checking to make sure the output directory subdirectory "collected_pairs" exists
     ibd_output_path: str = utility_scripts.check_dir(output_path, "collected_pairs/")
@@ -167,5 +175,9 @@ def gather_shared_segments(ibd_file_list: list, pheno_gmap_df:pd.DataFrame, phen
     gene_dict: dict = gather_gene_info(pheno_gmap_df)
 
 
-    run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, ibd_output_path, carrier_list, pair_info_dict)
+    pairs_dict: Dict[str, Dict] = run_parallel(gene_dict, ibd_file_list, THREADS, min_CM, ibd_program, ibd_output_path, carrier_list)
+
+    for key, value in pairs_dict.items():
+
+        pair_info_dict[ibd_program].setdefault(key, value)
 

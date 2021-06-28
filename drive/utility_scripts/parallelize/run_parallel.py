@@ -89,7 +89,7 @@ class Segment_Parallel_Runner(Parallel_Runner):
     def run_segments_parallel(self,
         parallel_func: object, 
         file_name: str,
-        header: str):
+        header: str) -> Dict:
         """function to run the computation in parallel
         Parameters
         __________
@@ -134,8 +134,6 @@ class Segment_Parallel_Runner(Parallel_Runner):
         pool.close()
 
         pool.join()
-
-        print(pair_info_dict)
         
         return pair_info_dict
         

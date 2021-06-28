@@ -282,7 +282,7 @@ def fix_chr_str(chr_num: str) -> str:
 def append_pairs(row: pd.Series, pair_info_dict: Dict, indx_dict: Dict[str, int]) -> None:
     """Function that will add the File_Pairs class to the dictionary """
 
-    pair_info_dict.setdefault("".join([row[indx_dict["id1_indx"]], "-", row[indx_dict["id2_indx"]]]), File_Pairs(row, indx_dict))
+    _ = pair_info_dict.setdefault("".join([row[indx_dict["id1_indx"]], "-", row[indx_dict["id2_indx"]]]), File_Pairs(row, indx_dict))
 
 def add_pair_to_class(pair_df: pd.DataFrame, pairs_info_dict: Dict, ibd_program: str, indx_dict: Dict[str, int], chr_num: str, variant_name: str=None, gene_name: str=None) -> None:
     """Function to add class objects to a dictionary that has the IDB information for each pair
