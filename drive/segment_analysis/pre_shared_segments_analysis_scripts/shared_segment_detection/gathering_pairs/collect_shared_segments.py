@@ -405,14 +405,14 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
 
             # This adds the pairs string as a key to the info_dict and 
             # adds the class to that that keeps the information
-            chunk_copy.apply(lambda row: append_pairs(row, info_dict, parameter_dict), axis=1)
+            _ = chunk_copy.apply(lambda row: append_pairs(row, info_dict, parameter_dict), axis=1)
     
 
     if variant_name:
-        pair_info_dict.setdefault(variant_name, info_dict) 
+        _ = pair_info_dict.setdefault(variant_name, info_dict) 
            
     else:
-        pair_info_dict.setdefault(gene_name, info_dict)
+        _ = pair_info_dict.setdefault(gene_name, info_dict)
             
     if chr_num != "0":
         if variant_name:

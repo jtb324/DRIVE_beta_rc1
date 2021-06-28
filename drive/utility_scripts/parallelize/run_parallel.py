@@ -140,37 +140,14 @@ class Segment_Parallel_Runner(Parallel_Runner):
         return pair_info_dict
         
 
-def parallelize_test(*args, combined_info_list: List,  output: str = None, que_object: bool = False):
+def parallelize_test(func: object, cpu_count: int, pair_info_dict: Dict[str, Dict], combined_info_list: List,  output: str = None, que_object: bool = False):
 
-        func: object = args[0]
+        pool = mp.Pool(cpu_count)
 
-        pool = mp.Pool(int(args[1]))
-
-        if que_object:
-
-            file_name: str = args[1]
-            header_str: str = args[2]
-
-            manager = mp.Manager()
-
-            que = manager.Queue()
+        func_partial = partial(func, pair_info_dict)
         
-            watcher = pool.apply_async(
-                utility_scripts.listener,
-                (que, "".join([output, file_name]), header_str))
-
-            pool.map(func(
-                *args,
-                que_object=que,
-                pool_object=pool,
-                manager_object=manager))
+        pool.map(func_partial, combined_info_list)
         
-
-            que.put("kill")
-        else:
-            
-
-            pool.map(func, combined_info_list)
         pool.close()
 
         pool.join()

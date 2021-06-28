@@ -98,9 +98,6 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
                 file_dict, IBD_search_output_files, THREADS, program, MIN_CM, pair_info_dict
             ) 
 
-    print(pair_info_dict.keys())
-    print(pair_info_dict["hapibd"].keys())
-
 
     if pheno_gmap and pheno_carriers:
 
@@ -130,6 +127,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             "phenotype",
             THREADS,
             analysis_files,
+            pair_info_dict
         )
 
         reformatter = (
@@ -169,8 +167,9 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             "gene",
             THREADS,
             analysis_files,
+            pair_info_dict
         )
-        print("reformatting")
+
         reformatter = (
             shared_segment_detection.Gene_Reformatter(
                 pd.read_csv(os.path.join(output, "carrier_analysis_output/single_variant_carriers.csv"), sep="\t"),

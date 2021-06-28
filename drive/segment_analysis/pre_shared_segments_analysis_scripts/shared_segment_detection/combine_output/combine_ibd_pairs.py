@@ -261,10 +261,10 @@ def write_to_file(output_path: str, pair_list: list):
         if os.path.getsize(output_path) == 0:
             # creating a header_line
             allpair_new_file.write(
-            #     "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\thapibd_phase1\thapibd_phase2\tilash_phase1\tilash_phase2\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
+                "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\thapibd_phase1\thapibd_phase2\tilash_phase1\tilash_phase2\thapibd_start\thapibd_end\thapibd_len\tilash_start\tilash_end\tilash_len\n"
+                )
+            #     "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n"
             # )
-                "IBD_programs\tpair_1\tpair_2\tchr\tvariant_id\tgene_name\tcarrier_status\tpotential_missed_carrier\tconnected_carriers\n"
-            )
         # writing the pairs strings to the output file
         for pair_str in pair_list:
             allpair_new_file.write(pair_str)
@@ -379,10 +379,10 @@ class Combine_Info:
         else:
             return 1
 
-def combine_output(gathered_file_dict: Dict, file_dict: Dict, output: str, analysis_type: str,threads: int, analysis_files: Dict):
+def combine_output(gathered_file_dict: Dict, file_dict: Dict, output: str, analysis_type: str,threads: int, analysis_files: Dict, pair_info_dict: Dict[str, Dict]):
     """main function to run for this script"""
 
-    # making sure the output directory exist
+    # making sure the tput directory exist
     output_dir: str = utility_scripts.check_dir(output, "pairs")
 
     utility_scripts.check_file(os.path.join(output, "no_ibd_segments.txt"))
@@ -404,15 +404,21 @@ def combine_output(gathered_file_dict: Dict, file_dict: Dict, output: str, analy
 
         file_info_list.append(combiner_info)
 
-    utility_scripts.parallelize_test(run, threads, combined_info_list=file_info_list)
-
-    #TODO: Keep trying to parallelize this function
+    utility_scripts.parallelize_test(run, int(threads),  pair_info_dict, file_info_list)
 
 
-def run(combined_info_object: Combine_Info):
+
+def run(pair_info_dict: Dict[str, Dict], combined_info_object: Combine_Info):
     """Function to be parallelized to combine the ibd pairs into the allpair.txt file
     Parameters
     __________
+    pair_info_dict : Dict[str, Dict[str, Dict[str, object]]]
+        dictionary of dictionaries where the outer keys are either ilash 
+        or hapibd and the value is a dictionary where the key is the 
+        MEGA probe id, and the value is a dictionary where the key is 
+        the pair in the form of 'pair1-pair2' and the value is a class 
+        object that has information
+
     combined_info_object : Combine_Info
         class object that has gathered specific files together with the chromsome number and the identifier"""    
 
@@ -422,8 +428,8 @@ def run(combined_info_object: Combine_Info):
     chr_num: str = combined_info_object.chr_num
     output_dir: str = combined_info_object.output_dir
     analysis_type: str = combined_info_object.analysis_type
-    hapibd_file: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
-    ilash_file: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
+    # hapibd_file: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
+    # ilash_file: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
     analysis_type_dict: Dict = combined_info_object.analysis_type_dict
 
     # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
@@ -563,7 +569,7 @@ def run(combined_info_object: Combine_Info):
                     pair_info_object.iid_list_handler(carrier_df=combined_info_object.carrier_df, pheno_carriers=None)
                 #
                 # Next line will actually generate a string with all the necesary information in it
-                pair_info_list: List[str] = pair_info_object.generate_pairs_dict(hapibd_file, ilash_file, analysis_type_dict)
+                pair_info_list: List[str] = pair_info_object.generate_pairs_dict(analysis_type_dict, pair_info_dict, identifier)
 
                 write_to_file(pair_info_object.output_path, pair_info_list)
 
