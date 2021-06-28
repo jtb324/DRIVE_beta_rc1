@@ -5,41 +5,41 @@ from typing import List, Dict
 import utility_scripts
 
 
-def parallelize_decorator(func):
-    """decorator function that will be used to wrap the two methods for parallelization in the classes below.
-    Parameter
-    _________
-    func : object
-        function that the decorator will wrap around. This function should be a class method used 
-        to parallelize the computation
-    """
-    def inner_func(self, *args):
+# def parallelize_decorator(func):
+#     """decorator function that will be used to wrap the two methods for parallelization in the classes below.
+#     Parameter
+#     _________
+#     func : object
+#         function that the decorator will wrap around. This function should be a class method used 
+#         to parallelize the computation
+#     """
+#     def inner_func(self, *args):
 
-        file_name: str = args[0]
-        header_str: str = args[2]
+#         file_name: str = args[0]
+#         header_str: str = args[2]
 
-        manager = mp.Manager()
+#         manager = mp.Manager()
 
-        que = manager.Queue()
-        pool = mp.Pool(int(self.workers))
+#         que = manager.Queue()
+#         pool = mp.Pool(int(self.workers))
 
-        watcher = pool.apply_async(
-            utility_scripts.listener,
-            (que, "".join([self.output, file_name]), header_str))
+#         watcher = pool.apply_async(
+#             utility_scripts.listener,
+#             (que, "".join([self.output, file_name]), header_str))
 
-        func(self,
-             *args,
-             que_object=que,
-             pool_object=pool,
-             manager_object=manager)
+#         func(self,
+#              *args,
+#              que_object=que,
+#              pool_object=pool,
+#              manager_object=manager)
 
-        que.put("kill")
+#         que.put("kill")
 
-        pool.close()
+#         pool.close()
 
-        pool.join()
+#         pool.join()
 
-    return inner_func
+#     return inner_func
 
 
 @dataclass
@@ -83,15 +83,13 @@ class Segment_Parallel_Runner(Parallel_Runner):
 
     ibd_format: str
     min_CM: str
-    file_list_dict: dict
+    file_list_dict: Dict[str, Dict]
     segment_file: str
 
-    @parallelize_decorator
     def run_segments_parallel(self,
-                              *args,
-                              que_object=None,
-                              pool_object=None,
-                              manager_object=None):
+        parallel_func: object, 
+        file_name: str,
+        header: str) -> Dict:
         """function to run the computation in parallel
         Parameters
         __________
@@ -104,147 +102,50 @@ class Segment_Parallel_Runner(Parallel_Runner):
         header_str : str
             string that will be the first row of the file at the file_name
 
-        que_object : object
-            que created by manager.Queue that waits for a string to be passed 
-            to it and then passes that string to the listener function
-
-        pool_object : object
-            created by mp.Pool
-
-        manager_object : object
-            que manager created by mp.Manager
-
         """
         # expanding the second argument of the arg list into the parallel_func
-        parallel_func: object = args[1]
+        manager = mp.Manager()
 
+        que = manager.Queue()
 
+        pool = mp.Pool(int(self.workers))
+
+        pair_info_dict: Dict[str, Dict] = manager.dict()
+        
         # get all the variants from the file_list_dict
         variant_list: list = self.file_list_dict.keys()
-
-        func = partial(parallel_func, self.segment_file, self.output,
-                       self.ibd_format, self.min_CM, self.file_list_dict, que_object)
-
-        pool_object.map(func, variant_list)
-
-def parallelize_test(*args, combined_info_list: List,  output: str = None, que_object: bool = False):
-
-        func: object = args[0]
-
-        pool = mp.Pool(int(args[1]))
-
-        if que_object:
-
-            file_name: str = args[1]
-            header_str: str = args[2]
-
-            manager = mp.Manager()
-
-            que = manager.Queue()
         
-            watcher = pool.apply_async(
-                utility_scripts.listener,
-                (que, "".join([output, file_name]), header_str))
+        _ = pool.apply_async(
+            utility_scripts.listener,
+            (que, "".join([self.output, file_name]), header))
 
-            pool.map(func(
-                *args,
-                que_object=que,
-                pool_object=pool,
-                manager_object=manager))
+        # func = partial(parallel_func, self.segment_file, self.output,
+        #                self.ibd_format, self.min_CM, self.file_list_dict, pair_info_dict, que)
         
+        for variant in variant_list:
 
-            que.put("kill")
-        else:
-            
+            pool.apply_async(parallel_func, args=(variant, self.segment_file, self.output,
+                       self.ibd_format, self.min_CM, self.file_list_dict, pair_info_dict, que))
+                       
+        # pool.map(func, variant_list)
 
-            pool.map(func, combined_info_list)
+        que.put("kill")
+
         pool.close()
 
         pool.join()
+        
+        return pair_info_dict
+        
 
-# @dataclass
-# class Haplotype_Parallel_Runner(Parallel_Runner):
-#     """child dataclass for the parallelization of the haplotype.py script
+def parallelize_test(func: object, cpu_count: int, pair_info_dict: Dict[str, Dict], combined_info_list: List,  output: str = None, que_object: bool = False):
 
-#     Parameters
-#     __________
-#     file_list_dict : dict 
-#         dictionary that contains list of all the allpair files, the map files, 
-#         the carrier_files (The reformated single_variant_list.csv files), the
-#         ilash files, and the hapibd files.  This dictionary will have the keys 
-#         "allpair_files", "map_files", "carrier_files", "ilash_files", 
-#         "hapibd_files".
+        pool = mp.Pool(cpu_count)
 
-#     network_file_path : str
-#         string that list the path to the network_groups.csv file
+        func_partial = partial(func, pair_info_dict)
+        
+        pool.map(func_partial, combined_info_list)
+        
+        pool.close()
 
-#     variant_list : list 
-#         list of all the unique variants within the confirmed_carriers.txt files
-
-#     confirmed_carrier_file : str
-#         filepath to the confirmed_carriers.txt file
-
-#     """
-#     file_list_dict: dict
-#     network_file_path: str
-#     variant_list: list
-#     confirmed_carrier_file: str
-
-#     @parallelize_decorator
-#     def run_haplotypes_parallel(self,
-#                                 *args,
-#                                 que_object=None,
-#                                 pool_object=None,
-#                                 manager_object=None):
-#         """function to run the process in parallel
-#         Parameters
-#         __________
-#         file_name : str 
-#             string containing the filename for the output file
-
-#         parallel_func : object
-#             function that will be parallelized during the computation
-
-#         header_str : str
-#             string that will be the first row of the file at the file_name
-
-#         que_object : object
-#             que created by manager.Queue that waits for a string to be passed 
-#             to it and then passes that string to the listener function
-
-#         pool_object : object
-#             created by mp.Pool
-
-#         manager_object : object
-#             que manager created by mp.Manager
-
-#         """
-
-#         # starting the second que object
-#         variant_que = manager_object.Queue()
-
-#         variant_header: str = "variant\tchr\n"
-
-#         var_watcher = pool_object.apply_async(
-#             utility_scripts.listener, (variant_que, "".join([
-#                 self.output, "nopairs_haplotype_analysis.txt"
-#             ]), variant_header))
-
-#         # expanding the file_list_dict to get all the
-#         allpair_file_list: list = self.file_list_dict["allpair_files"]
-#         map_file_list: list = self.file_list_dict["map_files"]
-#         carrier_file_list: list = self.file_list_dict["carrier_files"]
-#         ilash_file_list: list = self.file_list_dict["ilash_files"]
-#         hapibd_file_list: list = self.file_list_dict["hapibd_files"]
-
-#         # expanding the args[1] into the parallelized func
-#         parallel_func: object = args[1]
-
-#         func = partial(parallel_func, allpair_file_list, carrier_file_list,
-#                        map_file_list, ilash_file_list, hapibd_file_list,
-#                        que_object, variant_que, self.network_file_path,
-#                        self.confirmed_carrier_file)
-
-#         pool_object.map(func, self.variant_list)
-
-#         variant_que.put("kill")
+        pool.join()

@@ -38,7 +38,7 @@ def main(recode_filepath: str, output: str, pop_info_file: Optional[str], pop_co
     """
     carrier_dir: str = utility_scripts.check_dir(output, "carrier_analysis_output/")
     # creating a readme that will provide info about the single variant analysis
-    _ = utility_scripts.Readme_Info(carrier_dir, utility_scripts.carrier_analysis_body_text)
+    _ = utility_scripts.Readme_Info(carrier_dir, utility_scripts.carrier_analysis_body_text, "carrier_analysis_output_README.md")
 
     # running the single_variant_analysis function to 
     # determine individuals who carrier a variant of interest

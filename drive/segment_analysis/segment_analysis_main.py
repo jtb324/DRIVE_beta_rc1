@@ -44,10 +44,13 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
     
     ibd_readme_info: utility_scripts.Readme_Info = utility_scripts.Readme_Info(IBD_search_output_files, utility_scripts.formatted_ibd_dir_body_text_1, "formatted_ibd_output_README.md")
 
+    # creating a dictionary that can keep track of information about the pairs
+    pair_info_dict: Dict[str, Dict] = {}
+
     #This section is going through each program
     for program in IBD_programs.split(" "):
 
-        suffix_dict: dict = {
+        suffix_dict: Dict[str, str] = {
             "ilash": "*.match.gz",
             "hapibd": "*.ibd.gz",
         }
@@ -63,15 +66,17 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             pheno_df, pheno_carriers_df = collect_phenotype_info.load_pheno_file(pheno_gmap, pheno_carriers)
 
             shared_segment_detection.gather_shared_segments(
-            ibd_file,
-            pheno_df,
-            pheno_carriers_df,
-            IBD_search_output_files,
-            program,
-            MIN_CM,
-            file_suffix,
-            THREADS
-            )
+                                                            ibd_file,
+                                                            pheno_df,
+                                                            pheno_carriers_df,
+                                                            IBD_search_output_files,
+                                                            program,
+                                                            MIN_CM,
+                                                            file_suffix,
+                                                            THREADS, pair_info_dict
+                                                            )
+
+
         else: 
             convert_ibd_func_param: Dict = {
             "ibd_file_path": ibd_file, 
@@ -82,7 +87,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
 
             # Forming the file dictionary which is a file that 
             # contains the appropriate files for each chromosome
-            file_dict: dict = (
+            file_dict: Dict = (
                 shared_segment_detection.collect_files(
                     convert_ibd_func_param, os.path.join(carrier_file_dir, "single_variant_carriers.csv")
                 )
@@ -91,19 +96,19 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             # iterating over this dictionary so that we can get the
             # variants for each chromosome
             shared_segment_detection.iterate_file_dict(
-                file_dict, IBD_search_output_files, THREADS, program, MIN_CM
+                file_dict, IBD_search_output_files, THREADS, program, MIN_CM, pair_info_dict
             ) 
 
 
     if pheno_gmap and pheno_carriers:
 
-        gathered_file_dict: dict = (
+        gathered_file_dict: Dict = (
         shared_segment_detection.gather_files(
             IBD_dir_dict, os.path.join(IBD_search_output_files, "collected_pairs/")
             )
         )
 
-        ibd_file_dict: dict = (
+        ibd_file_dict: Dict = (
             shared_segment_detection.build_file_dict(
                 gathered_file_dict["ibd_pair_file_list"],
                 IBD_programs.split(" "),
@@ -111,7 +116,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             )
         )
 
-        analysis_files: dict = {
+        analysis_files: Dict = {
             "pheno_gmap_df": pheno_df,
             "pheno_carrier_df": pheno_carriers_df,
         }
@@ -123,6 +128,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             "phenotype",
             THREADS,
             analysis_files,
+            pair_info_dict
         )
 
         reformatter = (
@@ -137,7 +143,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
         reformatter.reformat()
     else:
         # getting a dictionary of all the files
-        gathered_file_dict: dict = (
+        gathered_file_dict: Dict = (
             shared_segment_detection.gather_files(
                 IBD_dir_dict,
                 os.path.join(IBD_search_output_files, "collected_pairs/"),
@@ -145,7 +151,7 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             )
         )
 
-        ibd_file_dict: dict = (
+        ibd_file_dict: Dict = (
             shared_segment_detection.build_file_dict(
                 gathered_file_dict["ibd_pair_file_list"], IBD_programs.split(" "), "gene"
             )
@@ -162,8 +168,9 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             "gene",
             THREADS,
             analysis_files,
+            pair_info_dict
         )
-        print("reformatting")
+
         reformatter = (
             shared_segment_detection.Gene_Reformatter(
                 pd.read_csv(os.path.join(output, "carrier_analysis_output/single_variant_carriers.csv"), sep="\t"),
@@ -284,7 +291,7 @@ def main(
 
     HAPIBD_PATH: str = "/data100t1/share/BioVU/shapeit4/Eur_70k/hapibd/"
     # This list groups the ibd files together and they will be used later in the program
-    ibd_dir_dict: dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
+    ibd_dir_dict: Dict = {"ilash": ILASH_PATH, "hapibd": HAPIBD_PATH}
 
     logger.info(f"iLASH files directory: {ILASH_PATH}")
 

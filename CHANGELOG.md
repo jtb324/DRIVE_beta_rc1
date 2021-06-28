@@ -286,3 +286,69 @@ ___
 * work on reimplementing the part that gets the segment lengths
 * fix unit test
     * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-26:
+
+### ##[Unreleased]
+
+### ##Added:
+* Noticed that we are accessing the ibd files already in the stages that form the small.txt.gz file. Therefore there is no need to create a separate step. Instead we can just create a data structure that has class that hold this information and create someway to get a fast look up. This will probably be a dictionary
+
+***What was done:***
+* Added a class called File_Pairs in the collect_shared_segments.py file that will collect information from the pairs
+
+### ##Changed:
+
+- Create this data structure called pair_info_dict the structure is {chromosome_number: {variant/gene name: {ibd_program: {pair_id_str: class object}}}}
+
+
+### ##Removed:
+
+### ##TODO:
+* need to make sure that this data structure is returned and can be passed into the the scripts that create the allpair.txt files
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-28:
+
+### ##[Unreleased]
+
+### ##Added:
+* Added some functions to the gather_ibd_info.py that will use a dictionary proxy from the multiprocessing.Manager.Dict. This dictionary is immutable but it is shared between different processes. 
+
+    * An inner dictionary has to be created where the key is the pairs of IIDs and the values are classes that have information such as the hapibd segment start/end/len and the same for ilash
+
+         * This information is collected for each pair for a specific variant
+    
+    * Once this inner dictionary is created it is added to the pair_info_dict where the key is the variant probe id and the value is this inner dictionary.
+
+    * This pair_info_dict is then returned from the parallelized function and contains all the pairs for each variant.
+
+    * This dictionary is then placed inside another dictionary called pair_info_dict within the determine_segments function within the segment_analysis_main.py file. This dictionary has either hapibd or ilash as the keys so that we can identify which program the pairs come from
+
+    * This dictionary is passed into the combine_output function in the combine_ibd_pairs.py file and is passed into the parallelized function, run, so that when the allpair.txt files are created it can just pull the info from that dictionary. 
+
+        * Had to use try and except because sometimes pair1 and pair 2 in the allpair.txt files are actually pair2 and pair 1 respectively in the pair_info_dict
+
+***What was done:***
+
+### ##Changed:
+
+- Changed back the pair_str values for the allpair.txt files so that they can use all the segment information.
+
+### ##Removed:
+
+* removed the hapibd and ilash files that were being loaded into a dataframe to get the segment lengths because this was redundant and is no longer needed
+
+### ##TODO:
+* consider creating a class for the pair_str that can account for each situation where the the hapibd or ilash object may not exist
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
