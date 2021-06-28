@@ -44,6 +44,9 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
     
     ibd_readme_info: utility_scripts.Readme_Info = utility_scripts.Readme_Info(IBD_search_output_files, utility_scripts.formatted_ibd_dir_body_text_1, "formatted_ibd_output_README.md")
 
+    # creating a dictionary that can keep track of information about the pairs
+    pair_info_dict: Dict[str, Dict] = {}
+
     #This section is going through each program
     for program in IBD_programs.split(" "):
 
@@ -63,15 +66,16 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             pheno_df, pheno_carriers_df = collect_phenotype_info.load_pheno_file(pheno_gmap, pheno_carriers)
 
             shared_segment_detection.gather_shared_segments(
-            ibd_file,
-            pheno_df,
-            pheno_carriers_df,
-            IBD_search_output_files,
-            program,
-            MIN_CM,
-            file_suffix,
-            THREADS
-            )
+                                                            ibd_file,
+                                                            pheno_df,
+                                                            pheno_carriers_df,
+                                                            IBD_search_output_files,
+                                                            program,
+                                                            MIN_CM,
+                                                            file_suffix,
+                                                            THREADS, pair_info_dict
+                                                            )
+
         else: 
             convert_ibd_func_param: Dict = {
             "ibd_file_path": ibd_file, 
@@ -91,8 +95,11 @@ def determine_segments(output: str, carrier_file_dir: Optional[str], IBD_dir_dic
             # iterating over this dictionary so that we can get the
             # variants for each chromosome
             shared_segment_detection.iterate_file_dict(
-                file_dict, IBD_search_output_files, THREADS, program, MIN_CM
+                file_dict, IBD_search_output_files, THREADS, program, MIN_CM, pair_info_dict
             ) 
+
+    print(pair_info_dict.keys())
+    print(pair_info_dict["hapibd"].keys())
 
 
     if pheno_gmap and pheno_carriers:

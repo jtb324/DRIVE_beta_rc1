@@ -138,7 +138,7 @@ def get_pair_string(row: pd.DataFrame, id1_indx: int, id2_indx: int, cM_indx: in
     elif row[id1_indx] not in (uniqID) and row[id2_indx] in (uniqID):  # If only id 2 is in the uniqID then it write that pair to the list
         return '{0}:{1}-{2}'.format(row[cM_indx], row[id2_indx], row[id1_indx])
 
-def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: int, IBDdata: dict, IBDindex: dict) -> str:
+def build_ibddata_and_ibddict(row: pd.Series, start_indx: int, end_indx: int, chr_indx: int, IBDdata: dict, IBDindex: dict) -> pd.Series:
     """Function that will identify breakpoints"""
 
     CHR: str = str(row[chr_indx])
@@ -279,7 +279,58 @@ def fix_chr_str(chr_num: str) -> str:
     
     return chr_num
 
-def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path: str, ibd_program: str, var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
+def append_pairs(row: pd.Series, pair_info_dict: Dict, indx_dict: Dict[str, int]) -> None:
+    """Function that will add the File_Pairs class to the dictionary """
+
+    pair_info_dict.setdefault("".join([row[indx_dict["id1_indx"]], "-", row[indx_dict["id2_indx"]]]), File_Pairs(row, indx_dict))
+
+def add_pair_to_class(pair_df: pd.DataFrame, pairs_info_dict: Dict, ibd_program: str, indx_dict: Dict[str, int], chr_num: str, variant_name: str=None, gene_name: str=None) -> None:
+    """Function to add class objects to a dictionary that has the IDB information for each pair
+    Parameters
+    __________
+    pair_df : pd.DataFrame
+        dataframe that is a chunk from either the iLash files or the hapibd files
+    
+    pairs_info_dict : Dict
+        dictionary where the key will be either the variant name or the gene name and the 
+        value will be another dictionary
+    
+    ibd_program : str
+        string of either hapibd or ilash. It has the potential to use GERMLINE but that is 
+        not really being used anymore
+    
+    indx_dict : Dict[str, int]
+        Dictionary where the keys are strings that list what the index is for and the values 
+        are an integer that gives the index position for that value
+    
+    variant_name : str
+        string that list the variant name. This value is None by default
+    
+    gene_name : str
+        string that list the gene name. This value is None by default
+    """
+    
+    if variant_name:
+        pairs_info_dict.setdefault(variant_name, {})
+
+
+        pairs_info_dict[variant_name].setdefault(ibd_program, {})
+
+        pair_df.apply(lambda row: append_pairs(row, pairs_info_dict[variant_name][ibd_program], indx_dict), axis=1)
+
+
+    else:
+        pairs_info_dict.setdefault(gene_name, {})
+
+        pairs_info_dict[gene_name].setdefault(ibd_program, {})
+
+        pair_df.apply(lambda row: append_pairs(row, pairs_info_dict[gene_name][ibd_program], indx_dict), axis=1)
+
+    
+    # need to use the apply function to add the class that has the pair info to that list
+    
+
+def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_file: str, uniqID: dict,  min_cM: int, que_object, output_path: str, ibd_program: str, pair_info_dict: Dict[str, Dict], var_position: int = None, gene_start: int = None, gene_end: int = None, variant_name=None, gene_name=None):
     '''This function will be used in the parallelism function'''
     # undoing the parameter_dict
     id1_indx = int(parameter_dict["id1_indx"])
@@ -301,6 +352,8 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
     # giving the chromosome a default value. If this value does not 
     # change throughout the program then the program will just move on
     chr_num: str = "0"
+
+    info_dict: Dict = {}
 
     for chunk in pd.read_csv(segment_file,
                                 sep="\t",
@@ -344,11 +397,23 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
             chunk_copy.loc[:,"pair_string"] = chunk_copy.apply(lambda row: get_pair_string(row, id1_indx, id2_indx, cM_indx, uniqID), axis=1)
 
             
-            chr_num_series:pd.Series = chunk_copy.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
+            chr_num_series: pd.Series = chunk_copy.apply(lambda row: build_ibddata_and_ibddict(row, str_indx, end_indx, chr_indx, IBDdata, IBDindex), axis=1)
 
             chr_num: str = list(set(chr_num_series.values))[0]
 
+            # At this point need to gather the information within a class
+
+            # This adds the pairs string as a key to the info_dict and 
+            # adds the class to that that keeps the information
+            chunk_copy.apply(lambda row: append_pairs(row, info_dict, parameter_dict), axis=1)
     
+
+    if variant_name:
+        pair_info_dict.setdefault(variant_name, info_dict) 
+           
+    else:
+        pair_info_dict.setdefault(gene_name, info_dict)
+            
     if chr_num != "0":
         if variant_name:
             write_to_file(IBDdata, IBDindex, output_path, chr_num, que_object, ibd_program, variant_name)
@@ -360,8 +425,31 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
         if gene_name:
             print(f"There were no shared IBD segments found for the gene {gene_name}")
 
+    #TODO: Need to return this dictionary
             
 
 
+class File_Pairs:
+    """class that will keep all of the information from ilash and or hapibd"""    
     
-    
+    def __init__(self, row: pd.Series, indx_dict: Dict[str, int]) -> None:
+        self.extract_information(row, indx_dict)
+
+    def extract_information(self, row: pd.Series, indx_dict: Dict[str, int]) -> None:
+        """Function to extract the information from the row series using the indices in the indx dict
+        Parameter
+        _________
+        row : pd.Series
+            pandas series that has the ibd segment information for pairs spread out over the column
+            
+        indx_dict : Dict[str, int]
+            dictionary that has the indx names as keys and the index position as values
+        """
+        self.pair1: str = row[indx_dict["id1_indx"]]
+        self.pair2: str = row[indx_dict["id2_indx"]]
+        self.chr_num: str = row[indx_dict["chr_indx"]]
+        self.str_pos: str = row[indx_dict["str_indx"]]
+        self.end_pos: str = row[indx_dict["end_indx"]]
+        self.cM_length: str = row[indx_dict["cM_indx"]]
+        self.phase_1: str = row[indx_dict["id1_phase_indx"]]
+        self.phase_2: str = row[indx_dict["id2_phase_indx"]]

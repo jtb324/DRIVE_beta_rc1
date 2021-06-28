@@ -286,3 +286,29 @@ ___
 * work on reimplementing the part that gets the segment lengths
 * fix unit test
     * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-24:
+
+### ##[Unreleased]
+
+### ##Added:
+* Noticed that we are accessing the ibd files already in the stages that form the small.txt.gz file. Therefore there is no need to create a separate step. Instead we can just create a data structure that has class that hold this information and create someway to get a fast look up. This will probably be a dictionary
+
+***What was done:***
+* Added a class called File_Pairs in the collect_shared_segments.py file that will collect information from the pairs
+
+### ##Changed:
+
+- Create this data structure called pair_info_dict the structure is {chromosome_number: {variant/gene name: {ibd_program: {pair_id_str: class object}}}}
+
+
+### ##Removed:
+
+### ##TODO:
+* need to make sure that this data structure is returned and can be passed into the the scripts that create the allpair.txt files
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail

@@ -1,4 +1,5 @@
 import sys
+from typing import Dict
 
 class Parameter_Dict:
     """class to generate a dictionary of indices that certain values can be found at"""
@@ -15,7 +16,7 @@ class Parameter_Dict:
             sys.exit(1)
 
     @staticmethod
-    def generate_base_dict() -> dict:
+    def generate_base_dict() -> Dict[str, int]:
         """Function to generate the base dictionary regardless of what ibd 
         program is used
         Returns
@@ -34,7 +35,7 @@ class Parameter_Dict:
 
         return parameter_dict
     
-    def return_param_dict(self) -> dict:
+    def return_param_dict(self) -> Dict[str, int]:
         """Function to return the parameter dictionary"""
         return self.param_dict
 
@@ -52,7 +53,11 @@ class Ilash_Indices(Parameter_Dict):
 
     def update_indices(self):
         """method to add to new indices if you use ilash"""
+        #this gives indexes for getting the length (the cM_indx) and the phase for each individual
         self.param_dict["cM_indx"] = 9
+        self.param_dict["id1_phase_indx"] = 1
+        self.param_dict["id2_phase_indx"] = 3
+        
 
 class Hapibd_Indices(Parameter_Dict):
     """class that will extend the Parameter Dict and get the extra indices"""
@@ -60,5 +65,8 @@ class Hapibd_Indices(Parameter_Dict):
     def update_indices(self):
         """method to add to new indices if you use hapibd"""
         self.param_dict["cM_indx"] = 7
+        self.param_dict["id1_phase_indx"] = 1
+        self.param_dict["id2_phase_indx"] = 3
+
 
     

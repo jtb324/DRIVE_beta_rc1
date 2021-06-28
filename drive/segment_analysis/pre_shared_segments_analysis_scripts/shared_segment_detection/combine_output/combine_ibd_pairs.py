@@ -331,15 +331,12 @@ class Combine_Info:
 
         
     
-    def get_ibd_df(self, ibd_file_key: str) -> List:
+    def get_ibd_df(self, ibd_file_key: str) -> pd.DataFrame:
         """Method to get the ibd file dataframe from the list in the gathered_file_dict
         Parameters
         __________
         ibd_file_key : str
             dictionary key for the gathereD_file_dict to get the appropriate ibd_files
-        
-        key_value : str
-            This is the string of the key to get the files from
         
         Returns
         _______

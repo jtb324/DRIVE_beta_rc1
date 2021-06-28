@@ -230,7 +230,7 @@ def filter_no_carriers(var_iid_dict: dict, output_path: str, chr_num: str) -> di
 
 #TODO: refactor to make this function testable
 # This function is not testable at the moment
-def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: str, min_CM: str):
+def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: str, min_CM: str, pair_info_dict: Dict[str, Dict]) -> Dict[str, Dict]:
     """Function will iterate through the file dictionary which has paired the chromosome number with the appropriate files 
     Parameters
     __________
@@ -245,6 +245,11 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
     output : str
         string that list directory to output files at
     """
+
+    
+
+    pair_info_dict.setdefault(ibd_program, {})
+
     # Iterating through the chromosomes that have a value
     for key in file_dict:
         
@@ -275,6 +280,7 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
                 var_info_dict = create_var_info_dict(var_info_dict, var_iid_dict, variant, bp)
 
             # need to fix this part for the new function
+            #TODO: Need to get rid of the decorator
             parallel_runner: object = utility_scripts.Segment_Parallel_Runner(
                 int(threads), output, ibd_program, min_CM, var_info_dict,
                 ibd_file)
@@ -282,14 +288,23 @@ def iterate_file_dict(file_dict: dict, output: str, threads: str, ibd_program: s
             error_filename: str = "nopairs-identified.txt"
             header_str: str = "variant_id"
 
-            parallel_runner.run_segments_parallel(error_filename, gather_shared_segments,
-                                                  header_str)
+            pairs_dict: Dict[str, Dict] = parallel_runner.run_segments_parallel(gather_shared_segments, 
+                    error_filename, header_str)
+            
+            
+            for key, value in pairs_dict.items():
+
+                pair_info_dict[ibd_program].setdefault(key, value)
+
+
+
 
 # TODO: rename function
-def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
-             min_CM: str, var_info_dict: list, que_object, variant):
+def gather_shared_segments(variant: str, segment_file: str, output_path: str, ibd_format: str,
+             min_CM: str, var_info_dict: list, pair_info_dict: Dict[str, Dict], que_object):
 
     output_path: str = utility_scripts.check_dir(output_path, "collected_pairs/")
+
     variant_position: int = int(var_info_dict[variant]["base_pos"])
 
     print(f"running the variant {variant}")
@@ -302,6 +317,6 @@ def gather_shared_segments(segment_file: str, output_path: str, ibd_format: str,
 
     IBDdata, IBDindex = create_ibd_arrays()
 
-    gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, ibd_format, var_position=variant_position, variant_name=variant) 
+    gather_pairs(IBDdata, IBDindex, parameter_dict, segment_file, uniqID, min_CM, que_object, output_path, ibd_format, pair_info_dict, var_position=variant_position, variant_name=variant) 
 
     
