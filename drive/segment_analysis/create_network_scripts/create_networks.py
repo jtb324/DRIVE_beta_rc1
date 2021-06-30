@@ -48,6 +48,7 @@ def create_networks(allpair_file_dir: str, networks_dir: str, analysis_type: str
     # Getting all of the allpair files into a list
     allpair_file_list: list = utility_scripts.get_file_list(
         allpair_file_dir, "*.allpair.txt")
+    
 
     # Need to refactor so that this doesn't rel on the variant_file_dir
     network_drawer: Network_Prep = Network_Prep(
@@ -73,14 +74,15 @@ def create_networks(allpair_file_dir: str, networks_dir: str, analysis_type: str
 
         # TODO: At this point the network_drawer has an attribute iid_dict that has the carriers for each variant/gene in for the chromosome 
         # iterating through each variant and getting the list of carriers
-    
+    # This iid_dict is not being formed for every chromosome
+
     for chromo_num in network_drawer.iid_dict.keys():
         
         inner_dict: Dict[str, List[str]] = network_drawer.iid_dict[chromo_num]
 
         # creating an object that has the chromosome number, the variant id/gene 
         # name, and the iid list as attributes
-
+        
         for identifier in inner_dict: 
             # pulling out the list of iids that are associated with the different 
             # genes/variant ids

@@ -201,6 +201,9 @@ def determine_networks(output: str, ibd_file_dir: str, is_phenotype_analysis: bo
         network_dir,
         "phenotype",
         os.path.join(ibd_file_dir, "confirmed_carriers.txt"))
+
+        create_network_scripts.create_distributions(network_dir, "phenotype")
+
     else: 
         create_network_scripts.create_networks(
             os.path.join(ibd_file_dir, "pairs/"),
@@ -208,6 +211,8 @@ def determine_networks(output: str, ibd_file_dir: str, is_phenotype_analysis: bo
             "gene",
             os.path.join(ibd_file_dir, "confirmed_carriers.txt"),
         )
+
+        create_network_scripts.create_distributions(network_dir, "gene")
 
     logger.info(
         f"Writing the results of the network analysis to: {network_dir}"
