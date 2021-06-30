@@ -1,7 +1,4 @@
 import pandas as pd
-from .get_haplotype_info import hapibd_info_finder, ilash_info_finder
-
-import sys
 from typing import List, Dict, Optional
 # This script keeps some of the functions that are used for determining if pairs are found
 
@@ -92,11 +89,11 @@ class Pair_Info_Class:
         """
         # getting the string of just the two pairs
         pairs_str: str = pair_string.split("\t")[4]
-
+        
         # splitting the above string into a list with pair 1 and
         # pair 2
         pairs_list: list = pairs_str.split(" ")
-
+        
         return pairs_list
 
     def iid_list_handler(self, carrier_df: str = None, pheno_carriers: pd.DataFrame = None):
@@ -104,7 +101,7 @@ class Pair_Info_Class:
 
         Parameters
         __________
-        carrier_dir : str
+        carrier_df : pd.DataFrame
             directory that specifies where the 
             single_variant_carrier.csv files are that list which
             iid carries which variant
@@ -121,12 +118,7 @@ class Pair_Info_Class:
             self.carrier_iid_list(pheno_carriers=pheno_carriers)
         else:
             self.carrier_iid_list(carrier_analysis_df =carrier_df)
-        # iid_option_handler: dict = {
-        #     True: self.carrier_iid_list(pheno_carriers=pheno_carriers), 
-        #     False: self.carrier_iid_list(carrier_analysis_dir=carrier_dir)
-        # }
-
-        # iid_option_handler[self.analysis_type == "phenotype"]
+        
 
     def carrier_iid_list(self, carrier_analysis_df: Optional[pd.DataFrame] = None, pheno_carriers: Optional[pd.DataFrame] = None):
         """Function to determine the iid list based on the analysis 
@@ -277,17 +269,16 @@ class Pair_Info_Class:
         pairs_list: list = []
         # iterating through each pair in the pair list
         for pair in self.pair_list:
-            
-            
+                     
             # creating an Pairs object that has each pair string
             pair_object: Pairs = Pairs(pair)
 
             # creating a string of the pairs to identify the pairs from 
             # the dictionary
-            pair_str: str = "".join([pair_object.pair1,"-", pair_object.pair2])
-
+            id_pair_str: str = "".join([pair_object.pair1,"-", pair_object.pair2])
+     
             # creating an alternate string to check if the pairs are in the reverse order
-            alt_pair_str: str = "".join([pair_object.pair2,"-", pair_object.pair1])
+            alt_id_pair_str: str = "".join([pair_object.pair2,"-", pair_object.pair1])
 
             # updating the pairs_dict so that there is a key for this pair
             pairs_dict[(pair_object.pair1, pair_object.pair2)] = {}
@@ -296,11 +287,10 @@ class Pair_Info_Class:
     
             
             if pair_object.pair2 in self.iid_list:
-
                 
                 # if the pair is a carrier than the carrier status will be set to 1
                 pairs_dict[(pair_object.pair1, pair_object.pair2)]["carrier_status"] = 1
-
+                
                 # assigning values for the missed carriers
                 self.set_missed_carrier_status_null(pairs_dict, pair_object)
 
@@ -314,25 +304,20 @@ class Pair_Info_Class:
 
                 # assigning values for the missed carriers
                 self.set_missed_carrier_status(pairs_dict, connected_carriers, pair_object)
-
-            # # need to get the information from hapibd and ilash about the segment length
-            # hapibd_info_object: hapibd_info_finder = hapibd_info_finder(hapibd_file, pair_object.pair1, pair_object.pair2, "hapibd")
-
-            # ilash_info_object: ilash_info_finder = ilash_info_finder(ilash_file, pair_object.pair1, pair_object.pair2, "ilash")
             
             # getting the ilash and hapibd objects with all the information for the pair
 
             try:
-                hapibd_pair_object = pair_info_dict["hapibd"][identifier][pair_str]
+                hapibd_pair_object = pair_info_dict["hapibd"][identifier][id_pair_str]
             
             except KeyError:
-                hapibd_pair_object = pair_info_dict["hapibd"][identifier].get(alt_pair_str)
+                hapibd_pair_object = pair_info_dict["hapibd"][identifier].get(alt_id_pair_str)
 
             try:
-                ilash_pair_object = pair_info_dict["ilash"][identifier][pair_str]
+                ilash_pair_object = pair_info_dict["ilash"][identifier][id_pair_str]
 
             except KeyError:
-                ilash_pair_object = pair_info_dict["ilash"][identifier].get(alt_pair_str)
+                ilash_pair_object = pair_info_dict["ilash"][identifier].get(alt_id_pair_str)
 
             
             # need to create an object that has can differiate the objects based on if hapibd_pair_object is None or if ilash_pair_object is none
@@ -348,18 +333,14 @@ class Pair_Info_Class:
                     # creating the pair_str when the phenotype analysis is selected
                     pair_str:str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{'N/A'}\t{self.identifier}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_pair_object.phase_1}\t{hapibd_pair_object.phase_2}\t{ilash_pair_object.phase_1}\t{ilash_pair_object.phase_2}\t{hapibd_pair_object.str_pos}\t{hapibd_pair_object.end_pos}\t{hapibd_pair_object.cM_length}\t{ilash_pair_object.str_pos}\t{ilash_pair_object.end_pos}\t{ilash_pair_object.cM_length}\n"
 
-                    # pair_str:str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{'N/A'}\t{self.identifier}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\n"
                 # if it is not phenotype then you have to use the 
                 # variant position
                 else:
-                    # hapibd_info_dict: dict = hapibd_info_object.get_len_info(var_position=analysis_type_info["variant_pos"])
-
-                    # ilash_info_dict: dict = ilash_info_object.get_len_info(var_position=analysis_type_info["variant_pos"])
-                
+                   
                     # writing the pair string when the phenotype analysis is not used
                     pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_pair_object.phase_1}\t{hapibd_pair_object.phase_2}\t{ilash_pair_object.phase_1}\t{ilash_pair_object.phase_2}\t{hapibd_pair_object.str_pos}\t{hapibd_pair_object.end_pos}\t{hapibd_pair_object.cM_length}\t{ilash_pair_object.str_pos}\t{ilash_pair_object.end_pos}\t{ilash_pair_object.cM_length}\n"
 
-                    # pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\n"
+                    
             elif not hapibd_pair_object and not ilash_pair_object:
 
                 if analysis_type_info["analysis_type"] == "phenotype":
@@ -374,7 +355,7 @@ class Pair_Info_Class:
                     # writing the pair string when the phenotype analysis is not used
                     pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\t{'N/A'}\n"
 
-            elif not hapibd_info_finder:
+            elif not hapibd_pair_object:
                 
             # if the analysis type is phenotype then have to use the 
             # gene start and end
@@ -405,11 +386,9 @@ class Pair_Info_Class:
                 # if it is not phenotype then you have to use the 
                 # variant position
                 else:
-                    
+                        
                     # writing the pair string when the phenotype analysis is not used
                     pair_str: str = f"{pair_object.program}\t{pair_object.pair1}\t{pair_object.pair2}\t{self.chromo_num.strip('.')[3:]}\t{self.identifier}\t{'N/A'}\t{pairs_dict[(pair_object.pair1, pair_object.pair2)]['carrier_status']}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['missed_carrier'])}\t{str(pairs_dict[(pair_object.pair1, pair_object.pair2)]['connected_carriers'])}\t{hapibd_pair_object.phase_1}\t{hapibd_pair_object.phase_2}\t{'N/A'}\t{'N/A'}\t{hapibd_pair_object.str_pos}\t{hapibd_pair_object.end_pos}\t{hapibd_pair_object.cM_length}\t{'N/A'}\t{'N/A'}\t{'N/A'}\n"
-
-            
 
             pairs_list.append(pair_str)
 

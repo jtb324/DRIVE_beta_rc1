@@ -425,9 +425,8 @@ def run(pair_info_dict: Dict[str, Dict], combined_info_object: Combine_Info):
     chr_num: str = combined_info_object.chr_num
     output_dir: str = combined_info_object.output_dir
     analysis_type: str = combined_info_object.analysis_type
-    # hapibd_file: pd.DataFrame = combined_info_object.get_ibd_df("hapibd_file_list")
-    # ilash_file: pd.DataFrame = combined_info_object.get_ibd_df("ilash_file_list")
     analysis_type_dict: Dict = combined_info_object.analysis_type_dict
+
 
     # Setting a max_number of pairs parameter ot use for comparision so that it only keeps one line
     max_pairs: int = 0
@@ -532,7 +531,7 @@ def run(pair_info_dict: Dict[str, Dict], combined_info_object: Combine_Info):
 
             if after_max_pair == 0 and count == 1:
 
-                max_pairs_str: str = previous_row_str
+                max_pairs_str: str = previous_row_str.strip(" ")
 
                 # get the start base position which will be used later in the allpair path
                 start_bp: str = previous_row_bp
@@ -550,6 +549,9 @@ def run(pair_info_dict: Dict[str, Dict], combined_info_object: Combine_Info):
 
                 # Entering into the get_max_pairs function
                 # TODO: Make a pairs object that can contain the information about the pair object such as the string of pairs, the identifier which is the variant_id or gene name, the chromosome number, the output_path, and the analysis type
+                print(identifier)
+
+
                 pair_info_object = Pair_Info_Class(
                     max_pairs_str, identifier, chr_num, allagree_path, analysis_type)
 

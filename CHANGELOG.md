@@ -368,6 +368,31 @@ ___
 
 ### ##Removed:
 
+### ##TODO:
+* consider creating a class for the pair_str that can account for each situation where the the hapibd or ilash object may not exist
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-30:
+
+### ##[Unreleased]
+
+### ##Added:
+
+
+***What was done:***
+
+### ##Changed:
+
+- Fixed a bug where in line 358 of the pair_functions.py file the hapibd_info_finder class was being used. Instead this was switched to the hapibd_pair_object and now the pair_str object was created correctly. Now when the hapibd_pair_object is not created the program correctly accounts for that.
+ 
+* The was also another variable that was called pair_str early in the file that was interfering with the pair_str variable that is written to the allpair.txt file. This variable was renamed to id_pair_str as well as was the alt_pair_str to alt_id_pair_str
+
+### ##Removed:
 
 ### ##TODO:
 * consider creating a class for the pair_str that can account for each situation where the the hapibd or ilash object may not exist
