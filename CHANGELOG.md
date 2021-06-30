@@ -352,3 +352,28 @@ ___
 * work on reimplementing the part that gets the segment lengths
 * fix unit test
     * at the moment every unit test should fail
+
+## [beta 1.0.0 rc1] - 2021-06-29:
+
+### ##[Unreleased]
+
+### ##Added:
+* Added a script called create_distribution.py. This script will plot the distributions if the size of networks for each gene and each variant into a subfolder in the networks directory called "network_distributions". The script also plots the total distributions of the sizes across all networks. This file is output into the same networks_distributions subdirectory
+
+***What was done:***
+
+### ##Changed:
+
+- Fixed a bug in the phenotype analysis where the program was not properly accounting for multiple genes on the same chromosome. It worked if there was only one gene per chromosome but it built the data structure wrong if there was more than one. This is fixed now
+
+### ##Removed:
+
+
+### ##TODO:
+* consider creating a class for the pair_str that can account for each situation where the the hapibd or ilash object may not exist
+* fix readmes for the formatted_ibd_output and the networks directory
+* Work on CLI design so think about how to make like a progress bar to let people know it is still going
+* work on making sure that the script can run in parallel
+* work on reimplementing the part that gets the segment lengths
+* fix unit test
+    * at the moment every unit test should fail
