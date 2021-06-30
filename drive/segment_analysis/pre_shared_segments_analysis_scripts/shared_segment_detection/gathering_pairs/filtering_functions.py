@@ -126,18 +126,5 @@ def filter_for_gene_site(df_chunk: pd.DataFrame, ibd_str_indx: int, ibd_end_indx
     
     return filtered_chunk
 
-def filter_for_matches(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Function that will filter the dataframe to make sure the pair1 id and pair 2 id are not the same
-    Parameters
-    __________
-    dataframe : pd.DataFrame
-        dataframe to be filtered
-    
-    Returns
-    _______
-    pd.DataFrame
-        returns a dataframe that has been filtered so that each iids are different
-    """
 
-    return dataframe[dataframe[0] != dataframe[2]]
 

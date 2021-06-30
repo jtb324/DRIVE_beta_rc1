@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Union, Tuple, Dict
 
 from ..generate_indx_dict.generate_dict import Germline_Indices, Ilash_Indices, Hapibd_Indices
-from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site, filter_for_matches
+from .filtering_functions import filter_to_greater_than_3_cm, filter_to_individual_in_uniqID, filter_for_correct_base_pair, filter_for_gene_site
 
 
 ####################################################################################################
@@ -385,8 +385,6 @@ def gather_pairs(IBDdata: dict, IBDindex: dict, parameter_dict: dict, segment_fi
 
             chunk = filter_for_gene_site(chunk_greater_than_3_cm, str_indx, end_indx, gene_start, gene_end)
             
-        # filter to make sure that the pair 1 id and pair 2 id are not the same
-        chunk = filter_for_matches(chunk)
 
         if not chunk.empty:
             

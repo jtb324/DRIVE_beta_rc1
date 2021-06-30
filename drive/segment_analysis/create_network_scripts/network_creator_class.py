@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.core.numeric import NaN
+from numpy.core.numeric import NaN, identity
 import pandas as pd
 import os.path
 from os import path
@@ -39,7 +39,7 @@ class Network_Prep:
             # getting a list of all the genes from the carriers_df
 
             gene_list: List[str] = list(set(carriers_df["gene_name"].values.tolist()))
-        
+
             for gene in gene_list:
 
                 # getting the chromosome number for the specific variant
@@ -51,8 +51,12 @@ class Network_Prep:
                 # getting the list of iids associated with that variant and ch    romosome
                 iid_list: List[str] = carriers_df[carriers_df["gene_name"] == gene].IID.values.tolist()
 
+                # providing an initial value for the 
+                # chromosome number
+                iid_dict.setdefault("".join(["chr",chr_num]), {})
+
                 # writing this list ot a dictionary
-                iid_dict["".join(["chr",chr_num])] = {gene: iid_list}
+                iid_dict["".join(["chr",chr_num])].setdefault(gene, iid_list)
 
         else:   
             # getting a list of all the variants from the carriers_df
@@ -245,8 +249,7 @@ class Network_Maker:
         # converting the above dictionary to a dataframe 
         self.network_carriers = pd.DataFrame.from_dict(
             carriers_in_network_dict)
-        print("self.network_carriers")
-        print(self.network_carriers)
+       
         # need to write these variants to a dataframe
         # if the file already exist then need to append the new 
         # information without adding a header
@@ -445,7 +448,7 @@ class Network_Maker:
 
         # Adding a column for the variant number and the chr number so that we can output just one file
         self.network_carriers = self.add_columns(self.network_carriers)
-        print(self.network_carriers)
+
         # allpairs_df = self.add_columns(allpairs_df, variant, chr_num)
 
         # Writing the dataframe to a csv file
