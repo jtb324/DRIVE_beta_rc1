@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "drive"
+version = "0.0.9b"
+description = "Software to help identify clusters of individuals who share IBD segments around a sections of the genome or clusters viduals who share phenotypes of interest"
+authors = ["jtb324 <james.baker@vanderbilt.edu>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+pandas = "^1.3.5"
+numpy = "^1.22.1"
+matplotlib = "^3.5.1"
+xlrd = "^2.0.1"
+typer = "^0.4.0"
+click = "^8.0.3"
+tqdm = "^4.62.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+pytest-cov = "^3.0.0"
+coverage = "^6.2"
+snakeviz = "^2.1.1"
+black = "^21.12b0"
+pylint = "^2.12.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
