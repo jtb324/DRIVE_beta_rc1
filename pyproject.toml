@@ -13,6 +13,8 @@ xlrd = "^2.0.1"
 typer = "^0.4.0"
 click = "^8.0.3"
 tqdm = "^4.62.3"
+pydantic = "^1.9.0"
+toml = "^0.10.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
@@ -21,6 +23,7 @@ coverage = "^6.2"
 snakeviz = "^2.1.1"
 black = "^21.12b0"
 pylint = "^2.12.2"
+ipykernel = "^6.7.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
