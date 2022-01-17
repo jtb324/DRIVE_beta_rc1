@@ -1,0 +1,70 @@
+# TOML document that allows the user to cutomize aspects of the software
+
+title = "DRIVE User Configuration"
+
+#### GENERAL PARAMETERS #####################################
+
+# The program will be configured to output files to the default directory unless the user specifies different
+[output]
+output = "./"
+
+
+[population_parameters]
+ethnicity_file = ""
+
+#### CARRIER ANALYSIS PARAMETERS ############################
+
+# This section of parameters will be used to configured the steps that run plink.
+[plink_parameters]
+
+
+# These input files include the:
+# * Variant file: An excel or csv file that list the variants 
+#   of interest as well as the gene name
+#
+# * binary_file: This argument list the filepath to the binary 
+#   file that has the array information
+#
+# * ped_files: string that has the directory to ped or map 
+#   files that are output by plink. This will be an empty 
+#   string if the user wishes to run plink. If the user has 
+#   already run plink then it should be a filepath to a 
+#   directory containing the ped and map files
+
+[inputs]
+variant_file = ""
+binary_file = ""
+ped_files = ""
+carrier_files = ""
+pheno_gene_info = ""
+phenotype_carriers = ""
+
+
+# This section has the start and end region of 
+# the gene of interest. 
+# Shared IBD segments that overlap this region will be 
+# identified
+["gene_range"]
+gene_range = [0, 0]
+
+# This section will list the ibd programs from 
+# which output data wil be used in the program. 
+# This is used to select the correct ibd shared # segments
+[ibd_programs]
+ibd_programs = ["hapibd", "ilash"]
+
+# The next section defines thresholds that the user can set:
+# * MIN_CM: threshold for the minimum sized 
+#   centimorgan that will be used as a shared 
+#   segment. This value defaults to 3
+# 
+# * MAF_THRESHOLD: minor allele frequency 
+#   threshold to filter any variants below this 
+#   threshold.
+[thresholds]
+min_cm = 3
+maf_threshold = 0.05
+#### SEGMENT ANALYSIS PARAMETERS ############################
+
+
+
