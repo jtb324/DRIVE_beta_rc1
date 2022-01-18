@@ -1,6 +1,8 @@
 import pytest
 from typing import Dict
 from models import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
+import sys
+sys.path.append("../")
 
 # example input data to test the program with
 example_people_data: Dict = {
