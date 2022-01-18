@@ -2,7 +2,8 @@ import pytest
 from typing import Dict
 
 import sys
-sys.path.append("./drive/")
+import os
+sys.path.append("drive/")
 
 from drive.models import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
 
