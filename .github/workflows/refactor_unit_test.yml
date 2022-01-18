@@ -21,7 +21,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
+      - name: changed directory
+        run: 
+          cd ./drive 
       - name: Run tests with pytest
         run: 
-          cd ./drive
           pytest 
