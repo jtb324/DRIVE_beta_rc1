@@ -90,7 +90,7 @@ class InputParams(BaseModel):
         # not then an error is raised that tells the user what the acceptable 
         # programs are
         if len([program for program in value if program.lower() not in supported_ibd_programs]) != 0:
-            error_message: str = models.Colors.RED + "FATAL: " + models.Colors.NOCOLOR + f"One or more of the ibd programs you supplied are not supported. Supported programs are {', '.join(supported_ibd_programs)}\n"
+            error_message: str = models.Colors.RED.value + "FATAL: " + models.Colors.NOCOLOR.value + f"One or more of the ibd programs you supplied are not supported. Supported programs are {', '.join(supported_ibd_programs)}\n"
             raise IncorrectIBDProgramError(value, error_message)
         return value
 
@@ -101,7 +101,7 @@ class InputParams(BaseModel):
 
         # if the threshold is incorrect than it raises an error
         if value <= 0 or value >= 0.5:
-            error_message: str = models.Colors.RED + "FATAL: " + models.Colors.NOCOLOR +f"Incorrect minor allele frequency threshold supplied. The minor allele frequency threshold is expected to be > 0 or < 0.5"
+            error_message: str = models.Colors.RED.value + "FATAL: " + models.Colors.NOCOLOR.value +f"Incorrect minor allele frequency threshold supplied. The minor allele frequency threshold is expected to be > 0 or < 0.5"
             raise IncorrectMafThresholdError(value, error_message)
         return value
     
@@ -111,8 +111,8 @@ class InputParams(BaseModel):
         """Function to check and make sure that the output path exists"""
         # checks if the specified directory exists. If it doesn't then it raises 
         # an error_message
-        if not os.path.isdir(value):
-            error_message: str = models.Colors.RED + "FATAL: "+ models.Colors.NOCOLOR + f"The provided output directory {value} was not found"
+        if not os.path.exists(value):
+            error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The provided output directory {value} was not found"
             raise DirectoryNotFoundError(error_message)
         return value
     
@@ -124,7 +124,7 @@ class InputParams(BaseModel):
         # Checks if the first gene range value is larger than the second value which 
         # would indicate that the gene range is reversed
         if value[0] > value[1]:
-            error_message: str = models.Colors.RED + "FATAL: "+ models.Colors.NOCOLOR + f"The gene range provided was illogical. The second value was smaller than the first value"
+            error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The gene range provided was illogical. The second value was smaller than the first value"
             raise IllogicalGeneRangeError(value, error_message)
 
         
