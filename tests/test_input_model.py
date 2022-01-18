@@ -1,8 +1,10 @@
 import pytest
 from typing import Dict
-from models import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
+
 import sys
-sys.path.append("./DRIVE_beta_rc1")
+sys.path.append("./drive/")
+
+from drive.models import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
 
 # example input data to test the program with
 example_people_data: Dict = {
