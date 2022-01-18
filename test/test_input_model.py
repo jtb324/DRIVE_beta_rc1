@@ -6,7 +6,7 @@ import os
 
 sys.path.append("../drive")
 
-from drive.models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
+from models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
 
 # example input data to test the program with
 example_people_data: Dict = {
