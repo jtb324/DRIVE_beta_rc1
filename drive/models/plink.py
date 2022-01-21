@@ -7,7 +7,7 @@ from typing import List, Optional
 
 class RunnerInterface(ABC):
 
-    recode_flags: List[str] = ["recode, recodeA"]
+    # recode_flags: List[str] = ["recode, recodeA"]
 
     @abstractmethod
     def run_plink(self):
@@ -31,7 +31,7 @@ class Gene_Runner(RunnerInterface):
     output: str 
     binary_file: str 
     maf_threshold: float 
-    recode_flags: List[str]
+    # recode_flags: List[str]
     var_file: Optional[str] = None
     
 
@@ -45,7 +45,7 @@ class Range_Runner(RunnerInterface):
     output: str
     binary_file: str
     maf_threshold: float
-    recode_flags: List[str]
+    # recode_flags: List[str]
 
 
     def run_plink(self):
