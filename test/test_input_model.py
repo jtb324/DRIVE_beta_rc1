@@ -113,9 +113,10 @@ def test_supported_file_type(file: str) -> None:
 
     var_file: str = example_people_data["inputs"]["variant_file"]
 
-    if file in ["", ".xlsx", ".csv"]: 
+    if var_file in ["", ".xlsx", ".csv"]: 
         _ = InputParams(**example_people_data)
-        assert var_file == "", f"Error was not raised by the variant filepath as expected"
+        assert var_file in ["", ".xlsx", ".csv"], f"Error was not raised by the variant filepath as expected"
+
     else:
         with pytest.raises(UnsupportedFileType) as exc:
             _ = InputParams(**example_people_data)
