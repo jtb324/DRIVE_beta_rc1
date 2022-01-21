@@ -32,10 +32,19 @@ class IllogicalGeneRangeError(Exception):
         self.message: str = message
         super().__init__(message)
 
+class ImproperPopulationCode(Exception):
+    """Custom error message if the population code is not in an accepted format"""
+    def __init__(self, population_code: str, message: str) -> None:
+        self.population_code: str = population_code
+        self.message: str = message
+        super().__init__(message)
+
 class InputParams(BaseModel):
     title: str 
     output_path: str
     ethnicity_path: Optional[str]
+    pop_code: str 
+    pop_info_file: str
     plink_parameters: Dict
     var_file: str
     bfile: str
@@ -55,6 +64,10 @@ class InputParams(BaseModel):
         kwargs["output_path"] = kwargs["output"]["output"]
 
         kwargs["ethinicity_path"] = kwargs["population_parameters"]["ethnicity_file"]
+
+        kwargs["pop_code"] = kwargs["population_parameters"]["pop_code"]
+
+        kwargs["pop_info_file"] = kwargs["population_parameters"]["pop_info_file"]
 
         kwargs["var_file"] = kwargs["inputs"]["variant_file"]
 
@@ -126,6 +139,17 @@ class InputParams(BaseModel):
         if value[0] > value[1]:
             error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The gene range provided was illogical. The second value was smaller than the first value"
             raise IllogicalGeneRangeError(value, error_message)
+
+    @validator('pop_code')
+    @classmethod
+    def nonsupported_pop_code(cls, value: str) -> str:
+        """Function to check if the population code is supported"""
+
+        pop_codes: List[str] = ["", "EUR", "EAS", "AFR", "AMR", "SAS"]
+
+        if value not in pop_codes:
+            error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The population code provided was not a valid value, excepted values are: ''. {', '.join(pop_codes)}"
+            raise ImproperPopulationCode(value, error_message)
 
         
 

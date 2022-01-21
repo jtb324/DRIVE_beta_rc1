@@ -6,13 +6,17 @@ import os
 
 sys.path.append("../drive")
 
-from models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
+from models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError, ImproperPopulationCode
 
 # example input data to test the program with
 example_people_data: Dict = {
         'title': 'DRIVE User Configuration',
         'output': {'output': './'},
-        'population_parameters': {'ethnicity_file': ''},
+        'population_parameters': {
+            'ethnicity_file': '',
+            'pop_code':'EUR',
+            'pop_info_file':''
+        },
         'plink_parameters': {},
         'inputs': {'variant_file': '',
         'binary_file': '',
@@ -90,3 +94,14 @@ def test_logical_gene_range() -> None:
         _ = InputParams(**example_people_data)
     except IllogicalGeneRangeError as exc:
         assert False, f"'InputParams validation raised an exception: {exc}"
+
+def test_unsupported_pop_code() -> None:
+    """Unit test to make sure that the ImproperPopulationCode is raised when the population code is incorrect"""
+    
+    example_people_data["population_parameters"]["pop_code"] = "WRONGCODE"
+
+    with pytest.raises(ImproperPopulationCode) as exc:
+        _ = InputParams(**example_people_data)
+
+    example_people_data["population_parameters"]["pop_code"] = "EUR"
+    
