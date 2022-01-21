@@ -1,7 +1,7 @@
 import typer
 import os
 import sys
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, MutableMapping
 import toml
 import models
 
@@ -172,55 +172,49 @@ def plink_runner(variant_file: str, recode_flags: List[str], binary_file: str, o
     
     # having the function return the directory that the plink files were written to
     return plink_output_path
+    
+def import_toml(toml_filepath: str) -> models.Carrier_Parameters:
+    """Function that will import the toml configurations and then """
+    config: MutableMapping = toml.load(toml_filepath)
+
+    # first need to create the InputParameters class object
+    return models.InputParams(**config)
+    # carrier_params: models.Carrier_Parameters = models.Carrier_Parameters(output, pop_info_file, pop_code, run_plink)
+
 
 @carrier_id_app.command()
 def determine_carriers(
-    output: str = typer.Option(
-        ..., help="file directory to output all output files into"
-    ),
-    pop_info_file: Optional[str] = typer.Option(
-        None,
-        help="filepath to the file that has all the ancestry information of the individuals in the binary file",
-    ),
-    pop_code: Optional[str] = typer.Option(
-        None,
-        help="Optional population code for the data to be subset into. This is based on 1000 genomes",
-    ),
-    ped_directory: Optional[str] = typer.Option(
-        None,
-        help="Optional argument that tells what filepath the ped and map files can be found at. This argument is only used if the user has already run plink and needs to"
+    toml: str = typer.Option(
+        "user_config.toml", 
+        help="The filepath to the toml file containing the user configurations"
     ),
     run_plink: bool = typer.Option(
         True, help="Optional argument that will "
-    ),
-    variant_file: Optional[str] = typer.Option(
-        None, 
-        help="Optional argument that list the filepath to the excel or csv file that has all the variants of interest"
-    ),
-    binary_file: Optional[str] = typer.Option(
-        None,
-        help="Optional argument that list the filepath to a pinary file of the MEGA array information "
-    ),
-    RANGE_STR: Optional[int] = typer.Option(
-        None,
-        help="Genomic start position to extract a range of snps from. This is used for a gene approach",
-    ),
-    RANGE_END: Optional[int] = typer.Option(
-        None,
-        help="Genomic end position to extract a range of snps from. This is used for a gene approach",
     )):
     """Function to return the IIDs of individuals carry at least one variant of interest"""
     
     # REFACTOR ###############################################
-    # first need to create the Carrier_Parameters class object
-    carrier_params: models.Carrier_Parameters = models.Carrier_Parameters(output, pop_info_file, pop_code, run_plink)
+    
     # Setting a constant for the recode_flags used to run plink
     # removing any files from a previous run
 
-    utility_scripts.remove_dir(os.path.join(output, "carrier_analysis_output"))
+    # using the users configuration file to gather all the inputs
+    inputs: models.InputParams = import_toml(toml)
+
+    analyzer: models.Carrier_Analyzer = models.Carrier_Analyzer(inputs.output_path, inputs.pop_info_file, inputs.pop_code, run_plink)
+
+    analyzer.check_dir()
+    # NOTE: 1/21/22 NEed to have some logic so that this is only run if run plink is specified
+    if inputs.var_file == "": 
+        models.Range_Runner(inputs.output_path, inputs.bfile, )
+    else:
+        models.Gene_Runner
+
+    #NOTE: # Need to expand on these two above classes#NOTE
+    
 
     # next two lines will create the logger and record initial parameters
-    logger: object = utility_scripts.create_logger(output, __name__)
+    # logger: object = utility_scripts.create_logger(output, __name__)
 
     user_arg_dict: Dict = {
             "analysis_type": "Determining carriers",

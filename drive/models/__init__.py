@@ -1,3 +1,4 @@
 from .colors import Colors
-from .inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError
-# from .carriers import Carrier_Parameters
+from .inputs import InputParams
+from .carriers import Carrier_Analyzer
+from .plink import Range_Runner, Gene_Runner
