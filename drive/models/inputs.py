@@ -39,6 +39,13 @@ class ImproperPopulationCode(Exception):
         self.message: str = message
         super().__init__(message)
 
+class UnsupportedFileType(Exception):
+    """Custom error message if the variant file has any file extension except csv, xlsx, or '' """
+    def __init__(self, extension: str, message: str) -> None:
+        self.extension: str =extension
+        self.message: str = message
+        super().__init__(message)
+
 class InputParams(BaseModel):
     title: str 
     output_path: str
@@ -151,5 +158,28 @@ class InputParams(BaseModel):
             error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The population code provided was not a valid value, excepted values are: ''. {', '.join(pop_codes)}"
             raise ImproperPopulationCode(value, error_message)
 
-        
+    @validator("var_file")
+    @classmethod
+    def incorrect_variant_file(cls, value: str) -> str:
+        """Function to check if the extension of the var file is supported"""
+        extension_types: List[str] = ["", ".csv", ".xlsx"]
+
+        # determining where the last '.' is in the filename 
+        # that way we can get the extension. If there is no 
+        # '.' then an IndexError is raised and the value is 
+        # an empty string. 
+        try:
+            # find the index position of the last dot
+            last_dot_indx: int = [i for i, letter in enumerate(value) if letter == "."][-1]
+
+            extension: str = value[last_dot_indx:]
+
+        except IndexError:
+
+            extension: str = ""
+
+        print(f"extension: {extension}")
+        if extension not in extension_types:
+            error_message: str = models.Colors.RED.value + "FATAL: "+ models.Colors.NOCOLOR.value + f"The extension of the variant files is not correct. If the file is not provided then the configuration file should be ''. If the file is provided than the extension needs to be either .xlsx or .csv"
+            raise UnsupportedFileType(extension, error_message)
 

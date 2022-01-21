@@ -6,7 +6,7 @@ import os
 
 sys.path.append("../drive")
 
-from models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError, ImproperPopulationCode
+from models.inputs import InputParams, IncorrectIBDProgramError, IncorrectMafThresholdError, DirectoryNotFoundError, IllogicalGeneRangeError, ImproperPopulationCode, UnsupportedFileType
 
 # example input data to test the program with
 example_people_data: Dict = {
@@ -104,4 +104,23 @@ def test_unsupported_pop_code() -> None:
         _ = InputParams(**example_people_data)
 
     example_people_data["population_parameters"]["pop_code"] = "EUR"
+
+@pytest.mark.parametrize("file", ["", ".xlsx", ".csv", "test.txt"])
+def test_supported_file_type(file: str) -> None:
+    """Unit test to make sure that the UnsupportedFileType is raised when the extension is wrong."""
+
+    example_people_data["inputs"]["variant_file"] = file
+
+    var_file: str = example_people_data["inputs"]["variant_file"]
+
+    if file in ["", ".xlsx", ".csv"]: 
+        _ = InputParams(**example_people_data)
+        assert var_file == "", f"Error was not raised by the variant filepath as expected"
+    else:
+        with pytest.raises(UnsupportedFileType) as exc:
+            _ = InputParams(**example_people_data)
+
+    
+    
+    
     
