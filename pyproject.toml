@@ -13,6 +13,7 @@ xlrd = "^2.0.1"
 typer = "^0.4.0"
 click = "^8.0.3"
 tqdm = "^4.62.3"
+python-dotenv = "^0.19.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
